@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+	<string name="login">Login</string>	
+	<string name="signup">Sign Up</string>
+	<string name="fashionista">Fashionista</string>
+	<string name="ok">Ok</string>
+	<string name="home">home</string>
+	<string name="search">search</string>
+	<string name="post">post</string>
+	<string name="likes">likes</string>
+	<string name="profile">profile</string>
+	<string name="firstName">first name</string>
+	<string name="lastName">last Name</string>	
+	<string name="userName">username</string>	
+	<string name="email">email address</string>	
+	<string name="profilePhoto">profile photo</string>
+	<string name="follows">Follows</string>
+	<string name="followers">Followers</string>		
+	<string name="newWindow">New Window</string>
+</resources>
