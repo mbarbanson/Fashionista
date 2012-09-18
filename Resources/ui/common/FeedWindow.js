@@ -1,3 +1,5 @@
+"use strict"
+
 function FeedWindow(user) {
 
 	var acs,
@@ -11,7 +13,7 @@ function FeedWindow(user) {
 		systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
 		style: Titanium.UI.iPhone.SystemButtonStyle.BAR
 	});
-	
+
 	title = Titanium.UI.createButton({
 		color: 'white',	
 		focusable: false,
@@ -32,8 +34,10 @@ function FeedWindow(user) {
     self.setRightNavButton(refresh);
     
     var ThumbnailsView = require('ui/common/ThumbnailsView');
-	new ThumbnailsView(user, self);
+	var thumbnailsView = ThumbnailsView.createThumbnailsView(user, self);
 
+	refresh.addEventListener('click', function(e) {thumbnailsView.fireEvent('refreshThumbs');});
+	
     return self;
 };
 
