@@ -37,15 +37,15 @@ function GuestWindow(parent) {
     });
     		
 	var ThumbnailsView = require('ui/common/ThumbnailsView');
-	alert("calling createThumbnailsView");
+	//alert("calling createThumbnailsView");
 	ThumbnailsView.createThumbnailsView(null, self);
 
 	navGroup = Titanium.UI.iPhone.createNavigationGroup({
    		window: self
 	});
-	alert("created navgroup");
+	//alert("created navgroup");
 	parent.add(navGroup);
-	alert("added navgroup");
+	//alert("added navgroup");
 	// create fixed toolbar at bottom
     var signup = Ti.UI.createButton({
         title: L('Sign Up'),

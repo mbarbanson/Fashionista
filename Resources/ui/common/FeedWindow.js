@@ -1,6 +1,6 @@
 "use strict"
 
-function FeedWindow(user) {
+function FeedWindow(parentWin, user) {
 
 	var acs,
 		refresh, 
@@ -32,10 +32,17 @@ function FeedWindow(user) {
         titleControl: title
     });
     self.setRightNavButton(refresh);
-    
+
+	navGroup = Titanium.UI.iPhone.createNavigationGroup({
+   		window: self
+	});
+	//alert("created navgroup");
+	parentWin.add(navGroup);
+	//alert("added navgroup");
+	    
     var ThumbnailsView = require('ui/common/ThumbnailsView');
 	var thumbnailsView = ThumbnailsView.createThumbnailsView(user, self);
-
+	
 	refresh.addEventListener('click', function(e) {thumbnailsView.fireEvent('refreshThumbs');});
 	
     return self;

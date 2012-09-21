@@ -6,14 +6,15 @@
 
 var curatedPhotosPath = 'photos/';
 
-function displayThumbnailsView (tableView, photos) {
-
+function displayThumbnailsView (parentWin, tableView, photos) {
+	//alert("displayThumbnailsView");
 	var numPhotos = 0, 
 		imgView, row, col, i, 
 		tableData = [];
 
 	numPhotos = photos !== "" ? photos.length : 0;
-	for (i = 0; i < 4; i = i + 1) {
+	var numRows = numPhotos / 3;
+	for (i = 0; i < numRows; i = i + 1) {
 		
 		row = Ti.UI.createTableViewRow({
 	        className:'row', // used to improve table performance
@@ -26,7 +27,7 @@ function displayThumbnailsView (tableView, photos) {
     
 	    for (col = 0; col < 3; col = col + 1) {
 			var image = numPhotos > 0 ? photos[numPhotos - 1] : 'IMG_0001.jpg';
-			image = image.urls? image.urls.thumbs_100 : curatedPhotosPath + image;
+			image = image.urls? image.urls.thumb_100 : curatedPhotosPath + image;
 			imgView = Ti.UI.createImageView({
 				image: image,
 			    //top: '10%',
@@ -43,12 +44,17 @@ function displayThumbnailsView (tableView, photos) {
 			numPhotos -= 1;	
 
 			imgView.addEventListener('click', function(e) {
-				var DetailWindow = require('ui/common/DetailWindow');
-				detailWindow = new DetailWindow(e.source.image);
-				detailWindow.open();
-				//alert("Go to detail window");
+				var DetailView = require('ui/common/DetailView');
+				var detailView = DetailView.showPreview(e.source.image);
+				parentWin.add(detailView);
+				var back = Ti.UI.createButton({title:'back'});
+				back.addEventListener('click', function(e) {
+						detailView.hide(); 
+						parentWin.remove(detailView); 
+						parentWin.leftNavButton = null;
+					});
+				parentWin.setLeftNavButton(back);
 			});
-			
 			row.add(imgView);
 		}
 		tableData.push(row);
@@ -89,24 +95,20 @@ function getCuratedThumbnails() {
 	}
 	else {
 		alert (photoDirectory + " doesn't exist");
+		return [];
 	}
 	
 }
 
 
 
-function initializeThumbnailsView (tableView) {
-	alert("initializeThumbnailsView");
+function initializeThumbnailsView (parentWin, tableView) {
    	var curatedPics = getCuratedThumbnails(true);	
-   	displayThumbnailsView(tableView, curatedPics);
+   	displayThumbnailsView(parentWin, tableView, curatedPics);
 }
 
-function refreshThumbnailsView (user, tableView) {
-   	getThumbnails(user, true,
-   					function (pics) {
-   						displayThumbnailsView (tableView, pics);
-					}
-	);	
+function refreshThumbnailsView (parentWin, user, tableView) {
+
 }
 
 exports.createThumbnailsView = function (user, parentWin) {
@@ -116,15 +118,22 @@ exports.createThumbnailsView = function (user, parentWin) {
 		backgroudColor: 'black',
 		visible: true
 	});
+	var refreshThumbnailsView = function (refreshThumbs) {
+	   	getThumbnails(user, refreshThumbs,
+	   					function (pics) {
+	   						displayThumbnailsView (parentWin, tableView, pics);
+						}
+		);			
+	}
 	
 	if (user) {
-		refreshThumbnailsView (user, tableView);	
+		refreshThumbnailsView (false);	
 		tableView.addEventListener('refreshThumbs', function (e) {
-						refreshThumbnailsView(user, tableView);
+						refreshThumbnailsView(true);
 		});	
 	}
 	else {
-		initializeThumbnailsView(tableView);
+		initializeThumbnailsView(parentWin, tableView);
 	}
 
 	var scrollView = Ti.UI.createScrollView ({

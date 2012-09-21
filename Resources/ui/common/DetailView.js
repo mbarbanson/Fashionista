@@ -1,20 +1,17 @@
 "use strict";
 
-exports.showPreview = function(parentWin, imgPath) {
-/*	
-	var win = Ti.UI.createWindow({
-		title: 'preview',
-		barColor: '#5D3879',
-		backgroundColor: 'black'
-	});
-*/	
+exports.showPreview = function(imgPath) {
+
 	var imgView = Ti.UI.createImageView({
 		title: 'preview',
-		image: imgPath? imgPath : '/images/IMG_0001.JPG',
-		backgroundColor: 'black'
+		image: imgPath? imgPath : '/photos/IMG_0001.JPG',
+		backgroundColor: 'black',
+		width: Ti.UI.FILL,
+		height: Ti.UI.FILL
 	});
-	parentWin.add(imgView);
+
 	imgView.show();
+	return imgView;
 /*
 	if (true) {   //}!_bounty.captured) {
 		var captureButton = Ti.UI.createButton({

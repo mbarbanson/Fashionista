@@ -194,7 +194,7 @@ exports.getUserCollectionIdPhotos = function(user, collectionId, callback) {
 
 
 
-exports.uploadPhoto = function(image, collectionId) {
+exports.uploadPhoto = function(image, collectionId, callback) {
 	Cloud.Photos.create({
         photo: image,
         collection_id: collectionId
@@ -206,6 +206,7 @@ exports.uploadPhoto = function(image, collectionId) {
                 'filename: ' + photo.filename + '\\n' +
                 'size: ' + photo.size,
                 'updated_at: ' + photo.updated_at);
+             callback();
         } else {
             alert('Error:\\n' +
                 ((e.error && e.message) || JSON.stringify(e)));

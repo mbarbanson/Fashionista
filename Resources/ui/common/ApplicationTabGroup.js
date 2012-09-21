@@ -13,7 +13,7 @@ function ApplicationTabGroup(user, rootWindow) {
 	var CameraView = require('/ui/common/CameraView');
 	
 	//create app tabs
-	var feedWindow = new FeedWindow(user),
+	var feedWindow = new FeedWindow(rootWindow, user),
 		win2 = Ti.UI.createWindow({title: user.username}),
 		win3 = Ti.UI.createWindow(),
 		win4 = Ti.UI.createWindow(),
