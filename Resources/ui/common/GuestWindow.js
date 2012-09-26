@@ -25,7 +25,7 @@ function GuestWindow(parent) {
 	var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
 	//alert("calling createThumbnailsWindow");
 	var thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow(null);
-
+	ThumbnailsWindow.refreshThumbnails();
 	navGroup = Titanium.UI.iPhone.createNavigationGroup({
    		window: thumbnailsWindow
 	});
@@ -112,7 +112,8 @@ function GuestWindow(parent) {
 			thumbnailsWindow.close();
 		}
 	    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-		new ApplicationTabGroup(acs.currentUser(), parent).open();
+		var tabGroup = createApplicationTabGroup(acs.currentUser(), parent)
+		tabGroup.open();
 	}
 		 
     login.addEventListener('click', function(e){

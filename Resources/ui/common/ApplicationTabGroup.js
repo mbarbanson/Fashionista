@@ -21,7 +21,8 @@ function createApplicationTabGroup(rootWindow) {
 		win3 = Ti.UI.createWindow(),
 		win4 = Ti.UI.createWindow(),
 		logoutWindow = new LogoutWindow();
-	
+		
+	ThumbnailsWindow.refreshThumbnails();	
 	var tab1 = Ti.UI.createTab({
 		icon: '/icons/light_grid.png',
 		window: thumbnailsWindow

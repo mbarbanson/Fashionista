@@ -12,10 +12,15 @@ exports.thumbnailsWindow = function () {
 };
 
 function getNavigationGroup() {
-	if (thumbnailsWindow && thumbnailsWindow.navigationGroup) {
+	if (thumbnailsWindow) {
 		//var FeedWindow = require('ui/common/FeedWindow');
 		//return FeedWindow.getNavigationGroup(thumbnailsWindow.parent);
-		return thumbnailsWindow.navigationGroup;
+		if (thumbnailsWindow.containingTab) {
+			return thumbnailsWindow.containingTab;
+		}
+		else if (thumbnailsWindow.navigationGroup) {
+			return thumbnailsWindow.navigationGroup;
+		}
 	}
 	alert("thumbnailsWindow doesn't have a navigationGroup!!!!!")
 	return null;
@@ -23,25 +28,12 @@ function getNavigationGroup() {
 
 function showDetail (image) {
 	//alert("showing Image detail" + image);
-
 	var DetailWindow = require('ui/common/DetailWindow');
 	var detailWindow = DetailWindow.showPreview(image);
 	var navGroup = getNavigationGroup();
 	if (navGroup) {
 		navGroup.open(detailWindow);
-		navGroup.show();
 	}
-	//thumbnailsWindow.add(detailWindow);
-	//detailWindow.open();
-	/*
-	var back = Ti.UI.createButton({title:'back'});
-	back.addEventListener('click', function(e) {
-			detailView.hide(); 
-			parentWin.remove(detailView); 
-			parentWin.leftNavButton = null;
-		});
-	parentWin.setLeftNavButton(back);
-*/
 
 };
 
@@ -158,23 +150,25 @@ function clearThumbnails() {
 		}
 	}
 	tableView.data = null;
+	thumbnailsWindow.navigationGroup = null;
+	thumbnailsWindow.containingTab = null;
 }
 
-function getThumbnails (refreshThumbs, callback) {
+function getThumbnails (callback) {
 	var collectionId,
+		user = acs.currentUser(),
 		photos = "";
 	
-	if (refreshThumbs) acs.setUserPhotos(acs.currentUser(), "");
-	
-	if (acs.currentUser()) {
-		photos = acs.getUserPhotos(acs.currentUser());
+	acs.setUserPhotos(user, "");
+	if (user) {
+		photos = acs.getUserPhotos(user);
 	    if (!photos || photos === "") {
-	    	collectionId = acs.getPhotoCollectionId(acs.currentUser());
+	    	collectionId = acs.getPhotoCollectionId(user);
 	    	if (collectionId != null) {
-			    acs.getUserCollectionIdPhotos(acs.currentUser(), collectionId, callback);
+			    acs.getUserCollectionIdPhotos(user, collectionId, callback);
 	    	}
 	    	else {
-	    		Ti.API.info("empty user photo collection for " + acs.currentUser().username);
+	    		Ti.API.info("empty user photo collection for " + user.username);
 	    		callback("");
 	    	}
     	}	    	
@@ -203,12 +197,16 @@ function initializeThumbnails (tableView) {
    	displayThumbnails(tableView, curatedPics);
 }
 
-function refreshThumbnails (refreshThumbs) {
-	   	getThumbnails(refreshThumbs,
-	   					function (pics) {
+function refreshThumbnails () {
+	if (acs.currentUser()) {
+	   	getThumbnails(function (pics) {
 	   						displayThumbnails (thumbnailsWindow.tableView, pics);
 						}
 		);			
+	}
+	else {
+		initializeThumbnails(thumbnailsWindow.tableView);
+	}			
 }
 
 function createThumbnailsWindow () {
@@ -251,13 +249,6 @@ function createThumbnailsWindow () {
 	else {
 		tableView = thumbnailsWindow.tableView;
 		clearThumbnails();
-	}
-	
-	if (user) {
-		refreshThumbnails (false);	
-	}
-	else {
-		initializeThumbnails(tableView);
 	}
 
    	return thumbnailsWindow;  

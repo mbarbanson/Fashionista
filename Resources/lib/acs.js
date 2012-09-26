@@ -27,16 +27,18 @@ exports.setCurrentUser = function(cu) {
 };
 
 function getPhotoCollectionId(user) {
-	if (user.custom_fields) {
+	if (user && user.custom_fields) {
 		return user.custom_fields.photoCollectionId;
 	}
 	return null;
 };
 
 function setPhotoCollectionId(user, collectionId) {
-	user.custom_fields.photoCollectionId = collectionId;
-	if (collectionId) {
-		updateUser({custom_fields: {photoCollectionId: collectionId}});
+	if (user && user.custom_fields) {
+		user.custom_fields.photoCollectionId = collectionId;
+		if (collectionId) {
+			updateUser({custom_fields: {photoCollectionId: collectionId}});
+		}
 	}
 };
 
@@ -252,7 +254,7 @@ exports.getPostList = function(callback) {
 // exports
 
 exports.getUserPhotos = function(user, photos) {
-	if (user.custom_fields) {
+	if (user && user.custom_fields) {
 		return user.custom_fields.photos;
 	}
 	return null;

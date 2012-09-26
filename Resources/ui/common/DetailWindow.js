@@ -10,13 +10,13 @@ exports.detailWindow = function () {
 };
 
 exports.showPreview = function(thumbView) {
-
+	var imgView = null;
 	if (!detailWindow) {
 		detailWindow = Ti.UI.createWindow({
 						        backgroundColor: 'black',
 						        barColor: 'black',
 						   		});
-		var imgView = Ti.UI.createImageView({
+		imgView = Ti.UI.createImageView({
 			title: 'preview',
 			backgroundColor: 'black',
 			width: Ti.UI.FILL,
@@ -25,8 +25,9 @@ exports.showPreview = function(thumbView) {
 		detailWindow.imgView = imgView;
 		detailWindow.add(imgView);
 	}
+	imgView = detailWindow.imgView;
 	// use small_240 if present, otherwise use the thumbnail itself or fallback image if neither has a value
-	detailWindow.imgView.image = thumbView.urls? thumbView.urls.small_240 : (thumbView.image? thumbView.image : '/photos/IMG_0001.JPG');
+	imgView.image = thumbView.urls? thumbView.urls.small_240 : (thumbView.image? thumbView.image : '/photos/IMG_0001.JPG');
 	imgView.show();
 	
 	return detailWindow;
