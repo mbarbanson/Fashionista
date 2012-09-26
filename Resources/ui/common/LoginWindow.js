@@ -23,7 +23,7 @@ var LoginWindow = function(action, cb) {
 		rightNavButton: done,
 		title: L(action)
 	});
-
+	//FIXME not used
 	winTitle = Titanium.UI.createButton({
 		color: 'white',	
 		focusable: false,
@@ -32,7 +32,7 @@ var LoginWindow = function(action, cb) {
 		font: {fontFamily: 'Thonburi', fontsize: 14},
 		style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 	});
-	       	    
+	//FIXME not used. remove       	    
     flexSpace = Titanium.UI.createButton({
         systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
     });
@@ -78,6 +78,7 @@ var LoginWindow = function(action, cb) {
 	
 	lWin.add(password);
 	
+	//FIXME: current not visible.
 	confirm = Ti.UI.createTextField({
 		hintText:L('confirm'),
 		passwordMask: true,
@@ -105,6 +106,7 @@ var LoginWindow = function(action, cb) {
 	function postActionCallback() {
 		if(acs.isLoggedIn()) {
 			Ti.API.info('Congratulations, you successfully logged in.');
+			var photoCollectionId = acs.getPhotoCollectionId(acs.currentUser());
 			if (!isLoginAction) {
 				try {
 					acs.createUserPhotoCollection(acs.currentUser(), acs.currentUser().username + ' Gallery');	
@@ -112,6 +114,14 @@ var LoginWindow = function(action, cb) {
 				catch (e) {
 					alert(e.Message);
 				}
+			}
+			else if (!photoCollectionId){
+				try {
+					acs.getUserPhotoCollection(acs.currentUser());	
+				}
+				catch (e) {
+					alert(e.Message);
+				}	
 			}
 			lWin.close();
 			cb();

@@ -1,29 +1,33 @@
 "use strict";
 
-var EditorView = require('/ui/common/EditorView');
-
-function ApplicationTabGroup(user, rootWindow) {
+var CameraView = require('/ui/common/CameraView');
+var LogoutWindow = require('/ui/common/LogoutWindow');
+var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
+//var FeedWindow = require('ui/common/FeedWindow');
+	
+function createApplicationTabGroup(rootWindow) {
 	//create module instance
 	var self = Ti.UI.createTabGroup({
-		backgroundColor: 'purple'
+		backgroundColor: 'yellow'
 	});
+	
 	rootWindow.add(self);
 	
-	var FeedWindow = require('ui/common/FeedWindow');
-	var CameraView = require('/ui/common/CameraView');
-	
+	//alert("about to create FeedWindow");
 	//create app tabs
-	var feedWindow = new FeedWindow(rootWindow, user),
-		win2 = Ti.UI.createWindow({title: user.username}),
+
+	var thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow(),
+		win2 = Ti.UI.createWindow(),
 		win3 = Ti.UI.createWindow(),
 		win4 = Ti.UI.createWindow(),
-		win5 = Ti.UI.createWindow();
+		logoutWindow = new LogoutWindow();
 	
 	var tab1 = Ti.UI.createTab({
 		icon: '/icons/light_grid.png',
-		window: feedWindow
+		window: thumbnailsWindow
 	});
-	feedWindow.containingTab = tab1;
+	thumbnailsWindow.containingTab = tab1;
+	tab1.addEventListener('click', function (e) {self.setActiveTab(0);});
 	
 	var tab2 = Ti.UI.createTab({
 		icon: '/icons/light_heart.png',
@@ -49,9 +53,10 @@ function ApplicationTabGroup(user, rootWindow) {
 	
 	var tab5 = Ti.UI.createTab({
 		icon: '/icons/light_gears.png',
-		window: win5
+		window: logoutWindow
 	});
-	win5.containingTab = tab5;
+	logoutWindow.containingTab = tab5;
+	tab5.addEventListener('click', function (e) {self.setActiveTab(4);});
 	
 	self.addTab(tab1);
 	self.addTab(tab2);
@@ -68,20 +73,33 @@ function ApplicationTabGroup(user, rootWindow) {
 		image: '/icons/light_camera.png',
 		borderRadius: 5,
 		style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
-	})
-	cameraBtn.addEventListener('click', function(e){
-		EditorView.createEditorView(self, user);
-		CameraView.createCameraView(user, self, editPhoto);
-	})
+	});
 	
+	cameraBtn.addEventListener('click', 
+		function() {
+			Ti.API.info("cameraBtn click handler");
+			takePhoto();
+		}
+	);
+
 	self.add(cameraBtn);	
 	self.setActiveTab(0);
+	
 	return self;
 };
 
-function editPhoto(user, parentWin, image) {
+function takePhoto () {
+	Ti.API.info("takePhoto");				
+	var cancelCallback = function (cancel) {
+		Ti.API.info("calling cancelCallback" + cancel);
+	}
+	CameraView.createCameraView(cancelCallback, sharePhoto);		
+}
+	
+function sharePhoto(image) {
+	Ti.API.info("refresh the thumbnail window");
+	ThumbnailsWindow.refreshThumbnails(true);
 	Ti.API.info("This is where the user chooses who to share this image with");
-	var editorView = EditorView.showEditorView(user, parentWin, image);
 }
 
-module.exports = ApplicationTabGroup;
+exports.createApplicationTabGroup = createApplicationTabGroup;

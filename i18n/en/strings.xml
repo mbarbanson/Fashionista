@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
 	<string name="login">Login</string>	
+	<string name="logout">Logout</string>	
 	<string name="signup">Sign Up</string>
 	<string name="fashionista">Fashionista</string>
 	<string name="ok">Ok</string>

@@ -1,21 +1,13 @@
 function GuestWindow(parent) {
 
-	var refresh, 
-		title, 
+	var title, 
 		flexSpace, 
-		self, 
 		navGroup, 
 		signup, 
 		login, 
 		toolbar,
 		thumbnailWin,
 		acs;
-	    
-   // add a refresh button to the navBar 
-	refresh = Titanium.UI.createButton({
-		systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
-		style: Titanium.UI.iPhone.SystemButtonStyle.BAR
-	});
 	
 	title = Titanium.UI.createButton({
 		color: 'white',	
@@ -29,22 +21,17 @@ function GuestWindow(parent) {
     flexSpace = Titanium.UI.createButton({
         systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
     });
-    
-	self = Ti.UI.createWindow({
-        backgroundColor: '#FFFFFF',
-        barColor: '#5D3879',
-        titleControl: title
-    });
     		
-	var ThumbnailsView = require('ui/common/ThumbnailsView');
-	//alert("calling createThumbnailsView");
-	ThumbnailsView.createThumbnailsView(null, self);
+	var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
+	//alert("calling createThumbnailsWindow");
+	var thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow(null);
 
 	navGroup = Titanium.UI.iPhone.createNavigationGroup({
-   		window: self
+   		window: thumbnailsWindow
 	});
 	//alert("created navgroup");
 	parent.add(navGroup);
+	thumbnailsWindow.navigationGroup = navGroup;
 	//alert("added navgroup");
 	// create fixed toolbar at bottom
     var signup = Ti.UI.createButton({
@@ -64,7 +51,7 @@ function GuestWindow(parent) {
         barColor: 'black',
         borderBottom:false
     }); 
-    self.add(toolbar);
+    thumbnailsWindow.add(toolbar);
     
     var ok = Titanium.UI.createButton({
 		title: L('ok'),
@@ -96,18 +83,19 @@ function GuestWindow(parent) {
     });
     dialog.add(label);
     dialog.add(ok);
-    self.add(dialog);
+    thumbnailsWindow.add(dialog);
 
     ok.addEventListener('click', function(e){
       	dialog.hide();  // should we just go ahead and remove()?
+      	thumbnailsWindow.remove(dialog);
     });
     
     acs = require('lib/acs');
     
 	function signupCallback() {
 		if(acs.isLoggedIn()===true) {
-			self.close();
 			navGroup.close();
+			thumbnailsWindow.remove(toolbar);
 		}
 	}
 	
@@ -118,8 +106,10 @@ function GuestWindow(parent) {
     
 	function loginCallback() {
 		if(acs.isLoggedIn()===true) {
-			self.close();
 			navGroup.close();
+			thumbnailsWindow.remove(toolbar);
+			//ThumbnailsWindow.clearThumbnails(thumbnailsWindow);
+			thumbnailsWindow.close();
 		}
 	    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 		new ApplicationTabGroup(acs.currentUser(), parent).open();
@@ -130,7 +120,7 @@ function GuestWindow(parent) {
         navGroup.open(new LoginWindow('login', loginCallback));
     });	   
      
-    return self;
+    return thumbnailsWindow;
 };
 
 module.exports = GuestWindow;

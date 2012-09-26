@@ -1,21 +1,21 @@
 "use strict"
 
-function FeedWindow(parentWin, user) {
+exports.getNavigationGroup = function (win) {
+	if (win) {
+		return win.navigationGroup;
+	}
+	return null;
+}
+
+exports.createFeedWindow = function (parentWin, user) {
 
 	var acs,
-		refresh, 
 		title, 
 		flexSpace, 
 		self;
-	    
-   // add a refresh button to the navBar 
-	refresh = Titanium.UI.createButton({
-		systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
-		style: Titanium.UI.iPhone.SystemButtonStyle.BAR
-	});
-
+/*
 	title = Titanium.UI.createButton({
-		color: 'white',	
+		color: 'white',
 		focusable: false,
 		enabled: true,
 		title: user.username,
@@ -28,24 +28,37 @@ function FeedWindow(parentWin, user) {
     
 	self = Ti.UI.createWindow({
         backgroundColor: 'black',
-        barColor: 'black',  //'#5D3879',
-        titleControl: title
+        barColor: 'black', 
+        titleControl: title,
+        navBarHidden: true
     });
-    self.setRightNavButton(refresh);
+    */
+    //self.setRightNavButton(refresh);
 
+    var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
+	var thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow(user);
+	//alert("about to create navGroup");
+	/*
 	navGroup = Titanium.UI.iPhone.createNavigationGroup({
-   		window: self
+   		window: thumbnailsWindow
 	});
-	//alert("created navgroup");
-	parentWin.add(navGroup);
-	//alert("added navgroup");
-	    
-    var ThumbnailsView = require('ui/common/ThumbnailsView');
-	var thumbnailsView = ThumbnailsView.createThumbnailsView(user, self);
-	
-	refresh.addEventListener('click', function(e) {thumbnailsView.fireEvent('refreshThumbs');});
-	
-    return self;
+	thumbnailsWindow.navigationGroup = navGroup;
+
+	self.navigationGroup = navGroup;
+	self.add(navGroup);
+
+	self.addEventListener('open', function(e) {
+		thumbnailsWindow.open();
+	});
+*/
+	//alert("created FeedWindow");
+    //return self;
+    return thumbnailsWindow;
 };
 
-module.exports = FeedWindow;
+exports.getNavigationGroup = function (feedWin) {
+	if (feedWin) {
+		return feedWin.navigationGroup;
+	}
+	else return null;	
+}

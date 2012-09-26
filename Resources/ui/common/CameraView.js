@@ -3,19 +3,21 @@
 //
 // CameraView brings up the camera view if the device has a camera or the photo gallery
 
-exports.createCameraView = function(user, parentWin, callback) {
+var acs = require('lib/acs');
+
+exports.createCameraView = function(cancelCallback, successCallback) {
+	var user = acs.currentUser();
 	if (Ti.Media.isCameraSupported) {
 		Ti.Media.showCamera({
 			animated:false,
 			success:function(event) {
 				var image = event.media;
-				//save for future use
-				//var imgPath = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory,'photo'+ user.username +'.jpg');
-				//imgPath.write(image);
-				callback(user, parentWin, image);
+				acs.uploadPhoto(image, acs.getPhotoCollectionId(user), function () {Ti.API.info("photo uploaded for " + user.username);});
+				successCallback(image);
 			},
-			cancel:function() {},
+			cancel:cancelCallback(),
 			error:function(error) {
+				cancelCallback();
 				var a = Ti.UI.createAlertDialog({title:L('camera_error')});
 				if (error.code == Ti.Media.NO_CAMERA) {
 					a.setMessage(L('camera_error_details'));
@@ -33,16 +35,15 @@ exports.createCameraView = function(user, parentWin, callback) {
 	} else {
 		//Ti.UI.iPhone.hideStatusBar();
 		Ti.Media.openPhotoGallery({
-			animated: true,
-			success:function(event) {
+			animated: false,
+			success: function(event) {
 				var image = event.media;
-				//save for future use
-				//var imgPath = Ti.Filesystem.getFile(Ti.Filesystem.applicationDataDirectory,'photo' + user.username + '.jpg');
-				//imgPath.write(image);
-				callback(user, parentWin, image);
+				acs.uploadPhoto(image, acs.getPhotoCollectionId(user), function () {Ti.API.info("photo uploaded for " + user.username);});
+				successCallback(image);
 			},
-			cancel:function() {},
+			cancel: cancelCallback,			
 			error:function(error) {
+				cancelCallback();
 				var a = Ti.UI.createAlertDialog({title:L('photo_gallery_error')});
 				if (error.code == Ti.Media.NO_CAMERA) {
 					a.setMessage(L('camera_error_details'));

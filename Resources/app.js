@@ -57,7 +57,6 @@ if (Ti.version < 1.8 ) {
 			rootWindow.open();
 		};
 		
-    
 	isTablet = osname === 'ipad' || (osname === 'android' && (width > 899 || height > 899));
 	if (isTablet) {
 		var AppWindow = require('ui/tablet/ApplicationWindow');
@@ -75,12 +74,13 @@ if (Ti.version < 1.8 ) {
 		//yourself what you consider a tablet form factor for android	
 
 		if (!Cloud.hasStoredSession()) {
-			//acs.logout();
-
+			Ti.API.info("no stored user session");
 		    showGuestWindow();			
 		}
 		// should not be able to get here without logging in
 		else {
+			var sessionId = Cloud.retrieveStoredSession();
+			Ti.API.info("found stored user session " + sessionId);
 			// we have a stored user session, retrieve the current user
 			Cloud.Users.showMe(function (e) {
 		        if (e.success) {
@@ -91,9 +91,10 @@ if (Ti.version < 1.8 ) {
 		                'last name: ' + user.last_name + '\\n');
 		            acs.setCurrentUser(user);
 		           	acs.setIsLoggedIn(true);
-
+					
 				    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-					new ApplicationTabGroup(user, rootWindow).open({transition: Titanium.UI.iPhone.AnimationStyle.NONE});
+					var tabGroup = ApplicationTabGroup.createApplicationTabGroup(rootWindow);
+					tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.NONE});
 		        } else {
 		            alert('Error:\\n' +
 		                ((e.error && e.message) || JSON.stringify(e)));
@@ -105,9 +106,5 @@ if (Ti.version < 1.8 ) {
 	{
 		Ti.API.info("Exception caught" + e.Message)
 	}
-
-	
-	
-
  
 })();
