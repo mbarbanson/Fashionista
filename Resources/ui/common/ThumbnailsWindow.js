@@ -113,6 +113,11 @@ function displayThumbnails (tableView, photos) {
 				imgView.urls = image.urls;
 				thumb = image.urls.thumb_100;
 			}
+			// photo was just uploaded thumb size has not been created yet
+			else if (!image.processed && image.filename) {
+				Ti.API.info("Thumb has not been created yet. Use fullsize image");
+				thumb = image.filename;
+			}
 			else 
 			{
 				//FIXME: if there are no photos yet, this path doesn't point to a photo
@@ -131,7 +136,7 @@ function displayThumbnails (tableView, photos) {
 	}
 
 	tableView.setData(tableData);
-
+	tableView.setVisible(true);
 };
 
 
@@ -150,6 +155,7 @@ function clearThumbnails() {
 		}
 	}
 	tableView.data = null;
+	tableView.setVisible(false);
 	thumbnailsWindow.navigationGroup = null;
 	thumbnailsWindow.containingTab = null;
 }
@@ -215,15 +221,15 @@ function createThumbnailsWindow () {
 	
 	if (!thumbnailsWindow) {
 		thumbnailsWindow = Ti.UI.createWindow({
-						        backgroundColor: 'black',
-						        barColor: 'black',
-						        titleControl: user ? user.username : ''
-						   		});
+						        backgroundColor: 'transparent',
+						        barColor: '#5D3879'
+					   		});
  
 		tableView = Ti.UI.createTableView ({
 			objname: 'ThumbnailView',
-			backgroudColor: 'black',
-			visible: true
+			backgroudColor: 'transparent',
+			//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
+			visible: false
 		});
 		thumbnailsWindow.tableView = tableView;
 	
@@ -231,7 +237,7 @@ function createThumbnailsWindow () {
 		    contentHeight: 'auto',
 		    height: Ti.UI.FILL,
 		    width: Ti.UI.SIZE,
-			backgroudColor: 'black'
+			backgroudColor: 'pink'
     	});
 	   	scrollView.add(tableView);
 	   	thumbnailsWindow.add(scrollView);

@@ -94,7 +94,9 @@ if (Ti.version < 1.8 ) {
 					
 				    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 					var tabGroup = ApplicationTabGroup.createApplicationTabGroup(rootWindow);
+					ApplicationTabGroup.setDefaultActiveTab();
 					tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.NONE});
+					//tabGroup.setVisible(true);
 		        } else {
 		            alert('Error:\\n' +
 		                ((e.error && e.message) || JSON.stringify(e)));

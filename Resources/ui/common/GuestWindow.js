@@ -1,3 +1,5 @@
+// Not creating an actual GuestWindow anymore. Just creating a ThumbnailsWindow containing a navGroup
+
 function GuestWindow(parent) {
 
 	var title, 
@@ -105,15 +107,18 @@ function GuestWindow(parent) {
     });
     
 	function loginCallback() {
-		if(acs.isLoggedIn()===true) {
-			navGroup.close();
-			thumbnailsWindow.remove(toolbar);
-			//ThumbnailsWindow.clearThumbnails(thumbnailsWindow);
-			thumbnailsWindow.close();
+		if(acs.isLoggedIn()===true) {		
+			// remove navGroup from hierarchy
+			thumbnailsWindow.remove(toolbar); 
+			thumbnailsWindow.navigationGroup = null;
+			navGroup.hide();
+			parent.remove(navGroup);
+			
+		    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
+			var tabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
+			tabGroup.open();
+			tabGroup.setVisible(true);
 		}
-	    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-		var tabGroup = createApplicationTabGroup(acs.currentUser(), parent)
-		tabGroup.open();
 	}
 		 
     login.addEventListener('click', function(e){

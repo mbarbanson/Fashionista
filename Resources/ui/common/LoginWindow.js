@@ -18,10 +18,12 @@ var LoginWindow = function(action, cb) {
 	});
 	
 	lWin = Ti.UI.createWindow({
-		backgroundColor: '#333',
+		backgroundColor: 'white',
 		barColor: '#5D3879',
 		rightNavButton: done,
-		title: L(action)
+		title: L(action),
+		tabBarHidden: true,
+		zIndex: 100
 	});
 	//FIXME not used
 	winTitle = Titanium.UI.createButton({
@@ -123,8 +125,8 @@ var LoginWindow = function(action, cb) {
 					alert(e.Message);
 				}	
 			}
-			lWin.close();
 			cb();
+			lWin.close();
 		} else {
 			alert('Oopsie, something went wrong.');
 			loginButton.title = L('login');

@@ -29,13 +29,15 @@ var LogoutWindow = function() {
     lWin.add(logoutBtn);
 
 	var logoutCallback = function () {
-		Ti.API.info('Congratulations, you successfully logged out in. ');
+		Ti.API.info('Congratulations, you successfully logged out. ');
 		var LoginWindow = require('ui/common/LoginWindow');
 		var loginWindow = new LoginWindow('login', function () {loginCallback(loginWindow);});
 		var tab = lWin.containingTab;
 		loginWindow.containingTab = tab;
 		// open loginWindow on top of the tab window stack
 		tab.open(loginWindow);
+		// no back button. user shouldn't be able to go back to the logout window since we're already logged out
+		loginWindow.setLeftNavButton = null;
 	}
 	
 	var loginCallback = function (loginWin) {
@@ -44,9 +46,8 @@ var LogoutWindow = function() {
 			var tab = loginWin.containingTab;
 			// close login window
 			tab.close(loginWin);
-			// open logout window. do we need to do this or does the logout Window show 
-			// since it is at the bttom of the tab window stack?
-			//tab.open(lWin);
+		    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
+		    ApplicationTabGroup.setDefaultActiveTab();
 		}
 	    else {
 	    	//FIXME this shouldn't happen

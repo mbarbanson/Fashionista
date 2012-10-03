@@ -195,7 +195,8 @@ function getUserCollectionIdPhotos(user, collectionId, callback) {
 function uploadPhoto (image, collectionId, callback) {
 	Cloud.Photos.create({
         photo: image,
-        collection_id: collectionId
+        collection_id: collectionId,
+        'photo_sync_sizes[]': 'thumb_100'
     }, function (e) {
         if (e.success) {
             var photo = e.photos[0];

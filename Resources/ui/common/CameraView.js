@@ -8,12 +8,17 @@ var acs = require('lib/acs');
 exports.createCameraView = function(cancelCallback, successCallback) {
 	var user = acs.currentUser();
 	if (Ti.Media.isCameraSupported) {
+		//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
 		Ti.Media.showCamera({
 			animated:false,
 			success:function(event) {
 				var image = event.media;
-				acs.uploadPhoto(image, acs.getPhotoCollectionId(user), function () {Ti.API.info("photo uploaded for " + user.username);});
-				successCallback(image);
+				acs.uploadPhoto(image, 
+								acs.getPhotoCollectionId(user), 
+								function () {
+									Ti.API.info("photo uploaded for " + user.username); 
+									successCallback(image);
+									});
 			},
 			cancel:cancelCallback(),
 			error:function(error) {
@@ -33,16 +38,21 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 			showControls: true
 		});
 	} else {
-		//Ti.UI.iPhone.hideStatusBar();
 		Ti.Media.openPhotoGallery({
 			animated: false,
 			success: function(event) {
 				var image = event.media;
-				acs.uploadPhoto(image, acs.getPhotoCollectionId(user), function () {Ti.API.info("photo uploaded for " + user.username);});
-				successCallback(image);
+				Ti.API.info("selected a photo from photo gallery successfully");
+				acs.uploadPhoto(image, 
+								acs.getPhotoCollectionId(user), 
+								function () {
+									Ti.API.info("photo uploaded for " + user.username); 
+									successCallback(image);
+								});
 			},
 			cancel: cancelCallback,			
 			error:function(error) {
+				Ti.API.info("selected a photo from photo gallery. returned an error");
 				cancelCallback();
 				var a = Ti.UI.createAlertDialog({title:L('photo_gallery_error')});
 				if (error.code == Ti.Media.NO_CAMERA) {

@@ -16,7 +16,7 @@ var ThumbnailGrid = function() {
 		
 		var row = Ti.UI.createTableViewRow({
 	        className:'row', // used to improve table performance
-	        selectedBackgroundColor:'white',
+	        selectedBackgroundColor:'transparent',
 	        rowIndex:i, // custom property, useful for determining the row during events
 	        height:105,
 	        top: 105*i
