@@ -1,8 +1,9 @@
 "use strict";
 
-var editorWindow = null, editorView = null;
+var editorWindow = null, 
+	editorView = null;
 
-exports.createEditorWindow = function(user) {
+function createEditorWindow (user) {
 	editorWindow = editorWindow || Ti.UI.createWindow({
 		barColor: 'black'
 	});
@@ -88,9 +89,12 @@ exports.createEditorWindow = function(user) {
 
 
 
-exports.showEditorWindow = function(user, image) {
+function showEditorWindow (user, image) {
 	
 	if (editorView == null) return;  // null or undefined
 	editorView.image = image;
 	//editorView.show();
-};
+}
+
+exports.createEditorWindow = createEditorWindow;
+exports.showEditorWindow = showEditorWindow;

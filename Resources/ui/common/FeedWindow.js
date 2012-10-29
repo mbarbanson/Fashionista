@@ -1,13 +1,13 @@
-"use strict"
+"use strict";
 
-exports.getNavigationGroup = function (win) {
+function getNavigationGroup (win) {
 	if (win) {
 		return win.navigationGroup;
 	}
 	return null;
 }
 
-exports.createFeedWindow = function (parentWin, user) {
+function createFeedWindow (parentWin, user) {
 
 	var acs,
 		title, 
@@ -54,11 +54,15 @@ exports.createFeedWindow = function (parentWin, user) {
 	//alert("created FeedWindow");
     //return self;
     return thumbnailsWindow;
-};
+}
 
-exports.getNavigationGroup = function (feedWin) {
+function getNavigationGroup (feedWin) {
 	if (feedWin) {
 		return feedWin.navigationGroup;
 	}
 	else return null;	
 }
+
+exports.getNavigationGroup = getNavigationGroup;
+exports.createFeedWindow = createFeedWindow;
+exports.getNavigationGroup = getNavigationGroup;

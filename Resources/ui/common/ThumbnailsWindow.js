@@ -1,53 +1,49 @@
 // copyright 2012 by Monique Barbanson. All rights reserved.
 //
 // ThumbGrid window for images
-"use strict"
+"use strict";
 
 var curatedPhotosPath = 'photos/';
-var thumbnailsWindow = null;
+var guestThumbnailsWindow = null;
+var privThumbnailsWindow = null;
 var acs = require('lib/acs');
 
-exports.thumbnailsWindow = function () {
-	 return thumbnailsWindow;
-};
-
-function getNavigationGroup() {
-	if (thumbnailsWindow) {
-		//var FeedWindow = require('ui/common/FeedWindow');
-		//return FeedWindow.getNavigationGroup(thumbnailsWindow.parent);
-		if (thumbnailsWindow.containingTab) {
-			return thumbnailsWindow.containingTab;
-		}
-		else if (thumbnailsWindow.navigationGroup) {
-			return thumbnailsWindow.navigationGroup;
-		}
+function thumbnailsWindow() {
+	var thumbnailsWin = guestThumbnailsWindow;
+	if (acs.currentUser()) {
+		thumbnailsWin = privThumbnailsWindow;	
 	}
-	alert("thumbnailsWindow doesn't have a navigationGroup!!!!!")
-	return null;
-};
+	return thumbnailsWin;
+}
 
+var DetailWindow = require('ui/common/DetailWindow');
 function showDetail (image) {
 	//alert("showing Image detail" + image);
-	var DetailWindow = require('ui/common/DetailWindow');
-	var detailWindow = DetailWindow.showPreview(image);
-	var navGroup = getNavigationGroup();
+	var detailWindow = DetailWindow.showPreview(image),
+		navGroup = thumbnailsWindow().containingTab;
 	if (navGroup) {
 		navGroup.open(detailWindow);
 	}
 
-};
+}
+
+function showPhotoDetailCallback(e) {
+	showDetail(e.source);	
+}
 
 function displayThumbnails (tableView, photos) {
-	//alert("displayThumbnailsView");
+	Ti.API.info("displayThumbnailsView");
 	var numPhotos = 0, 
 		imgView, row, col, i, 
-		tableData = [];
+		tableData = [],
+		ok, label, dialog, numRows,
+		image, thumb;
 
 	numPhotos = photos !== "" ? photos.length : 0;
 	
-	if (numPhotos == 0) {
+	if (numPhotos === 0) {
 		
-	    var ok = Titanium.UI.createButton({
+	    ok = Titanium.UI.createButton({
 			title: L('ok'),
 			style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
 			borderColor: 'white',
@@ -56,7 +52,7 @@ function displayThumbnails (tableView, photos) {
 			bottom: 5	
 	    });
    
-	    var label = Ti.UI.createLabel({
+	    label = Ti.UI.createLabel({
 			color: 'white',
 			backgroundColor: 'black',
 			font: { fontSize: 14 },
@@ -67,7 +63,7 @@ function displayThumbnails (tableView, photos) {
 			width: 280
 	    });
 	    
- 	    var dialog = Ti.UI.createView({
+		dialog = Ti.UI.createView({
 			color: 'white',
 			backgroundColor: 'black',
 			borderRadius: 6,
@@ -78,15 +74,15 @@ function displayThumbnails (tableView, photos) {
 
 	    dialog.add(label);
 	    dialog.add(ok);
-	    thumbnailsWindow.add(dialog);
+	    thumbnailsWindow().add(dialog);
 	
 	    ok.addEventListener('click', function(e){
-	      	dialog.hide();  // should we just go ahead and remove()?
+										dialog.hide();  // should we just go ahead and remove()?
 	    });
 	    
 	}
 
-	var numRows = Math.max(numPhotos / 3, 4);
+	numRows = Math.max(numPhotos / 3, 4);
 	for (i = 0; i < numRows; i = i + 1) {
 		
 		row = Ti.UI.createTableViewRow({
@@ -99,8 +95,8 @@ function displayThumbnails (tableView, photos) {
 	      });
     
 	    for (col = 0; col < 3; col = col + 1) {
-			var image = numPhotos > 0 ? photos[numPhotos - 1] : 'IMG_0001.jpg';
-			var thumb = null;
+			image = (numPhotos > 0 ? photos[numPhotos - 1] : 'IMG_0001.jpg');
+			thumb = null;
 			imgView = Ti.UI.createImageView({
 			    top: 0,
 				height:100,
@@ -127,9 +123,7 @@ function displayThumbnails (tableView, photos) {
 			imgView.image = thumb;
 			numPhotos -= 1;	
 
-			imgView.addEventListener('click', function (e) {
-					showDetail(e.source);
-				});
+			imgView.addEventListener('click', showPhotoDetailCallback);
 			row.add(imgView);
 		}
 		tableData.push(row);
@@ -137,129 +131,169 @@ function displayThumbnails (tableView, photos) {
 
 	tableView.setData(tableData);
 	tableView.setVisible(true);
-};
+}
 
 
 function clearThumbnails() {
-	if (!thumbnailsWindow.tableView) {
+	
+	if (!thumbnailsWindow().tableView) {
 		return;
 	}
-	var tableView = thumbnailsWindow.tableView;
-	var rows = tableView.data;
-	var numRows = rows.length;
-	for (var i = 0; i < numRows; i++) {
-		var imgViews = rows[i].children;
-		var numImg = imgViews.length;
-		for (var j = 0;j < numImg; j++) {
+	// clear tableView rows to avoid memory leaks
+	// null out imageViews also, just to be safe
+	var tableView = thumbnailsWindow().tableView,
+		rows = tableView.data,
+		numRows = rows.length,
+		i, imgViews, numImg, j;
+	for (i = 0; i < numRows; i = i + 1) {
+		imgViews = rows[i].children;
+		numImg = imgViews.length;
+		for (j = 0;j < numImg; j = j + 1) {
 			imgViews[j] = null;
 		}
 	}
 	tableView.data = null;
 	tableView.setVisible(false);
-	thumbnailsWindow.navigationGroup = null;
-	thumbnailsWindow.containingTab = null;
+	thumbnailsWindow().containingTab = null;
 }
 
 function getThumbnails (callback) {
 	var collectionId,
 		user = acs.currentUser(),
 		photos = "";
+		
+	// debug code to sanity check things
+	if (!user) {
+		alert("user is null and shouldn't be");
+	}
 	
-	acs.setUserPhotos(user, "");
 	if (user) {
 		photos = acs.getUserPhotos(user);
-	    if (!photos || photos === "") {
-	    	collectionId = acs.getPhotoCollectionId(user);
-	    	if (collectionId != null) {
-			    acs.getUserCollectionIdPhotos(user, collectionId, callback);
-	    	}
-	    	else {
-	    		Ti.API.info("empty user photo collection for " + user.username);
-	    		callback("");
-	    	}
-    	}	    	
-    } 
-    else {
-    	callback("");
-    }	
+		if (!photos || photos === []) {
+			Ti.API.info("About to clear user photos " + photos);
+			collectionId = acs.getPhotoCollectionId(user);
+			if (collectionId !== null) {
+			    acs.getUserCollectionIdPhotos(collectionId, callback);
+			}
+			else {
+				Ti.API.info("empty user photo collection for " + user.username);
+				callback("");
+			}
+		}
+	} 
+	else {
+		callback("");
+	}	
 }
 
 function getCuratedThumbnails() {
 	
-	var photoDirectory = Ti.Filesystem.getFile(curatedPhotosPath);
+	var photoDirectory = Ti.Filesystem.getFile(curatedPhotosPath),
+		listing;
 	if (photoDirectory && photoDirectory.exists()) {
-		var listing = photoDirectory.getDirectoryListing();
-		return listing;
+		listing = photoDirectory.getDirectoryListing();
 	}
 	else {
 		alert (photoDirectory + " doesn't exist");
-		return [];
+		listing = [];
 	}
+	return listing;
 	
 }
 
 function initializeThumbnails (tableView) {
-   	var curatedPics = getCuratedThumbnails(true);	
-   	displayThumbnails(tableView, curatedPics);
+	var curatedPics = getCuratedThumbnails(true);	
+	displayThumbnails(tableView, curatedPics);
 }
 
 function refreshThumbnails () {
+	// if there is a logged in user, retrieve the photoCollection and display the corresponding thumbnails
 	if (acs.currentUser()) {
-	   	getThumbnails(function (pics) {
-	   						displayThumbnails (thumbnailsWindow.tableView, pics);
+		getThumbnails(function (pics) {
+							displayThumbnails (privThumbnailsWindow.tableView, pics);
 						}
 		);			
 	}
-	else {
-		initializeThumbnails(thumbnailsWindow.tableView);
+	else { //if there is no logged in user, display curated thumbnails
+		initializeThumbnails(guestThumbnailsWindow.tableView);
 	}			
 }
 
 function createThumbnailsWindow () {
-	var tableView = null, scrollView = null, refreshBtn = null;
-	var user = acs.currentUser();
+	var tableView = null, 
+		refreshBtn = null;
 	
-	if (!thumbnailsWindow) {
-		thumbnailsWindow = Ti.UI.createWindow({
-						        backgroundColor: 'transparent',
-						        barColor: '#5D3879'
-					   		});
- 
-		tableView = Ti.UI.createTableView ({
-			objname: 'ThumbnailView',
-			backgroudColor: 'transparent',
-			//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
-			visible: false
-		});
-		thumbnailsWindow.tableView = tableView;
-	
-		scrollView = Ti.UI.createScrollView ({
-		    contentHeight: 'auto',
-		    height: Ti.UI.FILL,
-		    width: Ti.UI.SIZE,
-			backgroudColor: 'pink'
-    	});
-	   	scrollView.add(tableView);
-	   	thumbnailsWindow.add(scrollView);
-	   	
-	   	// add refresh button to nav bar
-		refreshBtn = Titanium.UI.createButton({
-			systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
-			style: Titanium.UI.iPhone.SystemButtonStyle.BAR
-		});
-		thumbnailsWindow.setRightNavButton(refreshBtn);
-		refreshBtn.addEventListener('click', function(e) {
-			refreshThumbnails(true);
+	if (acs.currentUser()) {
+		if (!privThumbnailsWindow) {
+			privThumbnailsWindow = Ti.UI.createWindow({
+							        backgroundColor: 'transparent',
+							        barColor: '#5D3879'
+									});
+		 
+				tableView = Ti.UI.createTableView ({
+					objname: 'ThumbnailView',
+				backgroudColor: 'transparent',
+				//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
+				visible: false
 			});
+			privThumbnailsWindow.tableView = tableView;
+	
+			privThumbnailsWindow.add(tableView);
+			
+			// add refresh button to nav bar
+			refreshBtn = Titanium.UI.createButton({
+				systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
+				style: Titanium.UI.iPhone.SystemButtonStyle.BAR
+			});
+			privThumbnailsWindow.setRightNavButton(refreshBtn);
+			refreshBtn.addEventListener('click', function(e) {
+				refreshThumbnails(true);
+				});
+		}
+		else { //thumbnailsWindow already exists 
+		
+			clearThumbnails();
+		}
 	}
 	else {
-		tableView = thumbnailsWindow.tableView;
-		clearThumbnails();
+		if (!guestThumbnailsWindow) {
+			guestThumbnailsWindow = Ti.UI.createWindow({
+							        backgroundColor: 'transparent',
+							        barColor: '#5D3879'
+									});
+		 
+				tableView = Ti.UI.createTableView ({
+					objname: 'ThumbnailView',
+				backgroudColor: 'transparent',
+				//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
+				visible: false
+			});
+			guestThumbnailsWindow.tableView = tableView;
+		
+			guestThumbnailsWindow.add(tableView);
+			
+			// add refresh button to nav bar
+			refreshBtn = Titanium.UI.createButton({
+				systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
+				style: Titanium.UI.iPhone.SystemButtonStyle.BAR
+			});
+			guestThumbnailsWindow.setRightNavButton(refreshBtn);
+			refreshBtn.addEventListener('click', function(e) {
+				refreshThumbnails(true);
+				});
+		}
+		else { //thumbnailsWindow already exists 
+		
+			clearThumbnails();
+		}
+		
 	}
-
-   	return thumbnailsWindow;  
-};
+	
+	return thumbnailsWindow();  
+}
 
 exports.clearThumbnails = clearThumbnails;
 exports.createThumbnailsWindow = createThumbnailsWindow;
 exports.refreshThumbnails = refreshThumbnails;
+exports.thumbnailsWindow = thumbnailsWindow;
+

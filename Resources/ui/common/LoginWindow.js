@@ -80,7 +80,7 @@ var LoginWindow = function(action, cb) {
 	
 	lWin.add(password);
 	
-	//FIXME: current not visible.
+	//FIXME: currently not visible.
 	confirm = Ti.UI.createTextField({
 		hintText:L('confirm'),
 		passwordMask: true,
@@ -106,6 +106,7 @@ var LoginWindow = function(action, cb) {
 	}
 	
 	function postActionCallback() {
+		'use strict';
 		if(acs.isLoggedIn()) {
 			Ti.API.info('Congratulations, you successfully logged in.');
 			var photoCollectionId = acs.getPhotoCollectionId(acs.currentUser());
@@ -119,18 +120,16 @@ var LoginWindow = function(action, cb) {
 			}
 			else if (!photoCollectionId){
 				try {
-					acs.getUserPhotoCollection(acs.currentUser());	
+					acs.getUserPhotoCollection();	
 				}
-				catch (e) {
-					alert(e.Message);
+				catch (e2) {
+					alert(e2.Message);
 				}	
 			}
 			cb();
 			lWin.close();
 		} else {
 			alert('Oopsie, something went wrong.');
-			loginButton.title = L('login');
-			loginButton.enabled = true;
 		}
 	}
 	

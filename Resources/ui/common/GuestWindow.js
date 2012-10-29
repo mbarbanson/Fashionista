@@ -1,15 +1,23 @@
 // Not creating an actual GuestWindow anymore. Just creating a ThumbnailsWindow containing a navGroup
+var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
+var acs = require('lib/acs');
 
-function GuestWindow(parent) {
 
-	var title, 
+function createGuestWindow(parent) {
+	'use strict';
+	var ThumbnailsWindow,
+		title, 
 		flexSpace, 
 		navGroup, 
 		signup, 
 		login, 
 		toolbar,
-		thumbnailWin,
-		acs;
+		ok,
+		label,
+		dialog,
+		thumbnailsWindow,
+		guestTabGroup,
+		tab1;
 	
 	title = Titanium.UI.createButton({
 		color: 'white',	
@@ -19,34 +27,41 @@ function GuestWindow(parent) {
 		font: {fontFamily: 'Thonburi', fontsize: 30},
 		style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 	});
-	       	    
+	    
     flexSpace = Titanium.UI.createButton({
         systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
     });
-    		
-	var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
+
+	ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
 	//alert("calling createThumbnailsWindow");
-	var thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow(null);
+	thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow();
 	ThumbnailsWindow.refreshThumbnails();
-	navGroup = Titanium.UI.iPhone.createNavigationGroup({
-   		window: thumbnailsWindow
+	
+	//  crate a tab group with a single tab to hold the thubnail window stack
+	guestTabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
+	tab1 = Ti.UI.createTab({
+		icon: '/icons/light_grid.png',
+		window: thumbnailsWindow
 	});
-	//alert("created navgroup");
-	parent.add(navGroup);
-	thumbnailsWindow.navigationGroup = navGroup;
-	//alert("added navgroup");
+	thumbnailsWindow.containingTab = tab1;
+	// hide tab Bar. We're just using a Tab Group to have a stack of windows without explicitly creating a navigation group which is an iOS only solution
+	thumbnailsWindow.setTabBarHidden(true);
+	guestTabGroup.addTab(tab1);
+	guestTabGroup.open();
+	guestTabGroup.setVisible(true);
+
 	// create fixed toolbar at bottom
-    var signup = Ti.UI.createButton({
+    signup = Ti.UI.createButton({
         title: L('Sign Up'),
-        style: Ti.UI.iPhone.SystemButtonStyle.DONE,
+        style: Ti.UI.iPhone.SystemButtonStyle.DONE
     });
     
-    var login = Ti.UI.createButton({
+    login = Ti.UI.createButton({
         title: L('Login'),
-        style: Ti.UI.iPhone.SystemButtonStyle.DONE,
+        style: Ti.UI.iPhone.SystemButtonStyle.DONE
     });
     
-    var toolbar = Titanium.UI.iOS.createToolbar({
+    toolbar = Titanium.UI.iOS.createToolbar({
         items:[flexSpace, login, flexSpace, signup, flexSpace],
         bottom:0,
         borderTop:true,
@@ -55,7 +70,7 @@ function GuestWindow(parent) {
     }); 
     thumbnailsWindow.add(toolbar);
     
-    var ok = Titanium.UI.createButton({
+    ok = Titanium.UI.createButton({
 		title: L('ok'),
 		style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
 		borderColor: 'white',
@@ -64,7 +79,7 @@ function GuestWindow(parent) {
 		bottom: 5	
     });
     
-    var label = Ti.UI.createLabel({
+    label = Ti.UI.createLabel({
 		color: 'white',
 		backgroundColor: 'black',
 		font: { fontSize: 14 },
@@ -75,7 +90,7 @@ function GuestWindow(parent) {
 		width: 280
     });
     
-    var dialog = Ti.UI.createView({
+    dialog = Ti.UI.createView({
 		color: 'white',
 		backgroundColor: 'black',
 		borderRadius: 6,
@@ -87,46 +102,40 @@ function GuestWindow(parent) {
     dialog.add(ok);
     thumbnailsWindow.add(dialog);
 
-    ok.addEventListener('click', function(e){
-      	dialog.hide();  // should we just go ahead and remove()?
-      	thumbnailsWindow.remove(dialog);
-    });
-    
-    acs = require('lib/acs');
-    
-	function signupCallback() {
-		if(acs.isLoggedIn()===true) {
-			navGroup.close();
-			thumbnailsWindow.remove(toolbar);
-		}
-	}
-	
-    signup.addEventListener('click', function(e){
-      	var LoginWindow = require('ui/common/LoginWindow');
-        navGroup.open(new LoginWindow('signup', loginCallback));
-    });
-    
 	function loginCallback() {
-		if(acs.isLoggedIn()===true) {		
-			// remove navGroup from hierarchy
-			thumbnailsWindow.remove(toolbar); 
-			thumbnailsWindow.navigationGroup = null;
-			navGroup.hide();
-			parent.remove(navGroup);
-			
-		    var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-			var tabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
-			tabGroup.open();
-			tabGroup.setVisible(true);
+		if(acs.isLoggedIn()===true) {	
+			try {
+				Ti.API.info("loginCallback");
+				var mainTabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
+				guestTabGroup.hide();
+				guestTabGroup.close();
+				guestTabGroup = null;
+				ApplicationTabGroup.addMainWindowTabs(parent, mainTabGroup);
+				mainTabGroup.open();
+				mainTabGroup.setVisible(true);				
+			}				
+			catch (ex) {
+				Ti.API.info("Caught exception " + ex.message);
+			}
 		}
 	}
-		 
-    login.addEventListener('click', function(e){
-      	var LoginWindow = require('ui/common/LoginWindow');
-        navGroup.open(new LoginWindow('login', loginCallback));
-    });	   
-     
-    return thumbnailsWindow;
-};
 
-module.exports = GuestWindow;
+    ok.addEventListener('click', function(e){
+		dialog.hide();  // should we just go ahead and remove()?
+		thumbnailsWindow.remove(dialog);
+    });
+    
+    signup.addEventListener('click', function(e){
+		var LoginWindow = require('ui/common/LoginWindow');
+        tab1.open(new LoginWindow('signup', loginCallback));
+    });
+	 
+    login.addEventListener('click', function(e){
+		var LoginWindow = require('ui/common/LoginWindow');
+        tab1.open(new LoginWindow('login', loginCallback));
+    });	   
+   //FIXME do we need to return this?
+    return thumbnailsWindow;
+}
+
+exports.createGuestWindow = createGuestWindow;

@@ -5,7 +5,8 @@
 
 var acs = require('lib/acs');
 
-exports.createCameraView = function(cancelCallback, successCallback) {
+function createCameraView (cancelCallback, successCallback) {
+	'use strict';
 	var user = acs.currentUser();
 	if (Ti.Media.isCameraSupported) {
 		//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
@@ -13,10 +14,11 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 			animated:false,
 			success:function(event) {
 				var image = event.media;
+				Ti.API.info(" about to upload photo for " + user.username + " image " + image + " event " + event);
 				acs.uploadPhoto(image, 
 								acs.getPhotoCollectionId(user), 
-								function () {
-									Ti.API.info("photo uploaded for " + user.username); 
+								function () { 
+									Ti.API.info("photo uploaded for " + user.username + " image " + image + " event " + event);
 									successCallback(image);
 									});
 			},
@@ -24,7 +26,7 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 			error:function(error) {
 				cancelCallback();
 				var a = Ti.UI.createAlertDialog({title:L('camera_error')});
-				if (error.code == Ti.Media.NO_CAMERA) {
+				if (error.code === Ti.Media.NO_CAMERA) {
 					a.setMessage(L('camera_error_details'));
 				}
 				else {
@@ -43,11 +45,13 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 			success: function(event) {
 				var image = event.media;
 				Ti.API.info("selected a photo from photo gallery successfully");
+				Ti.API.info(" about to upload photo for " + user.username + " image " + image + " event " + event);
 				acs.uploadPhoto(image, 
 								acs.getPhotoCollectionId(user), 
-								function () {
-									Ti.API.info("photo uploaded for " + user.username); 
-									successCallback(image);
+								function (photo) {
+									var photoUrl = photo.urls.original;
+									successCallback(photoUrl);
+									Ti.API.info("photo uploaded for " + user.username + " imageUrl " + photoUrl);
 								});
 			},
 			cancel: cancelCallback,			
@@ -55,7 +59,7 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 				Ti.API.info("selected a photo from photo gallery. returned an error");
 				cancelCallback();
 				var a = Ti.UI.createAlertDialog({title:L('photo_gallery_error')});
-				if (error.code == Ti.Media.NO_CAMERA) {
+				if (error.code === Ti.Media.NO_CAMERA) {
 					a.setMessage(L('camera_error_details'));
 				}
 				else {
@@ -68,4 +72,6 @@ exports.createCameraView = function(cancelCallback, successCallback) {
 			mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
 		});
 	}
-};
+}
+
+exports.createCameraView = createCameraView;

@@ -45,7 +45,7 @@
 // a couple local variables to save state
 var currentUser = null;
 var loggedIn = false;
-var Cloud = require('ti.cloud');
+var Cloud = Ti.Cloud;
 
 exports.isLoggedIn = function() {
 	return loggedIn;
