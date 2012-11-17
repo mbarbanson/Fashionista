@@ -10,12 +10,19 @@
  *  
  */
 
-// This is a single context application with mutliple windows in a stack
+
+//bootstrap and check dependencies
+if (Ti.version < 2.0 ) {
+	alert('Sorry - this application template requires Titanium Mobile SDK 2.0 or later');
+}
+
+// This is a single context application with multiple windows in a stack
 (function() {
 	"use strict";
 	//determine platform and form factor and render approproate components
 	var acs = require('lib/acs'),
 		Cloud = require('ti.cloud'),
+		FB = require('lib/facebook'),
 		osname = Ti.Platform.osname,
 		version = Ti.Platform.version,
 		height = Ti.Platform.displayCaps.platformHeight,
@@ -28,16 +35,51 @@
 		showGuestWindow,
 		AppWindow,
 		ApplicationTabGroup,
-		tabGroup,
-		FB, authCB, logoutCB;
+		tabGroup;
+
+	
+	// test out logging to developer console, formatting and localization
+	Ti.API.info(String.format("%s%s", L("welcome_message","default_not_set"),Titanium.version));
+	Ti.API.debug(String.format("%s %s", L("user_agent_message","default_not_set"),Titanium.userAgent));
+	
+	Ti.API.debug(String.format("locale specific date is %s",String.formatDate(new Date()))); // default is short
+	Ti.API.debug(String.format("locale specific date (medium) is %s",String.formatDate(new Date(),"medium")));
+	Ti.API.debug(String.format("locale specific date (long) is %s",String.formatDate(new Date(),"long")));
+	Ti.API.debug(String.format("locale specific time is %s",String.formatTime(new Date())));
+	Ti.API.debug(String.format("locale specific currency is %s",String.formatCurrency(12.99)));
+	Ti.API.debug(String.format("locale specific decimal is %s",String.formatDecimal(12.99)));
+	
+	
+	Ti.API.info("should be en, was = "+Ti.Locale.currentLanguage);
+	Ti.API.info("welcome_message = "+Ti.Locale.getString("welcome_message"));
+	Ti.API.info("should be def, was = "+Ti.Locale.getString("welcome_message2","def"));
+	Ti.API.info("welcome_message = "+ L("welcome_message"));
+	Ti.API.info("should be def, was = "+ L("welcome_message2","def"));
+	Ti.API.info("should be 1, was = "+String.format('%d',1));
+	
+	// TODO: This is failing
+	//Ti.API.info("should be 1.0, was = "+String.format('%1.1f',1));
+	
+	Ti.API.info("should be hello, was = "+String.format('%s','hello'));
+
+	// test to check that we can iterate over titanium based objects
+	(function(){	
+		Ti.API.info("you should see a list of modules (3 or more) below this line");
+		Ti.API.info("---------------------------------------------------------------");
+		var p;
+		for (p in Titanium)
+		{
+			Ti.API.info("             module: "+p);
+		}
+		Ti.API.info("Did you see modules? ^^^^^ ");
+		Ti.API.info("---------------------------------------------------------------");
+	})();
 		
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
 		GuestWindow.createGuestWindow(rootWindow);
 		//rootWindow.open();
 	};
-	
-	Ti.API.info("Fashionista has started. Garez vous des voitures!");	
 	
 	isTablet = osname === 'ipad' || (osname === 'android' && (width > 899 || height > 899));
 	if (isTablet) {
@@ -49,7 +91,7 @@
 	}
 	Cloud.debug = true;
 	rootWindow = AppWindow.createApplicationWindow(L('Fashionista'));
-			
+	
     // Check here whether there is a logged in user
 	try {	
 		//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
@@ -76,8 +118,8 @@
 					acs.setIsLoggedIn(true);
 										
 					ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-					tabGroup = ApplicationTabGroup.createApplicationTabGroup(rootWindow);
-					ApplicationTabGroup.addMainWindowTabs(rootWindow, tabGroup);
+					tabGroup = ApplicationTabGroup.createApplicationTabGroup();
+					ApplicationTabGroup.addMainWindowTabs(tabGroup);
 					ApplicationTabGroup.setDefaultActiveTab(tabGroup);
 					tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.NONE});
 
@@ -86,23 +128,12 @@
 		                ((e.error && e.message) || JSON.stringify(e)));
 		        }
 			});
-		}
-		
-		//facebook integration
-		FB = require('lib/facebook');
-		authCB = function () { 
-			Ti.API.info ("facebook authorize callback"); 
-		};
-		logoutCB = function () { 
-			Ti.API.info ("facebook logout callback"); 
-		};
-		Ti.API.info("initializing social integration");
-		FB.initSocialIntegration(authCB, logoutCB);
+		}		
 	}
 	catch (e)
 	{
 		Ti.API.info("Exception caught" + e.Message);
 	}
 
-	Ti.API.info("Fashionista is rolling...");
+	Ti.API.info("Fashionista is running...");
 }) ();

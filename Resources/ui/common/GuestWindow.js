@@ -1,11 +1,11 @@
 // Not creating an actual GuestWindow anymore. Just creating a ThumbnailsWindow containing a navGroup
-var ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 var acs = require('lib/acs');
 
 
-function createGuestWindow(parent) {
+function createGuestWindow() {
 	'use strict';
 	var ThumbnailsWindow,
+		ApplicationTabGroup,
 		title, 
 		flexSpace, 
 		navGroup, 
@@ -19,6 +19,7 @@ function createGuestWindow(parent) {
 		guestTabGroup,
 		tab1;
 	
+	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 	title = Titanium.UI.createButton({
 		color: 'white',	
 		focusable: false,
@@ -38,7 +39,7 @@ function createGuestWindow(parent) {
 	ThumbnailsWindow.refreshThumbnails();
 	
 	//  crate a tab group with a single tab to hold the thubnail window stack
-	guestTabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
+	guestTabGroup = ApplicationTabGroup.createApplicationTabGroup();
 	tab1 = Ti.UI.createTab({
 		icon: '/icons/light_grid.png',
 		window: thumbnailsWindow
@@ -106,11 +107,11 @@ function createGuestWindow(parent) {
 		if(acs.isLoggedIn()===true) {	
 			try {
 				Ti.API.info("loginCallback");
-				var mainTabGroup = ApplicationTabGroup.createApplicationTabGroup(parent);
+				var mainTabGroup = ApplicationTabGroup.createApplicationTabGroup();
 				guestTabGroup.hide();
 				guestTabGroup.close();
 				guestTabGroup = null;
-				ApplicationTabGroup.addMainWindowTabs(parent, mainTabGroup);
+				ApplicationTabGroup.addMainWindowTabs(mainTabGroup);
 				mainTabGroup.open();
 				mainTabGroup.setVisible(true);				
 			}				

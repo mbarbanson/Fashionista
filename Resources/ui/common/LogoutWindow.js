@@ -49,7 +49,7 @@ var LogoutWindow = function() {
 			tab = loginWin.containingTab;
 			// close login window
 			tab.close(loginWin);
-		    ApplicationTabGroup.setDefaultActiveTab();
+		    //ApplicationTabGroup.setDefaultActiveTab();
 		}
 	    else {
 			//FIXME this shouldn't happen
@@ -60,6 +60,8 @@ var LogoutWindow = function() {
 	// event listeners
 	logoutBtn.addEventListener('click', function() {
 		acs.logout(logoutCallback);
+		//do not logout of FB. Should only have to relink accounts if accessToken expires
+		//FB.logout();
 	});
 	
 	return lWin;
