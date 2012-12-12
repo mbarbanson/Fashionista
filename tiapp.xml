@@ -28,7 +28,7 @@
     <statusbar-hidden>false</statusbar-hidden>
     <fullscreen>false</fullscreen>
     <navbar-hidden>false</navbar-hidden>
-    <analytics>true</analytics>
+    <analytics>false</analytics>
     <guid>4cc79561-d889-4df0-976c-025f268664f8</guid>
     <property name="ti.ui.defaultunit">system</property>
     <iphone>

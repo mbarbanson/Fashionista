@@ -6,9 +6,10 @@
 	'use strict';
 	var Contacts = require('lib/contacts'),
 		FB = require('lib/facebook'),
-		Cloud = require('ti.cloud');
+		Cloud = require('ti.cloud'),
+		acs = require('lib/acs');
 	
-	function sharePhoto (photoBlob, thumbUrl, message) {
+	function sharePhototoFB (photoBlob, message) {
 
 		//var message = "Checkout this cool iPhone app that makes shopping more fun";
 		//FIXME move this behind a button
@@ -18,26 +19,32 @@
 		FB.authorize();
 		
 		// post to wall
-		FB.postPhoto(photoBlob, thumbUrl, message);
+		FB.postPhoto(photoBlob, message);
 		// call this to login with facebook instead of having fashionista specific credentials
 		//FB.linktoFBAccount();
 	}
 	
 	
-	function chooseFBFriends () {
+	
+	function newPostNotification (post) {
+		Ti.API.info('social.newPostNotification');
+		acs.newPostNotification(post);
+	}
+	
+	
 
+	function chooseFBFriends () {
 		// log into facebook and link to external account unless we already have a valid access token
 		FB.authorize();
 		
 		// get full list of FB friends
-		FB.getFriendsList();
+		FB.getAllFBFriends();
 		// call this to login with facebook instead of having fashionista specific credentials
 		//FB.linktoFBAccount();
 	}
 	
 	
 	function findFBFriends (callback) {
-
 		var i;
 		Cloud.SocialIntegrations.searchFacebookFriends(function (e){
 		    if (e.success) {
@@ -62,7 +69,7 @@
 	}
 	
 	// exported functions
-	exports.sharePhoto = sharePhoto;
+	exports.newPostNotification = newPostNotification;
 	exports.chooseFBFriends = chooseFBFriends;
 	exports.findFBFriends = findFBFriends;
 }) ();

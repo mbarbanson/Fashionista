@@ -5,40 +5,18 @@
 (function () {
 	'use strict';
 	var Cloud = require('ti.cloud'),
+		acs = require('lib/acs'),
 		loginListener = null,
 		logoutListener = null;
 		
-	function initFBIntegration(actionCB) {
-		Ti.Facebook.appid = '355242507898610';
-		Ti.Facebook.permissions = ['publish_stream', 'user_photos', 'friends_photos', 'xmpp_login']; // Permissions your app needs
-		if (loginListener) {
-			Ti.Facebook.removeEventListener('login', loginListener);
+	
+	function linktoFBAccount(callback, token) {
+		if (!token) {
+			token = Ti.Facebook.accessToken;
 		}
-		loginListener = function(e) {
-		    if (e.success) {
-		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.loggedIn + ". Now link the facebook account.");
-		        linktoFBAccount(actionCB);
-		    } else if (e.error) {
-		        Ti.API.info(e.error);
-		    } else if (e.cancelled) {
-		        Ti.API.info("Facebook login canceled");
-		    }
-		};
-		Ti.Facebook.addEventListener('login', loginListener);
-		if (logoutListener) {
-			Ti.Facebook.removeEventListener('logout', logoutListener);
-		}		
-		logoutListener = function(e) {
-		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.loggedIn);
-		};
-		Ti.Facebook.addEventListener('logout', logoutListener);
-	}
-	
-	
-	function linktoFBAccount(callback) {
 		Cloud.SocialIntegrations.externalAccountLink({
 		    type: 'facebook',
-		    token: Ti.Facebook.accessToken
+		    token: token
 		}, function (e) {
 		    if (e.success) {
 		        var user = e.users[0];
@@ -80,11 +58,18 @@
 	}
 	
 	// make sure user is authorized for facebook before executing action
+	// if the current user has a linked fb account already, logging into Fashionista will have already updated Ti.Facebook.accessToken
 	function authorize(actionCB) {
-		if (!Ti.Facebook.loggedIn) {
-			Ti.API.info("Calling facebook authorize. Facebook login status " + Ti.Facebook.loggedIn + " FB access token " + Ti.Facebook.accessToken);
+		var currentUser = acs.currentUser();
+
+		if (!currentUser) {
+			alert("No currentUser while trying to authorize with Facebook. Please send your system console log to the Fashionista team!");
+			return;
+		}
+		if (!Ti.Facebook.accessToken) {
 			initFBIntegration(actionCB);
-			Ti.Facebook.authorize();		
+			Ti.API.info("Calling facebook authorize. Facebook login status " + Ti.Facebook.loggedIn + " FB access token " + Ti.Facebook.accessToken);
+			Ti.Facebook.authorize();				
 		}
 		else {
 			Ti.API.info("Not calling facebook authorize. Facebook login status " + Ti.Facebook.loggedIn + " FB access token " + Ti.Facebook.accessToken);
@@ -103,45 +88,6 @@
 		}
 	}
 	
-	
-	function postPhoto(imageBlob, caption) {
-		var data = {
-		    caption: caption,
-		    source: imageBlob
-		};
-		try {
-			Ti.Facebook.requestWithGraphPath('me/photos', data, 'POST', function(e){
-			    if (e.success) {
-			        alert("Success!  From FB: " + e.result);
-			    } else {
-			        if (e.error) {
-			            alert(e.error);
-						Ti.Facebook.logout();
-						Ti.Facebook.authorize();
-			        } else {
-			            alert("Unkown result");
-			        }
-			    }
-			});
-			/* this also works, but send in photo caption via caption property
-			Ti.Facebook.request('photos.upload', data, function(e){
-			    if (e.success) {
-			        alert("Success!  From FB: " + e.result);
-			    } else {
-			        if (e.error) {
-			            alert(e.error);
-			        } else {
-			            alert("Unkown result");
-			        }
-			    }
-			});	
-			*/
-		}
-		catch (e) {
-			Ti.Facebook.logout();
-			Ti.Facebook.authorize();
-		}
-	}
 	
 	function postToWall(photoUrl, message) {
 		var name, 
@@ -167,7 +113,8 @@
 		});
 	}
 	
-	function getFriendsList() {
+	
+	function getAllFBFriends() {
 		Ti.Facebook.requestWithGraphPath('me/friends', {}, 'GET', function(e) {
 			var result = null;
 		    if (e.success) {
@@ -183,13 +130,44 @@
 		    return result;
 		});
 	}
+
+
+	function initFBIntegration(actionCB) {
+		Ti.Facebook.appid = '355242507898610';
+		Ti.Facebook.permissions = ['publish_stream', 'user_photos', 'friends_photos', 'xmpp_login']; // Permissions your app needs
+
+		if (loginListener) {
+			Ti.Facebook.removeEventListener('login', loginListener);
+		}
+		loginListener = function(e) {
+		    if (e.success) {
+		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.loggedIn + ". Now link the facebook account.");
+		        linktoFBAccount(actionCB);
+		    } else if (e.error) {
+		        Ti.API.info("Facebook login listener. Error result from authorize " + e.error);
+		        logout();
+		        Ti.API.info("Please try facebook authorize again");
+		    } else if (e.cancelled) {
+		        Ti.API.info("Facebook login canceled");
+		    }
+		};
+		Ti.Facebook.addEventListener('login', loginListener);
+		if (logoutListener) {
+			Ti.Facebook.removeEventListener('logout', logoutListener);
+		}		
+		logoutListener = function(e) {
+		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.loggedIn);
+		};
+		Ti.Facebook.addEventListener('logout', logoutListener);
+	}
+	
+
 	
 	exports.initFBIntegration = initFBIntegration;
 	exports.logout = logout;
 	exports.authorize = authorize;
 	exports.linktoFBAccount = linktoFBAccount;
 	exports.postToWall = postToWall;
-	exports.postPhoto = postPhoto;
-	exports.getFriendsList = getFriendsList;
+	exports.getAllFBFriends = getAllFBFriends;
 
 }) ();

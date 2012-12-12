@@ -2,21 +2,30 @@
 	UI component: Logout
 */
 
-var LogoutWindow = function() {
+function createLogoutWindow() {
 	'use strict';
-	var acs, FB, logoutBtn, logoutCallback, loginCallback, lWin;
-	
-	acs = require('lib/acs');
-	FB = require('lib/facebook');
-	
-	lWin = Ti.UI.createWindow({
+
+	return Ti.UI.createWindow({
 		backgroundColor: '#333',
 		barColor: '#5D3879',
 		title: L('logout')
-	});
+	});	
+}	
 
+
+function initLogoutWindow(logoutWin, containingTab) {
+	'use strict';
+	var acs, 
+		FB, 
+		ApplicationTabGroup,
+		logoutBtn;
+	
+	acs = require('lib/acs');
+	FB = require('lib/facebook');
+	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
+	
     logoutBtn = Ti.UI.createButton({
-        title: L('logout'),
+        title: L('logout') + " " + acs.currentUser().username,
         top:25,
 		width: '90%',
 		height: 40,
@@ -26,45 +35,51 @@ var LogoutWindow = function() {
 		},
 		textAlign: 'center'
     });
-    lWin.add(logoutBtn);
+    logoutWin.add(logoutBtn);
 
-	logoutCallback = function () {
-		Ti.API.info('Congratulations, you successfully logged out. ');
-		var LoginWindow = require('ui/common/LoginWindow'),
-			loginWindow, tab;
-		loginWindow = new LoginWindow('login', function () {loginCallback(loginWindow);});
-		tab = lWin.containingTab;
-		loginWindow.containingTab = tab;
-		// open loginWindow on top of the tab window stack
-		tab.open(loginWindow);
-		// no back button. user shouldn't be able to go back to the logout window since we're already logged out
-		loginWindow.setLeftNavButton = null;
-	};
-	
-	loginCallback = function (loginWin) {
+	function loginCallback (loginWin) {
 		var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
-			tab;
+			acs = require('lib/acs');
+			
 		// successfully logged in
-		if(acs.isLoggedIn()===true) {
-			tab = loginWin.containingTab;
-			// close login window
-			tab.close(loginWin);
-		    //ApplicationTabGroup.setDefaultActiveTab();
+		if(acs.isLoggedIn()) {
+			//acs.getCurrentUserDetails();				
+		    logoutWin.fireEvent('newLoggedInUser');
+			containingTab.close(loginWin);
 		}
 	    else {
-			//FIXME this shouldn't happen
-			Ti.API.info("login failed. go to sign up");
+			Ti.API.info("FIXME: login failed. go to sign up");
 	    }
-	};
-	
+	}
+		
+		
+	function logoutCallback () {
+		var acs = require('lib/acs'),
+			LoginWindow = require('ui/common/LoginWindow'),
+			loginWindow;
+			
+		Ti.API.info('Congratulations, you successfully logged out');
+		
+		loginWindow = LoginWindow.createLoginWindow('login', function () {loginCallback(loginWindow);});
+		containingTab.open(loginWindow);
+	}
+
+
 	// event listeners
 	logoutBtn.addEventListener('click', function() {
 		acs.logout(logoutCallback);
 		//do not logout of FB. Should only have to relink accounts if accessToken expires
-		//FB.logout();
 	});
 	
-	return lWin;
-};
+	logoutWin.addEventListener('newLoggedInUser', function () {
+		var tabGroup = logoutWin.containingTab.tabGroup;
+		logoutBtn.title = L('logout') + " " + acs.currentUser().username;
+		tabGroup.fireEvent('newLoggedInUser');
+		ApplicationTabGroup.setDefaultActiveTab(tabGroup);
+	});
+	
+	return logoutWin;
+}
 
-module.exports = LogoutWindow;
+exports.initLogoutWindow = initLogoutWindow;
+exports.createLogoutWindow = createLogoutWindow;

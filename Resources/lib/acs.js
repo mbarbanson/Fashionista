@@ -4,9 +4,10 @@
 
 (function () {
 	'use strict';
+	
 	// a couple local variables to save state
 	var privCurrentUser = null,
-		Cloud = require('ti.cloud');
+		Cloud = require('ti.cloud'),
 		loggedIn = false;
 	
 	
@@ -66,6 +67,8 @@
 		    password: password
 		}, function (e) {
 		    if (e.success) {
+				var Notifications = require('ui/common/notifications');
+
 				privCurrentUser = e.users[0];
 				if (!privCurrentUser.custom_fields) {
 					privCurrentUser.custom_fields = {};
@@ -73,10 +76,12 @@
 				loggedIn = true;
 				Cloud.sessionId = e.meta.session_id;
 				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
-				Ti.API.info("Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
+				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
+				// once we have a logged in user, setup Notifications	
+				Notifications.initNotifications();	
 				callback();
 		    } else {
-		        Ti.API.info('Error:\\n' + ((e.error && e.message) || JSON.stringify(e)));
+		        Ti.API.info('Error: acs.login e.success ' + e.success + '\\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
 		        loggedIn = false;
 		        privCurrentUser = null;
 				callback();
@@ -84,18 +89,32 @@
 		});	
 	}
 	
-	
+	// logout user and cancel all subscriptions so APS can stop sending notifications to this user
 	function logout(callback) {
-		Cloud.Users.logout(function (e) {
-		    if (e.success) {
-		        privCurrentUser = null;
-		        loggedIn = false;
-		        // clear session id
-				Cloud.sessionId = null;
-				Ti.App.Properties.setString('sessionId', null);
-		        callback();
-		    }
-		});		
+		var doLogout = function () {
+			Cloud.Users.logout(
+				function (e) {
+					    if (e.success) {
+							Ti.API.info("Logged out of Fashionista and unsubscribed from test channel");
+					        privCurrentUser = null;
+					        loggedIn = false;
+					        // clear session id
+							Cloud.sessionId = null;
+							Ti.App.Properties.setString('sessionId', null);
+					        callback();
+					    }
+					    else {
+							Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
+					    }
+				}
+			);				
+		};
+		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
+			unsubscribeNotifications("test", doLogout);
+		}
+		else {	
+			doLogout();					
+		}
 	}
 	
 	
@@ -111,12 +130,17 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('user = ' + JSON.stringify(e.users[0]));
+				var Notifications = require('ui/common/notifications');
 		        privCurrentUser = e.users[0];
 		        loggedIn = true;
 		        
 				Cloud.sessionId = e.meta.session_id;
 				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
 				Ti.API.info("Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
+				
+				// once we have a logged in user, setup Notifications	
+				Notifications.initNotifications();	
+				
 		        callback();
 		    } else {
 				alert('Error create User failed' + JSON.stringify(e));
@@ -125,6 +149,29 @@
 				callback();
 		    }
 		});
+	}
+	
+	
+	// get user details 
+	function getCurrentUserDetails(callback) {
+		Cloud.Users.showMe(function (e) {
+	        if (e.success) {
+	            var user = e.users[0],
+					Notifications = require("ui/common/notifications");
+	            Ti.API.info('Retrieved current user:\\n' +
+	                'id: ' + user.id + '\\n' +
+	                'first name: ' + user.first_name + '\\n' +
+	                'last name: ' + user.last_name + '\\n');
+	            setCurrentUser(user);
+				setIsLoggedIn(true);
+				Notifications.initNotifications();					
+				if (callback) callback();
+	        } else {
+	            alert('Error:\\n' +
+	                ((e.error && e.message) || JSON.stringify(e)) + " Please exit and start up again");
+	            Ti.App.Properties.setString('sessionId', null);
+	        }
+		});		
 	}
 	
 	
@@ -164,7 +211,7 @@
 	                'count: ' + collection.counts.total_photos + '\\n' +
 	                'updated_at: ' + collection.updated_at);
 	        } else {
-	            alert('Error:\\n' +
+	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)));
 	        }
 	    });
@@ -187,7 +234,7 @@
 						privCurrentUser.custom_fields.photos = photos;
 		                Ti.API.info('Got user photos:\\n' +
 		                    'Count: ' + photos.length);
-		                   
+		                /*  
 		                for (i = 0, ilen = photos.length; i < ilen; i = i + 1) {
 		                    photo = photos[i];
 		                    Ti.API.info('photo:\\n' +
@@ -195,6 +242,7 @@
 		                        'name: ' + photo.filename + '\\n' +
 		                        'updated_at: ' + photo.updated_at);
 		                }
+		                */
 		                callback(photos);
 		            }
 		        } else {
@@ -219,7 +267,7 @@
 	        if (e.success) {
 	            var photo = e.photos[0];
 	            
-	            alert ('Success:\\n' +
+	            Ti.API.info ('Success:\\n' +
 	                'id: ' + photo.id + '\\n' +
 	                'filename: ' + photo.filename + '\\n' +
 	                'size: ' + photo.size,
@@ -254,43 +302,6 @@
 	}
 	
 	
-	/*
-	exports.postPhoto = function(message, photo, callback) {
-		if(loggedIn) {
-			Cloud.Statuses.create({
-			    message: message,
-			    photo: photo
-			}, function (e) {
-			    if (e.success) {
-			        callback(true);
-			    } else {
-			        Ti.API.info('Error:\\n' + ((e.error && e.message) || JSON.stringify(e)));
-			        callback(false);
-			    }
-			});	
-		} else {
-			return false;
-		}
-	};
-	
-	exports.getPostList = function(callback) {
-		if(loggedIn) {
-			Cloud.Statuses.search({
-			    user_id: privCurrentUser.id
-			}, function (e) {
-			    if (e.success) {
-					Ti.API.info('statuses = ' + JSON.stringify(e.statuses))
-					callback(e.statuses);
-			    } else {
-			        Ti.API.info('Error:\\n' + ((e.error && e.message) || JSON.stringify(e)));
-			        callback(false);
-			    }
-			});
-		}
-	};
-	*/
-	
-	// exports
 	
 	function getUserPhotos (user, photos) {
 		if (user && user.custom_fields) {
@@ -305,7 +316,333 @@
 		}
 	}
 	
+	function subscribeNotifications (channelName) {
+		// if not device is not registered for oush notifications
+		// or running on simulator, bail
+		if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) {
+			return;
+		}
+		Cloud.PushNotifications.subscribe({
+		    channel: channelName,
+		    device_token: Ti.Network.remoteDeviceUUID,
+		    type: 'ios'
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('Successfully subscribed current user to push notifications for channel ' + channelName);
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});
+	}
 	
+	function unsubscribeNotifications (channelName, callback) {
+		if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) return;
+		
+		Cloud.PushNotifications.unsubscribe({
+		    //channel: channelName,
+		    device_token: Ti.Network.remoteDeviceUUID
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('unsusbcribe Notifications Success');
+		    } else {
+		        Ti.API.info('Error:  unsubscribeNotifications \\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		    // always execute callback, whether or not we successfully unregistered
+		    if (callback) callback();
+		});		
+	}
+	
+
+	function notifyUsers (channel, message, userIds, customPayload) {
+		// if not device is not registered for push notifications
+		// or running on simulator, bail
+		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
+			Ti.API.info("sending push notification " + message + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);		
+			Cloud.PushNotifications.notify({
+			    channel: channel,
+			    user_ids: userIds,
+			    payload: customPayload
+			}, function (e) {
+			    if (e.success) {
+			        Ti.API.info('Successfully notified friends ' + userIds + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+			    } else {
+			        Ti.API.info('Error:\\n' +
+			            ((e.error && e.message) || JSON.stringify(e)));
+			    }
+			});
+		}
+		else {
+			Ti.API.info('No push notifications on iOS, but consider this message sent: ' + message + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+		}
+	}
+
+
+	function approvedRequestNotification(userIds) {
+		Ti.API.info("approvedRequestNotification ");		
+		var msg = "Your friend request to " + currentUser().username + " has been approved. You are mutual friends!",
+			customPayload = {
+								"custom": {
+											"user_id": currentUser().id, 
+											"type": 'friend_approved'
+										},
+								"badge": 1,
+								"sound": "default",
+								"alert": msg
+							};
+		Ti.API.info(msg + " to " + userIds);
+		notifyUsers('test', msg, userIds, customPayload);		
+	}
+	
+	
+	function newFriendNotification(userIds) {
+		var msg = "You have a new friend request from " + currentUser().username + " !",
+			customPayload = {
+								"custom": {
+											"user_id": currentUser().id, 
+											"type": 'friend_request'
+										},
+								"badge": 1,
+								"sound": "default",
+								"alert": msg
+							};
+		notifyUsers('test', msg, userIds, customPayload);		
+	}
+	
+	function newPostNotification (post) {
+		// if not device is not registered for push notifications
+		// or running on simulator, bail
+		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
+			Ti.API.info("sending push notification " + post.content + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+			var username = post.user.username,
+				message = "From " + username + " via Fashionista: " + post.content;
+					
+			Cloud.PushNotifications.notify({
+			    channel: 'test',
+			    friends: true,
+			    payload: {
+				    "custom": {
+							"post_id": post.id, 
+							"user_id": post.user.id, 
+							"type": "newPost"
+							},
+				    "badge": 1,
+				    "sound": "default",
+				    "alert" : message
+				}
+			}, function (e) {
+			    if (e.success) {
+			        Ti.API.info('Successfully notified friends remoteUUID ' + Ti.Network.remoteDeviceUUID);
+			    } else {
+			        Ti.API.info('Error:\\n' +
+			            ((e.error && e.message) || JSON.stringify(e)));
+			    }
+			});
+		}
+		else {
+			Ti.API.info('No push notifications on iOS, but consider this message sent: ' + post.content + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+		}
+	}
+
+
+	
+	// Friends
+	function addFriends (friends, callback) {
+		Ti.API.info('acs.addFriends');
+		var userIdList = friends.join();
+		Cloud.Friends.add({
+		    user_ids: userIdList
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('Friend(s) added ' + friends);
+				callback(userIdList);
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+	
+	// friends: list of user ids to approve as friends
+	function approveFriendRequests (friends, callback) {
+		Ti.API.info('acs.approveFriendRequests ' + friends.toString());
+		var userIdList = friends.join();
+		Cloud.Friends.approve({
+		    user_ids: userIdList
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('Friend(s) approved ' + friends);
+				approvedRequestNotification(userIdList);
+		    } else {
+		        Ti.API.info('Error in approveFriends:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+	
+	
+	function getFriendRequests (callback) {
+		Ti.API.info('acs.getFriendRequests');
+		Cloud.Friends.requests(function (e) {
+		    if (e.success) {
+				var friendRequests = e.friend_requests;
+		        Ti.API.info('Friend(s) requests ' + friendRequests);
+				callback(friendRequests);
+		    } else {
+		        Ti.API.info('Error in getFriendRequests:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+
+
+	function getFriendsList (successCallback) {
+		Cloud.Friends.search({
+		    user_id: privCurrentUser.id
+		}, function (e) {
+			var i,
+				user;
+		    if (e.success) {
+		        Ti.API.info('Success:\\n' +
+		            'Count: ' + e.users.length);
+
+		       if (successCallback) {
+					successCallback(e.users);		
+				}
+		    } else {
+		        alert('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});
+	}
+		
+	// Posts
+	function addPost (pTitle, pBody, pPhoto, callback) {
+		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + callback);
+		Cloud.Posts.create({
+		    content: pBody,
+		    title: pTitle,
+		    photo: pPhoto,
+		    // since appcelerator limits photos to being square, use square aspect ratio for now
+		    'photo_sizes[preview]':'100x100#',
+			'photo_sizes[android]':'480x480#',
+			'photo_sizes[iphone]':'640x640#'
+//			'photo_sizes[iphone5]':'1136x640'
+// not using iPad to take photos, just to consume
+//			'photo_sizes[ipad]': '1024x768'
+		}, function (e) {
+		    if (e.success) {
+		        var post = e.posts[0];
+		        Ti.API.info('Success:\\n' +
+		            'id: ' + post.id + '\\n' +
+		            'title: ' + post.title + '\\n' +
+		            'content: ' + post.content + '\\n' +
+		            'updated_at: ' + post.updated_at);
+		        callback(post);
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+	
+	
+	function updatePost (postId, pTitle, pBody, callback) {
+		Ti.API.info("Update post..." + pBody + " callback " + callback);
+		Cloud.Posts.update({
+			post_id: postId,
+		    content: pBody,
+		    title: pTitle
+		}, function (e) {
+		    if (e.success) {
+		        var post = e.posts[0];
+		        Ti.API.info('Success:\\n' +
+		            'id: ' + post.id + '\\n' +
+		            'title: ' + post.title + '\\n' +
+		            'content: ' + post.content + '\\n' +
+		            'updated_at: ' + post.updated_at);
+		        callback(post);
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+	
+	
+	function getPostFromId (postId, postCallback) {
+		Ti.API.info('acs.getPostFromId');	
+		Cloud.Posts.show({
+		    post_id: postId,
+		    response_json_depth: 2
+		}, function (e) {
+		    if (e.success) {
+		        var post = e.posts[0];
+		        Ti.API.info('Success:\\n' +
+		            'id: ' + post.id + '\\n' +
+		            'title: ' + post.title + '\\n' +
+		            'content: ' + post.content + '\\n' +
+		            'updated_at: ' + post.updated_at);
+	            postCallback(post);
+		    } else {
+		        alert('Error getPostFromId:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});
+	}
+	
+	
+	function getFriendsPosts (friendsList, postCallback) {
+		Ti.API.info('acs.getFriendsPosts');
+		var getID = function(user) { return user.id;},
+			usersList = friendsList;
+		usersList.splice(usersList.length, 0, privCurrentUser);
+		Cloud.Posts.query({
+		    page: 1,
+		    per_page: 10,
+		    order: '-updated_at',
+		    response_json_depth: 2,
+		    where: {
+		        "user_id": { '$in': usersList.map(getID)  }
+		    }
+		}, function (e) {
+			var i,
+				post;
+		    if (e.success) {
+		        Ti.API.info('Success:\\n' +
+		            'Count: ' + e.posts.length);
+		        for (i = 0; i < e.posts.length; i = i + 1) {
+		            post = e.posts[i];
+	                postCallback(post);
+		        }
+		    } else {
+		        alert('Error: getFriendsPosts\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});	
+	}
+	
+	// Reviews aka Comments
+	function createReview(savedPostId) {
+		Cloud.Reviews.create({
+		    post_id: savedPostId,
+		    rating: 1,
+		    content: 'Good'
+		}, function (e) {
+		    if (e.success) {
+		        var review = e.reviews[0];
+		        alert('Success:\\n' +
+		            'id: ' + review.id + '\\n' +
+		            'rating: ' + review.rating + '\\n' +
+		            'content: ' + review.content + '\\n' +
+		            'updated_at: ' + review.updated_at);
+		    } else {
+		        alert('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
 	
 	exports.isLoggedIn = isLoggedIn;
 	exports.setIsLoggedIn = setIsLoggedIn;
@@ -316,6 +653,7 @@
 	exports.uploadPhoto = uploadPhoto;
 	exports.updateUser = updateUser;
 	exports.createUser = createUser;
+	exports.getCurrentUserDetails = getCurrentUserDetails;
 	exports.createUserPhotoCollection = createUserPhotoCollection;
 	exports.getUserCollectionIdPhotos = getUserCollectionIdPhotos;
 	exports.getUserPhotoCollection = getUserPhotoCollection;
@@ -323,5 +661,16 @@
 	exports.setCurrentUser = setCurrentUser;
 	exports.getUserPhotos = getUserPhotos;
 	exports.setUserPhotos = setUserPhotos;
-
-}) ();
+	exports.subscribeNotifications = subscribeNotifications;
+	exports.newPostNotification = newPostNotification;
+	exports.newFriendNotification = newFriendNotification;
+	exports.addFriends = addFriends;
+	exports.approveFriendRequests = approveFriendRequests;
+	exports.getFriendRequests = getFriendRequests;
+	exports.getFriendsList = getFriendsList;
+	exports.addPost = addPost;
+	exports.updatePost = updatePost;
+	exports.getFriendsPosts = getFriendsPosts;
+	exports.getPostFromId = getPostFromId;
+	exports.createReview = createReview;
+} ());

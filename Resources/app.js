@@ -23,6 +23,7 @@ if (Ti.version < 2.0 ) {
 	var acs = require('lib/acs'),
 		Cloud = require('ti.cloud'),
 		FB = require('lib/facebook'),
+		ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		osname = Ti.Platform.osname,
 		version = Ti.Platform.version,
 		height = Ti.Platform.displayCaps.platformHeight,
@@ -33,9 +34,7 @@ if (Ti.version < 2.0 ) {
 		accessToken,
 		GuestWindow = require('ui/common/GuestWindow'),
 		showGuestWindow,
-		AppWindow,
-		ApplicationTabGroup,
-		tabGroup;
+		AppWindow;
 
 	
 	// test out logging to developer console, formatting and localization
@@ -53,34 +52,33 @@ if (Ti.version < 2.0 ) {
 	Ti.API.info("should be en, was = "+Ti.Locale.currentLanguage);
 	Ti.API.info("welcome_message = "+Ti.Locale.getString("welcome_message"));
 	Ti.API.info("should be def, was = "+Ti.Locale.getString("welcome_message2","def"));
-	Ti.API.info("welcome_message = "+ L("welcome_message"));
-	Ti.API.info("should be def, was = "+ L("welcome_message2","def"));
 	Ti.API.info("should be 1, was = "+String.format('%d',1));
+
+	Ti.API.info('Ti.Platform.displayCaps.density: ' + Ti.Platform.displayCaps.density);
+	Ti.API.info('Ti.Platform.displayCaps.dpi: ' + Ti.Platform.displayCaps.dpi);
+	Ti.API.info('Ti.Platform.displayCaps.platformHeight: ' + Ti.Platform.displayCaps.platformHeight);
+	Ti.API.info('Ti.Platform.displayCaps.platformWidth: ' + Ti.Platform.displayCaps.platformWidth);
+	
+	Ti.App.SCREEN_WIDTH = (width > height) ? height : width;
+	Ti.App.SCREEN_HEIGHT = (width > height) ? width : height;
+	
+	if(Ti.Platform.osname === 'android'){
+	  Ti.API.info('Ti.Platform.displayCaps.xdpi: ' + Ti.Platform.displayCaps.xdpi);
+	  Ti.API.info('Ti.Platform.displayCaps.ydpi: ' + Ti.Platform.displayCaps.ydpi);
+	  Ti.API.info('Ti.Platform.displayCaps.logicalDensityFactor: ' + Ti.Platform.displayCaps.logicalDensityFactor);
+	}
 	
 	// TODO: This is failing
 	//Ti.API.info("should be 1.0, was = "+String.format('%1.1f',1));
 	
 	Ti.API.info("should be hello, was = "+String.format('%s','hello'));
-
-	// test to check that we can iterate over titanium based objects
-	(function(){	
-		Ti.API.info("you should see a list of modules (3 or more) below this line");
-		Ti.API.info("---------------------------------------------------------------");
-		var p;
-		for (p in Titanium)
-		{
-			Ti.API.info("             module: "+p);
-		}
-		Ti.API.info("Did you see modules? ^^^^^ ");
-		Ti.API.info("---------------------------------------------------------------");
-	})();
 		
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
 		GuestWindow.createGuestWindow(rootWindow);
 		//rootWindow.open();
 	};
-	
+		
 	isTablet = osname === 'ipad' || (osname === 'android' && (width > 899 || height > 899));
 	if (isTablet) {
 		AppWindow = require('ui/tablet/ApplicationWindow');
@@ -90,6 +88,9 @@ if (Ti.version < 2.0 ) {
 		Ti.UI.iPhone.hideStatusBar();
 	}
 	Cloud.debug = true;
+	
+	Ti.App.photoSizes ={"thumbnail": [100,100], "iphone": [640,640], "android": [480,480]};
+	
 	rootWindow = AppWindow.createApplicationWindow(L('Fashionista'));
 	
     // Check here whether there is a logged in user
@@ -106,28 +107,8 @@ if (Ti.version < 2.0 ) {
 		// should not be able to get here without logging in
 		else {
 			Ti.API.info("found stored session " + sessionId);
-			// we have a stored user token, retrieve the current user
-			Cloud.Users.showMe(function (e) {
-		        if (e.success) {
-		            var user = e.users[0];
-		            Ti.API.info('Retrieved current user:\\n' +
-		                'id: ' + user.id + '\\n' +
-		                'first name: ' + user.first_name + '\\n' +
-		                'last name: ' + user.last_name + '\\n');
-		            acs.setCurrentUser(user);
-					acs.setIsLoggedIn(true);
-										
-					ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-					tabGroup = ApplicationTabGroup.createApplicationTabGroup();
-					ApplicationTabGroup.addMainWindowTabs(tabGroup);
-					ApplicationTabGroup.setDefaultActiveTab(tabGroup);
-					tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.NONE});
-
-		        } else {
-		            alert('Error:\\n' +
-		                ((e.error && e.message) || JSON.stringify(e)));
-		        }
-			});
+			// we have a stored user session, retrieve the current user	
+			acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);
 		}		
 	}
 	catch (e)
@@ -136,4 +117,5 @@ if (Ti.version < 2.0 ) {
 	}
 
 	Ti.API.info("Fashionista is running...");
-}) ();
+
+} ());

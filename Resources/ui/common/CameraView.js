@@ -4,57 +4,40 @@
 // CameraView brings up the camera view if the device has a camera or the photo gallery
 
 (function () {
-	var acs = require('lib/acs');
-	var social = require('lib/social');
-	var ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
-	var ShareWindow = require('ui/common/ShareWindow');
+	"use strict";
+	var acs = require('lib/acs'),
+		social = require('lib/social'),
+		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
+		ShareWindow = require('ui/common/ShareWindow');
 	
 	
 	
-	function goToShareWindow (image) {
-		"use strict";
-		alert("takePhoto success callback!");
-		var shareWindow = ShareWindow.createShareWindow(image, social.sharePhoto);
+	function goToShareWindow (image, post) {
+		var shareWindow = ShareWindow.createShareWindow(image, post, social.newPostNotification);
 	}
-	
-	function takePhoto () {
-		"use strict";
-		Ti.API.info("takePhoto");				
-		var cancelCallback = function (e) {
-			Ti.API.info("calling cancelCallback " + e);
-		};
-		try {
-			createCameraView(cancelCallback, function() {Ti.API.info("takePhoto succeeded!");});		
-		}
-		catch (ex) {
-			Ti.API.info("takePhoto threw an exception. " + ex.message);
-		}
+
+	function photoSuccessCallback(event) {
+		Ti.API.info("Photo taken");
+		var image = event.media,
+			newSize = Ti.App.photoSizes[Ti.Platform.osname],
+			user = acs.currentUser(),
+			photoBlob;
+		// resize to platform optimized size before uploading, by default could be up to 2448x2449!
+		
+		photoBlob = image.imageAsResized(newSize[0], newSize[1]);
+		//start uploading now!
+		acs.addPost (user.username + " needs your help!", "How does this look?", photoBlob, function(post) {
+				Ti.API.info("finisihed uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
+				goToShareWindow(photoBlob, post);
+			});			
 	}
-	
 	 
-	function createCameraView (cancelCallback, successCallback) {
-		'use strict';
-		var user,
-			uploadSuccessCallback;
-		user = acs.currentUser();
-		uploadSuccessCallback = function (imageBlob) {
-			Ti.API.info("sharePhoto: refresh the thumbnail window");
-			ThumbnailsWindow.refreshThumbnails();
-			successCallback(imageBlob);
-		};
-		if (Ti.Media.isCameraSupported) {
+	function createCameraView (cancelCallback, mode) {
+		if (Ti.Media.isCameraSupported && mode === 'camera') {
 			//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
 			Ti.Media.showCamera({
 				animated:false,
-				success:function(event) {
-					var image = event.media;
-					Ti.API.info(" about to upload photo for " + user.username + " image " + image + " event " + event);
-					acs.uploadPhoto(image, 
-									acs.getPhotoCollectionId(user), 
-									uploadSuccessCallback);
-					Ti.API.info("This is where the user chooses who to share this image with");									
-					goToShareWindow(image);
-				},
+				success: photoSuccessCallback,
 				cancel:cancelCallback(),
 				error:function(error) {
 					cancelCallback();
@@ -75,16 +58,7 @@
 		} else {
 			Ti.Media.openPhotoGallery({
 				animated: false,
-				success: function(event) {
-					var image = event.media;
-					Ti.API.info("selected a photo from photo gallery successfully");
-					Ti.API.info(" about to upload photo for " + user.username + " image " + image + " event " + event);
-					acs.uploadPhoto(image, 
-									acs.getPhotoCollectionId(user), 
-									uploadSuccessCallback); 
-					Ti.API.info("This is where the user chooses who to share this image with");									
-					goToShareWindow(image);
-				},
+				success: photoSuccessCallback,
 				cancel: cancelCallback,			
 				error:function(error) {
 					Ti.API.info("selected a photo from photo gallery. returned an error");
@@ -104,7 +78,30 @@
 			});
 		}
 	}
+
+
 	
+	function takePhoto (cancelCallback) {
+		Ti.API.info("takePhoto");				
+		try {
+			createCameraView(cancelCallback, 'camera');		
+		}
+		catch (ex) {
+			Ti.API.info("takePhoto threw an exception. " + ex.message);
+		}
+	}
+	
+	function pickPhoto (cancelCallback) {
+		Ti.API.info("pick Photo");				
+		try {
+			createCameraView(cancelCallback);		
+		}
+		catch (ex) {
+			Ti.API.info("pickPhoto threw an exception. " + ex.message);
+		}
+	}
+		
 	exports.createCameraView = createCameraView;
 	exports.takePhoto = takePhoto;
+	exports.pickPhoto = pickPhoto;
 }) ();

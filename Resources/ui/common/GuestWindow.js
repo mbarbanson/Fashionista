@@ -6,6 +6,7 @@ function createGuestWindow() {
 	'use strict';
 	var ThumbnailsWindow,
 		ApplicationTabGroup,
+		LoginWindow,
 		title, 
 		flexSpace, 
 		navGroup, 
@@ -20,6 +21,8 @@ function createGuestWindow() {
 		tab1;
 	
 	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
+	LoginWindow = require('ui/common/LoginWindow');
+	
 	title = Titanium.UI.createButton({
 		color: 'white',	
 		focusable: false,
@@ -107,13 +110,12 @@ function createGuestWindow() {
 		if(acs.isLoggedIn()===true) {	
 			try {
 				Ti.API.info("loginCallback");
-				var mainTabGroup = ApplicationTabGroup.createApplicationTabGroup();
 				guestTabGroup.hide();
 				guestTabGroup.close();
 				guestTabGroup = null;
-				ApplicationTabGroup.addMainWindowTabs(mainTabGroup);
-				mainTabGroup.open();
-				mainTabGroup.setVisible(true);				
+				//mainTabGroup.setVisible(true);
+				ApplicationTabGroup.initAppUI();
+				//acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);				
 			}				
 			catch (ex) {
 				Ti.API.info("Caught exception " + ex.message);
@@ -127,13 +129,11 @@ function createGuestWindow() {
     });
     
     signup.addEventListener('click', function(e){
-		var LoginWindow = require('ui/common/LoginWindow');
-        tab1.open(new LoginWindow('signup', loginCallback));
+        tab1.open(LoginWindow.createLoginWindow('signup', loginCallback));
     });
 	 
     login.addEventListener('click', function(e){
-		var LoginWindow = require('ui/common/LoginWindow');
-        tab1.open(new LoginWindow('login', loginCallback));
+        tab1.open(LoginWindow.createLoginWindow('login', loginCallback));
     });	   
    //FIXME do we need to return this?
     return thumbnailsWindow;
