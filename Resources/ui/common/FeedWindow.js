@@ -1,6 +1,6 @@
-/**
- * Copyright 2012 by Monique Barbanson. All rights reserved.
+/*
  * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
 (function () {
@@ -15,10 +15,10 @@
 		return privFeedWindow;
 	}	
 
-
-	function showPostDetails (tab, post, photoBlob) {
+	//FIXME when do we have a photoBlob to pass in?
+	function displayPostDetails (tab, post, photoBlob) {
 		Ti.API.info('show post details');
-		var detailWindow = DetailWindow.createDetailWindow(post.user.username);	
+		var detailWindow = DetailWindow.createDetailWindow(post.user.username);
 		DetailWindow.showPostDetails(detailWindow, post, photoBlob);
 		tab.open(detailWindow);	
 	}
@@ -26,10 +26,11 @@
 	
 	// display post retrieved from cloud
 	function displayPostSummary (tableView, post, clickHandler) {
-		var row;
 		if (tableView) {
+			var row = DetailWindow.createRow(post);
+			DetailWindow.setRowEventHandlers(row, clickHandler, DetailWindow.updateCommentsCount);
 			Ti.API.info('display post summary: adding a row to the feedWindow ');
-			row = DetailWindow.populateRow(post, clickHandler);	  
+			DetailWindow.populateRow(tableView, row);	  
 			tableView.appendRow(row);
 		}
 	}
@@ -37,11 +38,17 @@
 
 	function updatePost(postId, title, caption, callback) {
 		
-		var updatePostCallback = function (post) {
-			Ti.API.info("successfully updated post " + post.content);
-			callback(post);												
-		};
-							
+		var style = privFeedWindow.spinnerStyle,
+			activityIndicator = Ti.UI.createActivityIndicator({style: style}),
+			updatePostCallback = function (post) {
+									Ti.API.info("successfully updated post " + post.content);
+									activityIndicator.hide();
+									privFeedWindow.setRightNavButton(null);
+									callback(post);												
+								};
+	
+		privFeedWindow.setRightNavButton(activityIndicator); 
+		activityIndicator.show(); 
 		acs.updatePost(postId, title, caption, updatePostCallback);		
 	}	
 
@@ -49,44 +56,51 @@
 	
 	function showFriendsFeed(fWin) {
 		Ti.API.info('Calling show feed');
-		
 		var tableView = fWin.table,
-			showPostDetailsCallback,
-			displayPostCallback,
-			friendsListCallback;
+			showPostDetails,
+			showPost,
+			friendsListCallback,
+			style = fWin.spinnerStyle,
+			activityIndicator = Ti.UI.createActivityIndicator({style: style}),
+			cleanupAction = function() {
+								activityIndicator.hide(); fWin.rightNavButton = null;
+							};
 
 		if (tableView) {
+			// FIXME is this refresh hack really needed?
+			//reset table property
 			fWin.table = null;
+			//force table layout update
 			fWin.remove(tableView);
-			tableView.setData([]);			
+			tableView.setData([]);	
+			tableView.displayComments = false;		
 			Ti.API.info("showFriendFeed. Refreshing Feed window");
-			showPostDetailsCallback = function (post, photo) {
-											Ti.API.info("Executing click handler callback for post " + post);
-											showPostDetails(fWin.containingTab, post, photo);
+			showPostDetails = function (row, photo) {
+											Ti.API.info("Executing click handler callback for row " + row);
+											displayPostDetails(fWin.containingTab, row.post, photo);
 										};
-			displayPostCallback = function (post) { displayPostSummary(tableView, post, showPostDetailsCallback);};
-			friendsListCallback = function (friends) { acs.getFriendsPosts(friends, displayPostCallback);};
+			showPost = function (post) { 
+					displayPostSummary(tableView, post, showPostDetails);
+				};
+			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
 			
-			acs.getFriendsList(friendsListCallback);
+			fWin.rightNavButton = activityIndicator;
+			activityIndicator.show(); 
+
+			acs.getFriendsList(friendsListCallback, cleanupAction);
 			
+			// add tableView back
 			fWin.add(tableView);
+			// force update layout to show posts
 			fWin.updateLayout();
-			fWin.table = tableView;			
+			fWin.table = tableView;		
+			tableView.parentWin = fWin;	
 		}
 		else {
 			Ti.API.info("FeedWindow doesn't have a tableView");
 		}
 	}
 	
-/* attach click handler to photos instead
-	function feedWindowClickHandler(e) {
-		Ti.API.info("feedWindow table click handler " + e.rowData);
-		var handler = e.rowData.action;
-		if (handler) {
-			handler(e.rowData.post);
-		}		
-	}
-*/
 
 	function clearFeed(fWin) {
 		Ti.API.info('Calling clear feed');
@@ -117,7 +131,7 @@
 	
 	function createFeedWindow() {
 		var feedWin = Ti.UI.createWindow({
-				title: 'Friends Page',
+				title: acs.currentUser().username + "'s Feed",
 		        backgroundColor: 'white',
 		        barColor: '#5D3879'				
 			}),
@@ -127,10 +141,21 @@
 				color: 'black',
 				data: [],
 				visible: true
-			});	
+			}),
+			style,
+			activityIndicator;	
 		privFeedWindow = feedWin;
 		feedWin.add(tableView);
 		feedWin.table = tableView;
+		
+		//setup spinny activity indicator
+		if (Ti.Platform.name === 'iPhone OS'){
+			style = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
+		}
+		else {
+			style = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
+		}
+		feedWin.spinnerStyle = style;
 		
 		// create table view click event listener
 		// tableView.addEventListener('click', feedWindowClickHandler);
@@ -147,7 +172,7 @@
 	exports.currentFeedWindow = currentFeedWindow;
 	exports.clearFeed = clearFeed;
 	exports.showFriendsFeed = showFriendsFeed;
-	exports.showPostDetails = showPostDetails;
+	exports.displayPostDetails = displayPostDetails;
 	exports.updatePost = updatePost;
 
-}) ();
+} ());
