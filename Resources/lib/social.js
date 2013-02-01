@@ -32,6 +32,17 @@
 	}
 	
 	
+	function newCommentNotification (post, commentText) {
+		Ti.API.info('social.newCommentNotification');
+		acs.newCommentNotification(post, commentText);
+	}
+	
+	
+	function newLikeNotification (post) {
+		Ti.API.info('social.newLikeNotification');
+		acs.newLikeNotification(post);
+	}
+
 
 	function chooseFBFriends () {
 		// log into facebook and link to external account unless we already have a valid access token
@@ -70,7 +81,9 @@
 	
 	// exported functions
 	exports.newPostNotification = newPostNotification;
+	exports.newCommentNotification = newCommentNotification;
+	exports.newLikeNotification = newLikeNotification;	
 	exports.chooseFBFriends = chooseFBFriends;
 	exports.findFBFriends = findFBFriends;
-}) ();
+} ());
 

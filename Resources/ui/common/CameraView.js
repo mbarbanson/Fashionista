@@ -8,29 +8,49 @@
 	var acs = require('lib/acs'),
 		social = require('lib/social'),
 		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
-		ShareWindow = require('ui/common/ShareWindow');
-	
-	
+		ShareWindow = require('ui/common/ShareWindow'),
+		FeedWindow = require('ui/common/FeedWindow'),
+		activityIndicator, 
+		cameraOverlay = Ti.UI.createView({opacity:0.0, width: Ti.UI.FILL, height: Ti.UI.FILL});
+
 	
 	function goToShareWindow (image, post) {
 		var shareWindow = ShareWindow.createShareWindow(image, post, social.newPostNotification);
 	}
+
 
 	function photoSuccessCallback(event) {
 		Ti.API.info("Photo taken");
 		var image = event.media,
 			newSize = Ti.App.photoSizes[Ti.Platform.osname],
 			user = acs.currentUser(),
+			feedWin = FeedWindow.currentFeedWindow(),
+			style = feedWin.spinnerStyle,
+			activityIndicator,
 			photoBlob;
-		// resize to platform optimized size before uploading, by default could be up to 2448x2449!
-		
+			
+		activityIndicator = Ti.UI.createActivityIndicator({
+							  style: style
+							});
+			
+		if (activityIndicator) {
+			feedWin.rightNavButton = activityIndicator; 
+			activityIndicator.show();
+		}	
+		// resize to platform optimized size before uploading, by default could be up to 2448x2449!		
 		photoBlob = image.imageAsResized(newSize[0], newSize[1]);
 		//start uploading now!
-		acs.addPost (user.username + " needs your help!", "How does this look?", photoBlob, function(post) {
-				Ti.API.info("finisihed uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
-				goToShareWindow(photoBlob, post);
-			});			
+		acs.addPost (user.username + " needs your help!", "How does this look?", photoBlob, 
+				function(post) {
+					Ti.API.info("finished uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
+					if (activityIndicator) { 
+						activityIndicator.hide();
+						feedWin.rightNavButton = null; 
+					}
+					goToShareWindow(photoBlob, post);
+				});			
 	}
+
 	 
 	function createCameraView (cancelCallback, mode) {
 		if (Ti.Media.isCameraSupported && mode === 'camera') {
@@ -53,7 +73,8 @@
 				saveToPhotoGallery:true,
 				allowEditing:true,
 				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO],
-				showControls: true
+				showControls: true,
+				overlay: cameraOverlay
 			});
 		} else {
 			Ti.Media.openPhotoGallery({
@@ -74,7 +95,8 @@
 				},
 				saveToPhotoGallery:true,
 				allowEditing:true,
-				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
+				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO],
+				overlay: cameraOverlay
 			});
 		}
 	}
@@ -91,6 +113,7 @@
 		}
 	}
 	
+	
 	function pickPhoto (cancelCallback) {
 		Ti.API.info("pick Photo");				
 		try {
@@ -101,6 +124,8 @@
 		}
 	}
 		
+		
+	
 	exports.createCameraView = createCameraView;
 	exports.takePhoto = takePhoto;
 	exports.pickPhoto = pickPhoto;

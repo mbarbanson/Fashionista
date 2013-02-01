@@ -85,10 +85,12 @@ function createGuestWindow() {
     
     label = Ti.UI.createLabel({
 		color: 'white',
-		backgroundColor: 'black',
-		font: { fontSize: 14 },
-		text: 'Use Fashionista when you need immediate advice\n from your friends about \na cute new shirt, \nsummer sandals or \nbeach shorts, anything else you can think of',
-		textAlign: Ti.UI.TEXT_ALIGNMENT_CENTER,
+		backgroundColor: 'transparent',
+		font: { fontSize: 20 },
+		text: 'Welcome! Use Fashionista to take a photo, choose your fashion buddies and ask for immediate fashion advice.',
+		textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
+		wordWrap : true,
+		horizontalWrap : true,		
 		top: 5,
 		height: 150,
 		width: 280
@@ -96,7 +98,7 @@ function createGuestWindow() {
     
     dialog = Ti.UI.createView({
 		color: 'white',
-		backgroundColor: 'black',
+		backgroundColor: '#5D3879',
 		borderRadius: 6,
 		top: 55,
 		height: 200,

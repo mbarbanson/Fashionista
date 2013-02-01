@@ -16,17 +16,35 @@
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
 			var feedWin = FeedWindow.currentFeedWindow();
-			Ti.API.info("new post handler. Need to update feed window " + feedWin);
+			Ti.API.info("new post handler. Updating feed window " + feedWin);
 			if (feedWin) {
-				//FeedWindow.clearFeed(feedWin);
 				FeedWindow.showFriendsFeed(feedWin);				
 			}			
 		});
 	
-		// handle new post notifications. Define event listener before the event is ever fired
-		// just received a notification that current user was added as a friend by requester
-		// if requester is already a friend of current user, stop there
-		// otherwise, current user approves requester as a friend and both become mutual friends
+		// handle new comment notifications. Define event listener before the event is ever fired
+		// just received a notification that a comment was added
+		Ti.API.info("Adding newComment handler");
+		Ti.App.addEventListener('newComment', function (e) {
+			var feedWin = FeedWindow.currentFeedWindow();
+			Ti.API.info("new comment. Updating feed window " + feedWin);
+			if (feedWin) {
+				FeedWindow.showFriendsFeed(feedWin);				
+			}			
+		});
+		
+		
+		// handle new like notifications. Define event listener before the event is ever fired
+		// just received a notification that a like was added
+		Ti.API.info("Adding newLike handler");
+		Ti.App.addEventListener('newLike', function (e) {
+			var feedWin = FeedWindow.currentFeedWindow();
+			Ti.API.info("new like handler. Updating feed window " + feedWin);
+			if (feedWin) {
+				FeedWindow.showFriendsFeed(feedWin);				
+			}			
+		});
+		
 		Ti.API.info("Adding approveFriendRequest handler");
 		Ti.App.addEventListener('approveFriendRequest', function (e) {
 			Ti.API.info("executing approveFriendRequest handler");
@@ -85,6 +103,14 @@
 						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
 						Ti.App.fireEvent('newFriendPost');
 					break;
+					case 'newComment':
+						Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
+						Ti.App.fireEvent('newComment');
+					break;		
+					case 'newLike':
+						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
+						Ti.App.fireEvent('newLike');
+					break;								
 					case 'friend_request':
 						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
 						Ti.App.fireEvent('approveFriendRequest', {"user_id": senderId});
@@ -97,7 +123,7 @@
 				}
 				// FIXME: bring up a temporary overlay instead of an alert which looks too much like the os alert for push notifications
 		        Ti.UI.createAlertDialog({
-		            title : 'From ' + senderId + " via Fashionista",
+		            title : "Fashionista",
 		            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
 		        }).show();
 				

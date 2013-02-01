@@ -20,9 +20,9 @@ function createEditorWindow (user) {
 						});   
 
     var close = Titanium.UI.createButton({
-    	//image: 'icons/light_x.png',
-    	//backgroundImage: 'none',
-    	//color: 'purple',
+		//image: 'icons/light_x.png',
+		//backgroundImage: 'none',
+		//color: 'purple',
         //style: Titanium.UI.iPhone.SystemButtonStyle.BAR,
         //backgroundColor: 'purple',
         style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,

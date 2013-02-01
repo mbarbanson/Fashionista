@@ -54,15 +54,14 @@
 			win.add(tableView);					
 	}
 	
-	function likePost(post) {
+	function likePost(row) {
+		var post = row.post;
 		alert("Liked post " + post.content);
 	}
 
-	function addComment(post) {
-		alert("Added a comment to post " + post.content);
-	}
 	
-	function flagPost(post) {
+	function flagPost(row) {
+		var post = row.post;		
 		alert("Flag post as inappropriate" + post.content);
 	}
 
@@ -86,7 +85,8 @@
 			flagBtn,
 			likeIcon, likesDetails,
 			commentIcon, commentsDetails,
-			commentsTable;
+			commentsTable,
+			addComment;
 		
 			row = Ti.UI.createTableViewRow({
 				    className:'fashionistaPost', // used to improve table performance
@@ -131,6 +131,7 @@
 							height: postH
 							});
 			row.add(imgView);
+			imgView.addEventListener('click', row.action);
 
 			imageAvatar = Ti.UI.createImageView({
 							image: IMG_BASE + 'custom_tableview/user.png',
@@ -174,7 +175,7 @@
 								height: 30
 								});
 			row.add(flagBtn);
-			flagBtn.addEventListener('click', function(e) { flagPost(post);});
+			flagBtn.addEventListener('click', function(e) { flagPost(row);});
 
 			commentBtn = Ti.UI.createButton({
 								image: '/icons/dark_comment.png',
@@ -186,7 +187,7 @@
 								height: 30
 								});
 			row.add(commentBtn);
-			commentBtn.addEventListener('click', function(e) { addComment(post);});
+			commentBtn.addEventListener('click', function(e) { addComment(row);});
 			
 			likeBtn = Ti.UI.createButton({
 								image: '/icons/dark_heart.png',
@@ -198,7 +199,7 @@
 								height: 30
 								});
 			row.add(likeBtn);
-			likeBtn.addEventListener('click', function(e) { likePost(post);});
+			likeBtn.addEventListener('click', function(e) { likePost(row);});
 						
 			createdAtDate = post.created_at;
 	
@@ -226,7 +227,7 @@
 			likesDetails = Ti.UI.createLabel({
 								color:'#222',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: post.likes_count + ' likes',
+								text: (post.likes_count || '0')  + ' likes',
 								//borderColor: 'black',
 								//borderWidth: 1,								
 								left: 30, top: postH + 60,
@@ -248,14 +249,52 @@
 			commentsDetails = Ti.UI.createLabel({
 								color:'#222',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: post.reviews_count + ' comments',
+								text: (post.reviews_count || '0') + ' comments',
 								//borderColor: 'black',
 								//borderWidth: 1,								
 								left: 30, top: postH + 80,
-								width: 200,
+								width: 290,
 								height: 15
 								});
 			row.add(commentsDetails);
+			
+			addComment = function (row) {
+				var post = row.post,
+					postId,
+					contentText,
+					button,
+					Comment = require('lib/comments'),
+					createComment;
+				if (post) {
+					Ti.API.info("Add a comment to post " + post.content);
+					postId = post.id,
+					contentText = Ti.UI.createTextField({
+				        hintText: 'Comment...',
+				        top: postH + 100, left: 30, 
+				        width: 230, height: 50,
+				        verticalAlign: Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+				        borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED
+				    	});
+		    		row.add(contentText);
+		    		contentText.focus();
+		    		
+		    		button = Ti.UI.createButton({
+							        title: 'Send',
+							        top: postH + 100, left: 265, 
+							        width: 50, height: 50
+							    });
+				    row.add(button);
+				    createComment = function (e) {Comment.createReview(postId, contentText.value);};
+				    button.addEventListener('click', createComment);
+				    
+		    		row.updateLayout();
+					}
+					else {
+						Ti.API.info("addComment: post is null " + post);			
+					}
+				};
+
+			
 			return row;
 	}
 

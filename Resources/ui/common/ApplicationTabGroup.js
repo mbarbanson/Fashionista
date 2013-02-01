@@ -1,6 +1,11 @@
+/*
+ * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ */
 
 (function () {
 	'use strict';
+	
 	var acs = require('lib/acs'),
 		CameraView = require('/ui/common/CameraView'),
 		LogoutWindow = require('/ui/common/LogoutWindow'),
@@ -30,10 +35,9 @@
 			logoutWindow,
 			tab1, tab2, tab3, tab4, tab5, 
 			cameraBtn, galleryBtn;
-			
+	
 		tabGroup.addEventListener('newLoggedInUser', function () {
 			Ti.API.info("Received newLoggedInUser event. Rebuilding feedWindow");
-			//FeedWindow.clearFeed(feedWindow);
 			FeedWindow.showFriendsFeed(feedWindow);					
 		});
 
@@ -127,6 +131,8 @@
 		cameraBtn.addEventListener('click', 
 			function (e) {
 				Ti.API.info("cameraBtn click handler");
+				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
+				tabGroup.setActiveTab(tab1);
 				if (acs.currentUser()) {
 					CameraView.takePhoto(function () {setDefaultActiveTab(tabGroup);});
 				}			
@@ -150,6 +156,8 @@
 		galleryBtn.addEventListener('click', 
 			function (e) {
 				Ti.API.info("galleryBtn click handler");
+				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
+				tabGroup.setActiveTab(tab1);
 				if (acs.currentUser()) {
 					CameraView.pickPhoto(function () {setDefaultActiveTab(tabGroup);});
 				}			
@@ -177,4 +185,4 @@
 	exports.setDefaultActiveTab = setDefaultActiveTab;
 	exports.initAppUI = initAppUI;
 
-}) ();
+} ());

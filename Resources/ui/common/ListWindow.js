@@ -36,24 +36,37 @@ function createListTable(tableData) {
 	});
 }
 
-function populateList(listWindow, friends, clickHandler) {
+function populateList(listWindow, friends, fashionBuddies, clickHandler) {
 	'use strict';
 	var table,
 		numFriends = friends.length,
 		tableData = [],
 		i,
 		friend,
-		actionFun;
+		actionFun,
+		isFashionBuddy;
 	actionFun = function (fid) { 
 		Ti.API.info("calling populateList click handler");
 		clickHandler(fid);
+	};
+	isFashionBuddy = function (fid) {
+		var i = 0,
+			numBuddies = fashionBuddies.length,
+			found = false;
+		for (i = 0; i < numBuddies; i = i + 1) {
+			if (fashionBuddies[i].id === fid) {
+				found = true;
+				break;
+			}						
+		}
+		return found;
 	};
 	for (i = 0; i < numFriends; i = i + 1) {
 		friend = friends[i];
 		tableData.push({
 			title: friend.first_name + " " + friend.last_name, 
 			id: friend.id, 
-			hasChild: true,
+			hasCheck: isFashionBuddy(friend.id),
 			action: actionFun
 		});				
 	}
@@ -62,8 +75,11 @@ function populateList(listWindow, friends, clickHandler) {
 	// create table view event listener
 	table.addEventListener('click', function(e) {
 		var handler = e.rowData.action;
+		e.rowData.hasCheck = !e.rowData.hasCheck; 
 		if (handler) {
-			handler(e.rowData.id);
+			//FIXME
+			// pass in e.rowData and add if hasCheck is true, remove is false would allow adding *and* removing of fashion buddies
+			handler(e.rowData.id); 
 		}
 	});
 	listWindow.add(table);

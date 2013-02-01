@@ -77,7 +77,8 @@
 			Ti.API.info("FeedWindow doesn't have a tableView");
 		}
 	}
-
+	
+/* attach click handler to photos instead
 	function feedWindowClickHandler(e) {
 		Ti.API.info("feedWindow table click handler " + e.rowData);
 		var handler = e.rowData.action;
@@ -85,6 +86,7 @@
 			handler(e.rowData.post);
 		}		
 	}
+*/
 
 	function clearFeed(fWin) {
 		Ti.API.info('Calling clear feed');
@@ -131,7 +133,7 @@
 		feedWin.table = tableView;
 		
 		// create table view click event listener
-		tableView.addEventListener('click', feedWindowClickHandler);
+		// tableView.addEventListener('click', feedWindowClickHandler);
 		// listen for resume events until we find a better criteria for when to proactively update the feed
 		// need to be able to distinguish between different notifications. Until then, this is not helping.
 		//Ti.App.addEventListener('resumed', appResumedHandler);	

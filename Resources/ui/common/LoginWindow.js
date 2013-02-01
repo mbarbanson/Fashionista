@@ -21,7 +21,19 @@
 			lwDialog, 
 			username, 
 			password, 
-			confirm;
+			confirm,
+			spinner = Ti.UI.createActivityIndicator({top:'50%', left: '50%'}),
+			style;
+			
+		//setup spinny activity indicator
+		if (Ti.Platform.name === 'iPhone OS'){
+			style = Ti.UI.iPhone.ActivityIndicatorStyle.DARK;
+		}
+		else {
+			style = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
+		}			
+		spinner.font = {fontFamily:'Helvetica Neue', fontSize:15,fontWeight:'bold'};
+		spinner.style = style;	
 				
 		isLoginAction = (action === 'login');
 			
@@ -36,6 +48,7 @@
 			title: L(action),
 			tabBarHidden: true
 		});
+		
 		//FIXME not used
 		winTitle = Titanium.UI.createButton({
 			color: 'white',	
@@ -140,6 +153,8 @@
 				}
 
 				cb();
+				spinner.hide();
+				lWin.remove(spinner);
 				lWin.close();
 			} else {
 				alert('Oopsie, something went wrong.');
@@ -148,6 +163,9 @@
 		
 		// event listeners
 		done.addEventListener('click', function() {
+			// activityIndicator must be added to the window
+			lWin.add(spinner);
+			spinner.show();
 			if(isLoginAction) {
 				acs.login(username.value, password.value, postActionCallback);
 			} else {

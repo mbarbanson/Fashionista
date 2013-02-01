@@ -1,4 +1,4 @@
-/**
+/*
  * @author MONIQUE BARBANSON
  */
 
@@ -55,25 +55,23 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 		var captionValue = caption.getValue(),
 			feedWin = FeedWindow.currentFeedWindow(),
 			newPostNotify;
-					
+						
 		newPostNotify = function (post) {
 				// newPostNotification
 				Ti.API.info("Notifying friends of new post");
 				social.newPostNotification(post);
-
 				//update feed window with local info after caption has been updated in the cloud
 				Ti.API.info("update local feed window with new post");
 				if (feedWin) {
-					//FeedWindow.clearFeed(feedWin);
 					FeedWindow.showFriendsFeed(feedWin);				
-				}									
+				}						
 		};
 			
-		// upload post update
-		FeedWindow.updatePost(post.id, "", captionValue, newPostNotify);
-						
 		// go back to friend page
 		shareTabGroup.close();
+		// upload post update
+		FeedWindow.updatePost(post.id, "", captionValue, newPostNotify);
+								
 	});
 	
 	cancelBtn.addEventListener('click', function(e) {
@@ -94,10 +92,8 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 
 	// create share window elements
 	caption = Ti.UI.createTextArea({
-		value : L('Add a caption ...'),
-		color : '#aaa',
-		autocorrect : false,
-		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
+        hintText: 'Add a caption, e.g.: How does this look?',
+		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 		top : 10,
 		left : '5%',
 		width : '90%',
@@ -107,13 +103,10 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 			fontSize : '17'
 		},
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
-		wordWrap : true,
-		horizontalWrap : true,
 		borderRadius : 5,
 		paddingLeft : 2,
 		paddingRight : 2,
-		backgroundColor : 'white',
+		backgroundColor : 'white'
 		//borderColor: 'black',
 		//borderWidth: 1
 	});
@@ -174,8 +167,6 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 		backgroundColor : '#fff',
 		height : 40,
 		left : 0,
-		//borderWidth: 1,
-		//borderColor: 'black',
 		//leftImage: '/images/f_logo.png',
 		hasChild : true
 	});
@@ -196,24 +187,26 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 	};
 
 	shareToFBFriends.addEventListener('click', function(e) {
-		var callback = function(friends) {
-			var listWin;
-			if (friends && friends.length > 0) {
-				Ti.API.info("create and populate list of friends window");
-				listWin = ListWindow.createListWindow(addSelectedFBFriends);
-				ListWindow.populateList(listWin, friends, selectFBFriend);
-				listWin.containingTab = tab;
-				tab.open(listWin);
-			} else {
-				alert('You are the first of your facebook to use Fashionista. Kudos! Invite your fashion brain trust to Fashionista now.');
-			}
-		},
-		//facebook integration
-		FB = require('lib/facebook'), 
-		authCB = function() {
-			Ti.API.info("facebook authorize callback");
-			social.findFBFriends(callback);
-		};
+		var callback = function(friends, fashionBuddies) {
+							var listWin;
+							if (friends && friends.length > 0) {
+								Ti.API.info("create and populate list of friends window");
+								listWin = ListWindow.createListWindow(addSelectedFBFriends);
+								// this is where we check which FB friends are already the current user's Fashionista friends
+								ListWindow.populateList(listWin, friends, fashionBuddies, selectFBFriend);
+								listWin.containingTab = tab;
+								tab.open(listWin);
+							} else {
+								alert('You are the first of your facebook to use Fashionista. Kudos! Invite your fashion brain trust to Fashionista now.');
+							}
+						},
+			fashionBuddiesFilter = function (fbFriends) {acs.getFriendsList(function (fashionBuddies) {callback(fbFriends, fashionBuddies);});},
+			//facebook integration
+			FB = require('lib/facebook'), 
+			authCB = function() {
+				Ti.API.info("facebook authorize callback");
+				social.findFBFriends(fashionBuddiesFilter);
+			};
 		FB.authorize(authCB);
 	});
 

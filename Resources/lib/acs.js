@@ -1,5 +1,7 @@
 /*
-	Library to wrap app-specific functionality around the ACS APIs
+ * Library to wrap app-specific functionality around the ACS APIs
+ * Copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ * @author: Monique Barbanson
 */
 
 (function () {
@@ -397,10 +399,10 @@
 	
 	
 	function newFriendNotification(userIds) {
-		var msg = "You have a new friend request from " + currentUser().username + " !",
+		var msg = "You have a new friend request from " + privCurrentUser.username + " !",
 			customPayload = {
 								"custom": {
-											"user_id": currentUser().id, 
+											"user_id": privCurrentUser.id, 
 											"type": 'friend_request'
 										},
 								"badge": 1,
@@ -410,13 +412,15 @@
 		notifyUsers('test', msg, userIds, customPayload);		
 	}
 	
-	function newPostNotification (post) {
-		// if not device is not registered for push notifications
+	
+	function newNotification (post, notificationType, notificationContent) {
+		// if device is not registered for push notifications
 		// or running on simulator, bail
 		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
 			Ti.API.info("sending push notification " + post.content + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
-			var username = post.user.username,
-				message = "From " + username + " via Fashionista: " + post.content;
+			//always send notification from current user
+			var username = '@' + privCurrentUser.username, //post.user.username,
+				message = username + notificationContent;
 					
 			Cloud.PushNotifications.notify({
 			    channel: 'test',
@@ -424,8 +428,8 @@
 			    payload: {
 				    "custom": {
 							"post_id": post.id, 
-							"user_id": post.user.id, 
-							"type": "newPost"
+							"user_id": privCurrentUser.id, //post.user.id, 
+							"type": notificationType
 							},
 				    "badge": 1,
 				    "sound": "default",
@@ -444,7 +448,21 @@
 			Ti.API.info('No push notifications on iOS, but consider this message sent: ' + post.content + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
 		}
 	}
+	
+	
+	function newPostNotification (post) {
+		newNotification(post, "newPost", ' ' + post.content);
+	}
 
+
+	function newCommentNotification (post, commentText) {
+		newNotification(post, "newComment", ' replied ' + commentText + ' to the post ' + post.content);
+	}
+	
+	
+	function newLikeNotification (post) {
+		newNotification(post, "newLike", ' liked the post ' + post.content);
+	}
 
 	
 	// Friends
@@ -497,7 +515,7 @@
 	}
 
 
-	function getFriendsList (successCallback) {
+	function getFriendsList (successCallback, cleanupAction) {
 		Cloud.Friends.search({
 		    user_id: privCurrentUser.id
 		}, function (e) {
@@ -508,7 +526,7 @@
 		            'Count: ' + e.users.length);
 
 		       if (successCallback) {
-					successCallback(e.users);		
+					successCallback(e.users, cleanupAction);		
 				}
 		    } else {
 		        alert('Error:\\n' +
@@ -516,7 +534,8 @@
 		    }
 		});
 	}
-		
+	
+			
 	// Posts
 	function addPost (pTitle, pBody, pPhoto, callback) {
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + callback);
@@ -539,7 +558,27 @@
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
 		            'updated_at: ' + post.updated_at);
-		        callback(post);
+		        if (callback) {callback(post);};
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+		});		
+	}
+	
+	
+	function showPost(savedPostId, callback) {
+		Cloud.Posts.show({
+		    post_id: savedPostId
+		}, function (e) {
+		    if (e.success) {
+		        var post = e.posts[0];
+		        Ti.API.info('Success:\\n' +
+		            'id: ' + post.id + '\\n' +
+		            'title: ' + post.title + '\\n' +
+		            'content: ' + post.content + '\\n' +
+		            'updated_at: ' + post.updated_at);
+				if (callback) {callback(post);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
@@ -571,29 +610,10 @@
 	}
 	
 	
-	function getPostFromId (postId, postCallback) {
-		Ti.API.info('acs.getPostFromId');	
-		Cloud.Posts.show({
-		    post_id: postId,
-		    response_json_depth: 2
-		}, function (e) {
-		    if (e.success) {
-		        var post = e.posts[0];
-		        Ti.API.info('Success:\\n' +
-		            'id: ' + post.id + '\\n' +
-		            'title: ' + post.title + '\\n' +
-		            'content: ' + post.content + '\\n' +
-		            'updated_at: ' + post.updated_at);
-	            postCallback(post);
-		    } else {
-		        alert('Error getPostFromId:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-		});
-	}
+
 	
 	
-	function getFriendsPosts (friendsList, postCallback) {
+	function getFriendsPosts (friendsList, postAction, cleanupAction) {
 		Ti.API.info('acs.getFriendsPosts');
 		var getID = function(user) { return user.id;},
 			usersList = friendsList;
@@ -608,42 +628,28 @@
 		    }
 		}, function (e) {
 			var i,
-				post;
+				post,
+				numPosts;
 		    if (e.success) {
+				numPosts = e.posts.length;
 		        Ti.API.info('Success:\\n' +
-		            'Count: ' + e.posts.length);
-		        for (i = 0; i < e.posts.length; i = i + 1) {
-		            post = e.posts[i];
-	                postCallback(post);
-		        }
+		            'Count: ' + numPosts);
+		         if (numPosts > 0) {
+					for (i = 0; i < numPosts ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+				   }
+		         }  
 		    } else {
 		        alert('Error: getFriendsPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
+			if (cleanupAction) { cleanupAction(); }
 		});	
 	}
 	
-	// Reviews aka Comments
-	function createReview(savedPostId) {
-		Cloud.Reviews.create({
-		    post_id: savedPostId,
-		    rating: 1,
-		    content: 'Good'
-		}, function (e) {
-		    if (e.success) {
-		        var review = e.reviews[0];
-		        alert('Success:\\n' +
-		            'id: ' + review.id + '\\n' +
-		            'rating: ' + review.rating + '\\n' +
-		            'content: ' + review.content + '\\n' +
-		            'updated_at: ' + review.updated_at);
-		    } else {
-		        alert('Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-		});		
-	}
-	
+
+
 	exports.isLoggedIn = isLoggedIn;
 	exports.setIsLoggedIn = setIsLoggedIn;
 	exports.getPhotoCollectionId = getPhotoCollectionId;
@@ -663,14 +669,17 @@
 	exports.setUserPhotos = setUserPhotos;
 	exports.subscribeNotifications = subscribeNotifications;
 	exports.newPostNotification = newPostNotification;
+	exports.newCommentNotification = newCommentNotification;
+	exports.newLikeNotification = newLikeNotification;		
 	exports.newFriendNotification = newFriendNotification;
 	exports.addFriends = addFriends;
 	exports.approveFriendRequests = approveFriendRequests;
 	exports.getFriendRequests = getFriendRequests;
 	exports.getFriendsList = getFriendsList;
 	exports.addPost = addPost;
+	exports.showPost = showPost;	
 	exports.updatePost = updatePost;
 	exports.getFriendsPosts = getFriendsPosts;
-	exports.getPostFromId = getPostFromId;
-	exports.createReview = createReview;
+
+
 } ());
