@@ -8,61 +8,58 @@
 	'use strict';
 
 	var Cloud = require('ti.cloud');
-			
-	// Reviews aka Comments
-	function createReview(savedPostId, contentText, callback) {
-		Cloud.Reviews.create({
-		    post_id: savedPostId,
-		    rating: 1,
-		    content: contentText,
-		    allow_duplicate: 1
-		}, function (e) {
-		    if (e.success) {
-		        var review = e.reviews[0];
-		        Ti.API.info('Success:\\n' +
-		            'id: ' + review.id + '\\n' +
-		            'rating: ' + review.rating + '\\n' +
-		            'content: ' + review.content + '\\n' +
-		            'updated_at: ' + review.updated_at);
-	            callback(review);
-		    } else {
-		        Ti.API.info('Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-		});		
+
+/*
+ * 
+
+function callback(data) {
+  if(data) {
+    if(data.meta) {
+      var meta = data.meta;
+      if(meta.status == 'ok' && meta.code == 200 && meta.method_name == 'createLike') {
+        var likes = data.response.likes;
+        ...
+      }
+    }
+  }
+}
+ * 
+ */			
+	// Likes
+	function createLike(savedPostId, callback) {
+		/*
+		var deployType = Ti.App.getDeployType(),
+			sdk = (deployType == 'production')? new Cocoafish('awbsrluLqnzmYOZPoevSb4x4cyUvSmHk') : new Cocoafish('VtBOemkWS2i8oF8ky5Zw72RlLnRaRRov'),  // app key
+			data = {
+					  post_id: savedPostId
+					};
+		sdk.sendRequest('likes/create.json', 'POST', data, callback);
+		*/
+		Ti.API.info("Likes are not supported yet!")
+	}	
+
+/*
+function callback(data) {
+  if(data) {
+    if(data.meta) {
+      var meta = data.meta;
+      if(meta.status == 'ok' && meta.code == 200 && meta.method_name == 'deleteLike') {
+        alert("Like deleted!");
+      }
+    }
+  }
+}	
+*/
+	
+	function deleteLike(savedPostId, callback) {
+		var deployType = Ti.App.getDeployType();
+			sdk = (deployType == 'production')? new Cocoafish('awbsrluLqnzmYOZPoevSb4x4cyUvSmHk') : new Cocoafish('VtBOemkWS2i8oF8ky5Zw72RlLnRaRRov'),  // app key
+			data = {
+					  post_id: savedPostId
+					};
+		sdk.sendRequest('likes/delete.json', 'DELETE', data, callback);
 	}	
 	
-	
-	function getPostComments (postId, callback) {
-		Cloud.Reviews.query({
-			post_id: postId,
-		    order: '-updated_at',
-		    response_json_depth: 3,			
-		    page: 1,
-		    per_page: 20
-		}, function (e) {
-		    if (e.success) {
-				var numReviews = e.reviews.length;
-		        Ti.API.info('Success getPostComments:\\n' +
-		            'Count: ' + numReviews);
-		        /*    
-		        for (var i = 0; i < e.reviews.length; i++) {
-		            var review = e.reviews[i];
-		            Ti.API.info('id: ' + review.id + '\\n' +
-		                'id: ' + review.id + '\\n' +
-		                'rating: ' + review.rating + '\\n' +
-		                'content: ' + review.content + '\\n' +
-		                'updated_at: ' + review.updated_at);
-		        }
-		        */
-		        callback(e.reviews);
-		    } else {
-		        Ti.API.info('Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-		});		
-	}
-	
-	exports.createReview = createReview;
-	exports.getPostComments = getPostComments;
+	exports.createLike = createLike;
+	exports.deleteLike = deleteLike;
 } ());

@@ -131,7 +131,7 @@
 	
 	function createFeedWindow() {
 		var feedWin = Ti.UI.createWindow({
-				title: acs.currentUser().username + "'s Feed",
+				title: "Fashionista",
 		        backgroundColor: 'white',
 		        barColor: '#5D3879'				
 			}),

@@ -16,7 +16,8 @@
 						backgroundColor: 'white',
 						selectedBackgroundColor:'white',
 					    width:Ti.UI.SIZE,
-					    height: Ti.UI.SIZE
+					    height: Ti.UI.SIZE,
+					    borderColor: 'white'
 					}),
 
 			label = Ti.UI.createLabel({
@@ -40,7 +41,7 @@
 	
 	function addNewComment(tableView, comment) {
 		var row = createCommentRow(comment);			
-		tableView.insertRowBefore(1, row);			
+		tableView.appendRow(row);			
 		
 	}
 	

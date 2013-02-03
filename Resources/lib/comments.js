@@ -36,7 +36,7 @@
 	function getPostComments (postId, callback) {
 		Cloud.Reviews.query({
 			post_id: postId,
-		    order: '-updated_at',
+		    order: 'updated_at',
 		    response_json_depth: 3,			
 		    page: 1,
 		    per_page: 20

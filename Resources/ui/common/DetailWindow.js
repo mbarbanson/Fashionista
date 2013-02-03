@@ -133,8 +133,9 @@
 			// comment input field
 			contentTextInput = Ti.UI.createTextArea({
 		        hintText: 'Add a comment...',
+		        color: 'black',
 		        top: postH + 135, left: 5, 
-		        width: 255, height: 50,
+		        width: 255, height: 45,
 				textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 				autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,				
 		        borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
@@ -155,6 +156,8 @@
 					left:245, top:postH + 140,
 					//borderWidth: 1,
 					//borderColor: 'black',
+					backgroundColor: 'grey',
+					backgroundFocusedColor: 'grey',
 					width: 10,
 					height: 10
 					});
@@ -169,8 +172,8 @@
 			// send comment button			
 			sendBtn = Ti.UI.createButton({
 					        title: 'Send',
-					        top: postH + 135, left: 265, 
-					        width: 50, height: 50
+					        top: postH + 135, left: 270, 
+					        width: 45, height: 45
 				        });
 				    
 		    row.add(sendBtn);
