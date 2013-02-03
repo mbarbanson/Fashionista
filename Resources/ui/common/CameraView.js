@@ -24,8 +24,8 @@
 		var image = event.media,
 			newSize = Ti.App.photoSizes[Ti.Platform.osname],
 			user = acs.currentUser(),
-			feedWin = FeedWindow.currentFeedWindow(),
-			style = feedWin.spinnerStyle,
+			curWin = FeedWindow.currentFeedWindow(),
+			style = Ti.App.spinnerStyle,
 			activityIndicator,
 			photoBlob;
 			
@@ -34,7 +34,7 @@
 							});
 			
 		if (activityIndicator) {
-			feedWin.rightNavButton = activityIndicator; 
+			curWin.rightNavButton = activityIndicator; 
 			activityIndicator.show();
 		}	
 		// resize to platform optimized size before uploading, by default could be up to 2448x2449!		
@@ -45,7 +45,7 @@
 					Ti.API.info("finished uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
 					if (activityIndicator) { 
 						activityIndicator.hide();
-						feedWin.rightNavButton = null; 
+						curWin.rightNavButton = null; 
 					}
 					goToShareWindow(photoBlob, post);
 				});			
@@ -56,7 +56,7 @@
 		if (Ti.Media.isCameraSupported && mode === 'camera') {
 			//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
 			Ti.Media.showCamera({
-				animated:false,
+//				animated: true,
 				success: photoSuccessCallback,
 				cancel:cancelCallback(),
 				error:function(error) {
@@ -72,9 +72,9 @@
 				},
 				saveToPhotoGallery:true,
 				allowEditing:true,
-				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO],
-				showControls: true,
-				overlay: cameraOverlay
+				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO, Ti.Media.MEDIA_TYPE_VIDEO]
+//				showControls: true,
+//				overlay: cameraOverlay
 			});
 		} else {
 			Ti.Media.openPhotoGallery({

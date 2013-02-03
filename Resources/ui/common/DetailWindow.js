@@ -7,14 +7,17 @@
 
 	var CommentsView = require('ui/common/CommentsView'),
 		Comments = require('lib/comments'),
+		Likes = require('lib/likes'),		
 		acs = require('lib/acs'),
 		social = require('lib/social');
 	
 	function showPreview (thumbView) {
 		var imgView = null,
 			detailWindow = Ti.UI.createWindow({
+									title: title + "Fashionista Favorites",
 							        backgroundColor: 'black',
-							        barColor: 'black'
+							        barColor: '#5D3879',
+							        tabBarHidden: true
 							});
 
 		imgView = Ti.UI.createImageView({
@@ -37,15 +40,53 @@
 		var detailWindow = Ti.UI.createWindow({
 							title: title + "'s Photo",
 					        backgroundColor: 'white',
-							barColor: '#5D3879'	
+							barColor: '#5D3879',
+							tabBarHidden: true	
 						});
 		return detailWindow;		
 	}
 	
 	
 	function likePost(row) {
-		var post = row.post;
-		alert("Liked post " + post.content);
+		var post = row.post,
+			createLikeCallback = function (like) {
+				social.newLikeNotification(post);
+				var likesCount = row.likesCount;	
+				likesCount.fireEvent('update_likesCount');
+			};
+		
+		if (post) {
+			Ti.API.info("Like a post " + post.content);
+			Likes.createLike(post, createLikeCallback);
+		}
+		else {
+			Ti.API.info("likePost: post is null " + post);			
+		}		
+	}
+	
+
+	function updateLikesCount (row, post) {
+		Ti.API.info('update like count');	
+		var likesCount = row.likesCount,
+			count =  post.likes_count; //commentsCount.text.split(" ", 1);
+		row.post = post;
+		// Update likes count
+		likesCount.text = count + ' likes'; //parseInt(count[0], 10) + 1 + ' comments';			
+	}
+
+		
+	function createComment (tableView, row, commentText) {
+		var post = row.post,
+			createReviewCallback = function (review) {
+				social.newCommentNotification(post, commentText);
+				var commentsCount = row.commentsCount;
+				if (tableView.displayComments) {
+					//FIXME also check that tableView is a child of win
+					CommentsView.addNewComment(tableView, review);									
+				}	
+				commentsCount.fireEvent('update_commentsCount');
+			};
+		Comments.createReview(post.id, commentText, createReviewCallback);
 	}
 
 	
@@ -111,7 +152,7 @@
 			closeBtn = Ti.UI.createButton({
 					image: '/icons/dark_x.png',
 					style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
-					left:248, top:postH + 137,
+					left:245, top:postH + 140,
 					//borderWidth: 1,
 					//borderColor: 'black',
 					width: 10,
@@ -164,7 +205,7 @@
 	}
 	
 	//FIXME when do we pass in a photoBlob here?
-	function setRowEventHandlers (row, clickHandler, updateCommentsCountHandler, photoBlob) {
+	function setRowEventHandlers (row, clickHandler, updateCommentsCountHandler, updateLikesCountJandler, photoBlob) {
 		row.action = function (e) {if (clickHandler) {clickHandler(row, photoBlob);}};
 		row.updateCommentsCount = function(e) {
 										Ti.API.info('Need to updateCommentsCount');	
@@ -172,7 +213,14 @@
 											var post = row.post;
 											// update post then the commentsCount in row from the new post values
 											acs.showPost(post.id, function (updatedPost) {updateCommentsCountHandler(row, updatedPost);});
-									}};			
+									}};	
+		row.updateLikesCount = function(e) {
+										Ti.API.info('Need to updateLikesCount');	
+										if (updateLikesCountHandler) {
+											var post = row.post;
+											// update post then the commentsCount in row from the new post values
+											acs.showPost(post.id, function (updatedPost) {updateLikesCountHandler(row, updatedPost);});
+									}};												
 	}
 	
 
@@ -325,6 +373,8 @@
 								height: 15
 								});
 			row.add(likesCount);
+			row.likesCount = likesCount;
+			likesCount.addEventListener('update_likesCount', row.updateLikesCount);
 						
 			// number of comments
 			commentIcon = Ti.UI.createImageView({
@@ -356,7 +406,7 @@
 			var row;
 			tableView.displayComments = true; 
 			row = createRow (post);
-			setRowEventHandlers (row, null, updateCommentsCount);
+			setRowEventHandlers (row, null, updateCommentsCount, updateLikesCount);
 			populateRow(tableView, row, photoBlob);
 			tableView.appendRow(row);
 			CommentsView.createCommentsView(tableView, comments);			
@@ -390,5 +440,5 @@
 	exports.populateRow = populateRow;
 	exports.setRowEventHandlers = setRowEventHandlers;
 	exports.updateCommentsCount = updateCommentsCount;
-	
+	exports.updateLikesCount = updateLikesCount;	
 } ());

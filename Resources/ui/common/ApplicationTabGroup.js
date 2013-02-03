@@ -131,10 +131,16 @@
 		cameraBtn.addEventListener('click', 
 			function (e) {
 				Ti.API.info("cameraBtn click handler");
+				var win = Titanium.UI.createWindow(),
+					cancelCallback = function () {
+										Ti.API.info("Take photo cancel callback");
+										tab3.close(win); 
+										tabGroup.setActiveTab(tab1);
+								};
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
-				tabGroup.setActiveTab(tab1);
 				if (acs.currentUser()) {
-					CameraView.takePhoto(function () {setDefaultActiveTab(tabGroup);});
+					CameraView.takePhoto(cancelCallback);		
+					tab3.open(win, {animated: true});
 				}			
 				else {
 					alert("Please log in or sign up first");

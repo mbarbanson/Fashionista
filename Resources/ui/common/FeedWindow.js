@@ -28,7 +28,7 @@
 	function displayPostSummary (tableView, post, clickHandler) {
 		if (tableView) {
 			var row = DetailWindow.createRow(post);
-			DetailWindow.setRowEventHandlers(row, clickHandler, DetailWindow.updateCommentsCount);
+			DetailWindow.setRowEventHandlers(row, clickHandler, DetailWindow.updateCommentsCount, DetailWindow.updateLikesCount);
 			Ti.API.info('display post summary: adding a row to the feedWindow ');
 			DetailWindow.populateRow(tableView, row);	  
 			tableView.appendRow(row);

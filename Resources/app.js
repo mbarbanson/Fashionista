@@ -85,7 +85,10 @@ if (Ti.version < 2.0 ) {
 	}
 	else {
 		AppWindow = require('ui/handheld/ApplicationWindow');
-		Ti.UI.iPhone.hideStatusBar();
+		if (Ti.Platform.name === 'iPhone OS') { 
+			Ti.UI.iPhone.hideStatusBar(); 
+			Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
+		}
 	}
 	Cloud.debug = true;
 	
