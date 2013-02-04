@@ -620,7 +620,7 @@
 		usersList.splice(usersList.length, 0, privCurrentUser);
 		Cloud.Posts.query({
 		    page: 1,
-		    per_page: 10,
+		    per_page: 20,
 		    order: '-updated_at',
 		    response_json_depth: 2,
 		    where: {

@@ -1,4 +1,5 @@
-/**
+/*
+ * Copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  * @author MONIQUE BARBANSON
  */
 
@@ -6,19 +7,25 @@
 (function () {
 	'use strict';
 	
-	
-	
-	function initSubscriptions() {
+	// call this before initNotification so that the event handlers are defined before the events are fired
+	function initNotificationHandlers () {
 		var acs = require('lib/acs'),
 			FeedWindow = require('ui/common/FeedWindow');
-		Ti.API.info("calling initSubscriptions to setup event handlers");				
-		// handle new friend request notifications. Define event listener before the event is ever fired
+		Ti.API.info("calling initSubscriptions to setup event handlers");
+		
+						
+		// handle new friend post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow();
-			Ti.API.info("new post handler. Updating feed window " + feedWin);
+			var feedWin = FeedWindow.currentFeedWindow(),
+				tab, postId = e.post_id, message = e.message;
+			Ti.API.info("new post. " +  message + " Updating feed window " + feedWin);
 			if (feedWin) {
-				FeedWindow.showFriendsFeed(feedWin);				
+				FeedWindow.showFriendsFeed(feedWin);
+				tab = feedWin.containingTab;
+				if (postId) {
+					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
+				}				
 			}			
 		});
 	
@@ -26,10 +33,14 @@
 		// just received a notification that a comment was added
 		Ti.API.info("Adding newComment handler");
 		Ti.App.addEventListener('newComment', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow();
-			Ti.API.info("new comment. Updating feed window " + feedWin);
+			var feedWin = FeedWindow.currentFeedWindow(), tab, postId = e.post_id, message = e.message;
+			Ti.API.info("new comment " + message + " Updating feed window " + feedWin + " postId " + postId );
 			if (feedWin) {
-				FeedWindow.showFriendsFeed(feedWin);				
+				tab = feedWin.containingTab;
+				FeedWindow.showFriendsFeed(feedWin);
+				if (postId) {
+					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
+				}								
 			}			
 		});
 		
@@ -38,10 +49,14 @@
 		// just received a notification that a like was added
 		Ti.API.info("Adding newLike handler");
 		Ti.App.addEventListener('newLike', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow();
-			Ti.API.info("new like handler. Updating feed window " + feedWin);
+			var feedWin = FeedWindow.currentFeedWindow(), tab, postId = e.post_id, message = e.message;
+			Ti.API.info("new like " + message + " Updating feed window " + feedWin);
 			if (feedWin) {
-				FeedWindow.showFriendsFeed(feedWin);				
+				FeedWindow.showFriendsFeed(feedWin);	
+				tab = feedWin.containingTab;
+				if (postId) {
+					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
+				}											
 			}			
 		});
 		
@@ -59,8 +74,13 @@
 				Ti.API.info("got a request to add self as a friend. do nothing currentUser is " + currentUser);
 			}
 			
-		});
-		
+		});		
+	}
+	
+	
+	// called when registerForPushNotifications returns successfully
+	function initSubscriptions() {
+		var acs = require('lib/acs');		
 		// subscribe to notifications
 		acs.subscribeNotifications('test');	
 	}
@@ -69,9 +89,10 @@
 		// should be called after we have a logged in user
 	function initNotifications () {
 		var acs = require('lib/acs');
+		initNotificationHandlers();
 		//register for push notifications every time the app launches, as prescribed by Apple's
 		// Local and Push Notifications Programming Guide
-		Ti.API.info("calling registerForPushNotifications");
+		Ti.API.info("calling registerForPushNotifications");		
 		Ti.Network.registerForPushNotifications({
 		    types : [Ti.Network.NOTIFICATION_TYPE_BADGE, Ti.Network.NOTIFICATION_TYPE_ALERT, Ti.Network.NOTIFICATION_TYPE_SOUND],
 		    // push notification registration was successful
@@ -89,6 +110,7 @@
 				var customPayload = e.data.custom,
 					notificationType = customPayload.type,
 					senderId = customPayload.user_id,
+					postId = customPayload.post_id,
 					message = e.data.alert,
 					currentUser = acs.currentUser();
 				Ti.API.info(notificationType + " \n time " + Date.now());
@@ -101,15 +123,15 @@
 				switch (notificationType) {
 					case 'newPost':
 						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-						Ti.App.fireEvent('newFriendPost');
+						Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": postId, "message": message});
 					break;
 					case 'newComment':
 						Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
-						Ti.App.fireEvent('newComment');
+						Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": postId, "message": message});
 					break;		
 					case 'newLike':
 						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-						Ti.App.fireEvent('newLike');
+						Ti.App.fireEvent('newLike', {"user_id": senderId, "post_id": postId, "message": message});
 					break;								
 					case 'friend_request':
 						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
@@ -125,8 +147,7 @@
 		        Ti.UI.createAlertDialog({
 		            title : "Fashionista",
 		            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
-		        }).show();
-				
+		        }).show();				
 		    }
 		});
 	}

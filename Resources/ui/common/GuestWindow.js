@@ -112,12 +112,12 @@ function createGuestWindow() {
 		if(acs.isLoggedIn()===true) {	
 			try {
 				Ti.API.info("loginCallback");
-				guestTabGroup.hide();
-				guestTabGroup.close();
-				guestTabGroup = null;
-				//mainTabGroup.setVisible(true);
+				if (guestTabGroup) {
+					guestTabGroup.hide();
+					guestTabGroup.close();
+					guestTabGroup = null;					
+				}
 				ApplicationTabGroup.initAppUI();
-				//acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);				
 			}				
 			catch (ex) {
 				Ti.API.info("Caught exception " + ex.message);

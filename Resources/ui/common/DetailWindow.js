@@ -36,9 +36,9 @@
 		return detailWindow;
 	}
 	
-	function createDetailWindow(title) {
+	function createDetailWindow() {
 		var detailWindow = Ti.UI.createWindow({
-							title: title + "'s Photo",
+							title: "Photo Details",
 					        backgroundColor: 'white',
 							barColor: '#5D3879',
 							tabBarHidden: true	
@@ -72,21 +72,6 @@
 		row.post = post;
 		// Update likes count
 		likesCount.text = count + ' likes'; //parseInt(count[0], 10) + 1 + ' comments';			
-	}
-
-		
-	function createComment (tableView, row, commentText) {
-		var post = row.post,
-			createReviewCallback = function (review) {
-				social.newCommentNotification(post, commentText);
-				var commentsCount = row.commentsCount;
-				if (tableView.displayComments) {
-					//FIXME also check that tableView is a child of win
-					CommentsView.addNewComment(tableView, review);									
-				}	
-				commentsCount.fireEvent('update_commentsCount');
-			};
-		Comments.createReview(post.id, commentText, createReviewCallback);
 	}
 
 	

@@ -18,7 +18,7 @@
 	//FIXME when do we have a photoBlob to pass in?
 	function displayPostDetails (tab, post, photoBlob) {
 		Ti.API.info('show post details');
-		var detailWindow = DetailWindow.createDetailWindow(post.user.username);
+		var detailWindow = DetailWindow.createDetailWindow();
 		DetailWindow.showPostDetails(detailWindow, post, photoBlob);
 		tab.open(detailWindow);	
 	}
