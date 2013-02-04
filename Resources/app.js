@@ -72,7 +72,7 @@ if (Ti.version < 2.0 ) {
 	//Ti.API.info("should be 1.0, was = "+String.format('%1.1f',1));
 	
 	Ti.API.info("should be hello, was = "+String.format('%s','hello'));
-		
+			
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
 		GuestWindow.createGuestWindow(rootWindow);
@@ -96,29 +96,37 @@ if (Ti.version < 2.0 ) {
 	
 	rootWindow = AppWindow.createApplicationWindow(L('Fashionista'));
 	
-    // Check here whether there is a logged in user
-	try {	
-		//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
-		//yourself what you consider a tablet form factor for android	
-		sessionId = Ti.App.Properties.getString('sessionId');
-		Ti.API.info("Check whether we have a stored sessionId " + sessionId + " Cloud.sessionId " + Cloud.sessionId);
-		Cloud.sessionId = sessionId;
-		if (!sessionId) {
-			Ti.API.info("no stored session " + sessionId);
-		    showGuestWindow();			
+	// for now exit if device is offline
+	if (!Ti.Network.online) {
+		alert("Sorry - Fashionista requires an internet connection. Your device is offline. Please make sure you are connected to the internet, then exit and restart.");
+		rootWindow.close();
+	}
+	else {
+	    // Check here whether there is a logged in user
+		try {	
+			//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
+			//yourself what you consider a tablet form factor for android	
+			sessionId = Ti.App.Properties.getString('sessionId');
+			Ti.API.info("Check whether we have a stored sessionId " + sessionId + " Cloud.sessionId " + Cloud.sessionId);
+			Cloud.sessionId = sessionId;
+			if (!sessionId) {
+				Ti.API.info("no stored session " + sessionId);
+			    showGuestWindow();			
+			}
+			// should not be able to get here without logging in
+			else {
+				Ti.API.info("found stored session " + sessionId);
+				// we have a stored user session, retrieve the current user	
+				acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);
+			}		
 		}
-		// should not be able to get here without logging in
-		else {
-			Ti.API.info("found stored session " + sessionId);
-			// we have a stored user session, retrieve the current user	
-			acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);
-		}		
-	}
-	catch (e)
-	{
-		Ti.API.info("Exception caught" + e.Message);
-	}
+		catch (e)
+		{
+			Ti.API.info("Exception caught" + e.Message);
+		}
+	
+		Ti.API.info("Fashionista is running...");
 
-	Ti.API.info("Fashionista is running...");
-
+		
+	}
 } ());

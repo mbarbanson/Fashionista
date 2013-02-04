@@ -6,7 +6,8 @@ exports.createApplicationWindow = function (title) {
 		backgroundColor: 'black',
 		barColor: '#5D3879',
 		tabBarHidden: true,
-		visible:true
+		visible:true,
+		exitOnClose: true
 	});
 	return self;
 };

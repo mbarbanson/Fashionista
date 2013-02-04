@@ -1,7 +1,8 @@
 function ApplicationWindow(title) {
 	var self = Ti.UI.createWindow({
 		title:title,
-		backgroundColor:'black'
+		backgroundColor:'black',
+		exitOnclose: true
 	});
 	
 	var button = Ti.UI.createButton({
