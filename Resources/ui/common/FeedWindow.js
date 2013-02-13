@@ -14,27 +14,38 @@
 	function currentFeedWindow() {
 		return privFeedWindow;
 	}	
-
-	//FIXME when do we have a photoBlob to pass in?
-	function displayPostDetails (tab, post, photoBlob) {
-		Ti.API.info('show post details');
-		var detailWindow = DetailWindow.createDetailWindow();
-		DetailWindow.showPostDetails(detailWindow, post, photoBlob);
-		tab.open(detailWindow);	
+	
+	
+	function createFinishingUpRow(postModel) {
+		var row = Ti.UI.createTableViewRow({
+					title: "            Finishing Up...",
+					color: 'white',
+					backgroundColor:'black',
+					width: Ti.UI.FILL,
+					height: Ti.UI.SIZE,
+					visible: true,
+					layout: 'horizontal'
+				}),
+			photo = postModel.photo,	
+			thumbnail;
+		postModel.thumbnail_50 = photo.imageAsThumbnail(50);
+		thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_50});
+		row.add(thumbnail);
+		return row;
 	}
 	
 	
-	// display post retrieved from cloud
-	function displayPostSummary (tableView, post, clickHandler) {
-		if (tableView) {
-			var row = DetailWindow.createRow(post);
-			DetailWindow.setRowEventHandlers(row, clickHandler, DetailWindow.updateCommentsCount, DetailWindow.updateLikesCount);
-			Ti.API.info('display post summary: adding a row to the feedWindow ');
-			DetailWindow.populateRow(tableView, row);	  
-			tableView.appendRow(row);
-		}
-	}
-	
+	function addFinishingUpRow(postModel) {
+		Ti.API.info('Calling addFinishingUpRow');
+		var fWin = currentFeedWindow(),
+			tableView = fWin.table,
+			fRow = createFinishingUpRow(postModel);
+		if (tableView) {			
+			tableView.insertRowBefore(0, fRow);			
+			tableView.scrollToTop(0);
+		}	
+				
+	}	
 
 	function updatePost(postId, title, caption, callback) {
 		
@@ -52,7 +63,29 @@
 		acs.updatePost(postId, title, caption, updatePostCallback);		
 	}	
 
-
+	function addPost(postModel, callback) {
+		
+		var style = privFeedWindow.spinnerStyle,
+			image = postModel.photo,
+			imgH = image.height,
+			imgW = image.width,
+			newSize = Ti.App.photoSizes[Ti.Platform.osname],
+			//activityIndicator = Ti.UI.createActivityIndicator({style: style}),
+			addPostCallback = function (post) {
+									Ti.API.info("successfully added post " + post.content);
+									//activityIndicator.hide();
+									//privFeedWindow.setRightNavButton(null);
+									callback(post);												
+								};
+		// crop the dimension that's larger than the screen if any						
+		if (imgH > newSize[1]) { imgH = newSize[1]; }
+		if (imgW > newSize[0]) { imgW = newSize[0]; }					
+		image = image.imageAsResized(imgW, imgH);
+		//privFeedWindow.setRightNavButton(activityIndicator); 
+		//activityIndicator.show(); 
+		acs.addPost("", postModel.caption, image, addPostCallback);
+		addFinishingUpRow(postModel);		
+	}
 	
 	function showFriendsFeed(fWin) {
 		Ti.API.info('Calling show feed');
@@ -75,12 +108,8 @@
 			tableView.setData([]);	
 			tableView.displayComments = false;		
 			Ti.API.info("showFriendFeed. Refreshing Feed window");
-			showPostDetails = function (row, photo) {
-											Ti.API.info("Executing click handler callback for row " + row);
-											displayPostDetails(fWin.containingTab, row.post, photo);
-										};
 			showPost = function (post) { 
-					displayPostSummary(tableView, post, showPostDetails);
+					DetailWindow.displayPostSummary(tableView, post);
 				};
 			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
 			
@@ -172,7 +201,7 @@
 	exports.currentFeedWindow = currentFeedWindow;
 	exports.clearFeed = clearFeed;
 	exports.showFriendsFeed = showFriendsFeed;
-	exports.displayPostDetails = displayPostDetails;
+	exports.addPost = addPost;
 	exports.updatePost = updatePost;
 
 } ());

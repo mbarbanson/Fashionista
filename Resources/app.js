@@ -86,13 +86,13 @@ if (Ti.version < 2.0 ) {
 	else {
 		AppWindow = require('ui/handheld/ApplicationWindow');
 		if (Ti.Platform.name === 'iPhone OS') { 
-			Ti.UI.iPhone.hideStatusBar(); 
+			//Ti.UI.iPhone.hideStatusBar(); 
 			Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
 		}
 	}
 	Cloud.debug = true;
 	
-	Ti.App.photoSizes ={"thumbnail": [100,100], "iphone": [640,640], "android": [480,480]};
+	Ti.App.photoSizes ={"thumbnail": [48,48], "iphone": [638,638], "android": [478,478]};
 	
 	rootWindow = AppWindow.createApplicationWindow(L('Fashionista'));
 	

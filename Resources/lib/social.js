@@ -1,4 +1,4 @@
-/**
+/*
  * @author MONIQUE BARBANSON
  */
 

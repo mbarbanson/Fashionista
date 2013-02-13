@@ -10,12 +10,13 @@
 		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
 		ShareWindow = require('ui/common/ShareWindow'),
 		FeedWindow = require('ui/common/FeedWindow'),
+		PostModel = require('models/posts'),
 		activityIndicator, 
 		cameraOverlay = Ti.UI.createView({opacity:0.0, width: Ti.UI.FILL, height: Ti.UI.FILL});
 
-	
-	function goToShareWindow (image, post) {
-		var shareWindow = ShareWindow.createShareWindow(image, post, social.newPostNotification);
+
+	function goToShareWindow (postModel) {
+		var shareWindow = ShareWindow.createShareWindow(postModel, social.newPostNotification);
 	}
 
 
@@ -27,19 +28,22 @@
 			curWin = FeedWindow.currentFeedWindow(),
 			style = Ti.App.spinnerStyle,
 			activityIndicator,
-			photoBlob;
-			
+			photoBlob,
+			postModel;
+		/*				
 		activityIndicator = Ti.UI.createActivityIndicator({
 							  style: style
 							});
-			
+
 		if (activityIndicator) {
 			curWin.rightNavButton = activityIndicator; 
 			activityIndicator.show();
-		}	
+		}
+		*/	
 		// resize to platform optimized size before uploading, by default could be up to 2448x2449!		
-		photoBlob = image.imageAsResized(newSize[0], newSize[1]);
+		photoBlob = image; //image.imageAsResized(newSize[0], newSize[1]);
 		//start uploading now!
+		/*
 		acs.addPost (user.username + " needs your help!", "How does this look?", photoBlob, 
 				function(post) {
 					Ti.API.info("finished uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
@@ -48,7 +52,10 @@
 						curWin.rightNavButton = null; 
 					}
 					goToShareWindow(photoBlob, post);
-				});			
+				});	
+		*/	
+		postModel = new PostModel(user, photoBlob);
+		goToShareWindow(postModel);	
 	}
 
 	 
@@ -129,4 +136,4 @@
 	exports.createCameraView = createCameraView;
 	exports.takePhoto = takePhoto;
 	exports.pickPhoto = pickPhoto;
-}) ();
+} ());

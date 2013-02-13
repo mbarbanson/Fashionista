@@ -1,12 +1,19 @@
-"use strict";
+/*
+ * 
+ */
+
+
 
 var editorWindow = null, 
 	editorView = null;
 
 function createEditorWindow (user) {
+	"use strict";
+	
 	editorWindow = editorWindow || Ti.UI.createWindow({
 		barColor: 'black'
 	});
+	/*
 	editorView = editorView || EditorView.createEditorView(editorWindow, user);
 	editorWindow.add(editorView);
 
@@ -81,17 +88,17 @@ function createEditorWindow (user) {
 										Ti.API.info("Accept edited photo");
 										sharePhoto(user, editorView.getImage());
 										var tab = parentWin.containingTab;
-										tab.close(parentWin);
-									}); 	
-	  
+										tab.close(parentWin);}); 	
+	*/  
 	return editorWindow;
 }
 
 
 
 function showEditorWindow (user, image) {
+	"use strict";
 	
-	if (editorView == null) return;  // null or undefined
+	if (editorView === null) { return; }  // null or undefined
 	editorView.image = image;
 	//editorView.show();
 }

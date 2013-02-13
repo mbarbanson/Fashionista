@@ -8,8 +8,7 @@
 		acs = require('lib/acs'),
 		loginListener = null,
 		logoutListener = null;
-		
-	
+
 	function linktoFBAccount(callback, token) {
 		if (!token) {
 			token = Ti.Facebook.accessToken;
@@ -35,6 +34,50 @@
 		});
 	}
 
+
+	
+	function logout() {
+		if (Ti.Facebook.getLoggedIn()) {
+			Ti.Facebook.logout();
+		}
+		else {
+			Ti.API.info("not logged into facebook");
+			Ti.Facebook.logout();
+		}
+	}
+	
+		
+	function initFBIntegration(actionCB) {
+		Ti.Facebook.appid = '355242507898610';
+		Ti.Facebook.permissions = ['publish_stream', 'user_photos', 'friends_photos', 'xmpp_login']; // Permissions your app needs
+
+		if (loginListener) {
+			Ti.Facebook.removeEventListener('login', loginListener);
+		}
+		loginListener = function(e) {
+		    if (e.success) {
+		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.loggedIn + ". Now link the facebook account.");
+		        linktoFBAccount(actionCB);
+		    } else if (e.error) {
+		        Ti.API.info("Facebook login listener. Error result from authorize " + e.error);
+		        logout();
+		        Ti.API.info("Please try facebook authorize again");
+		    } else if (e.cancelled) {
+		        Ti.API.info("Facebook login canceled");
+		    }
+		};
+		Ti.Facebook.addEventListener('login', loginListener);
+		if (logoutListener) {
+			Ti.Facebook.removeEventListener('logout', logoutListener);
+		}		
+		logoutListener = function(e) {
+		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.loggedIn);
+		};
+		Ti.Facebook.addEventListener('logout', logoutListener);
+	}
+	
+
+	
 	function unlinkFBAccount(callback) {
 		Cloud.SocialIntegrations.externalAccountUnlink({
 		    type: 'facebook',
@@ -77,22 +120,13 @@
 			actionCB();	
 		}
 	}
-	
-	function logout() {
-		if (Ti.Facebook.getLoggedIn()) {
-			Ti.Facebook.logout();
-		}
-		else {
-			Ti.API.info("not logged into facebook");
-			Ti.Facebook.logout();
-		}
-	}
+
 	
 	
 	function postToWall(photoUrl, message) {
 		var name, 
 			data;
-		name = "Fashionista for iPhone";
+		name = L("Fashionista for iPhone");
 		data = {
 			    link : "http://signup.3pmrevolution.com",
 			    name : name,
@@ -132,35 +166,6 @@
 	}
 
 
-	function initFBIntegration(actionCB) {
-		Ti.Facebook.appid = '355242507898610';
-		Ti.Facebook.permissions = ['publish_stream', 'user_photos', 'friends_photos', 'xmpp_login']; // Permissions your app needs
-
-		if (loginListener) {
-			Ti.Facebook.removeEventListener('login', loginListener);
-		}
-		loginListener = function(e) {
-		    if (e.success) {
-		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.loggedIn + ". Now link the facebook account.");
-		        linktoFBAccount(actionCB);
-		    } else if (e.error) {
-		        Ti.API.info("Facebook login listener. Error result from authorize " + e.error);
-		        logout();
-		        Ti.API.info("Please try facebook authorize again");
-		    } else if (e.cancelled) {
-		        Ti.API.info("Facebook login canceled");
-		    }
-		};
-		Ti.Facebook.addEventListener('login', loginListener);
-		if (logoutListener) {
-			Ti.Facebook.removeEventListener('logout', logoutListener);
-		}		
-		logoutListener = function(e) {
-		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.loggedIn);
-		};
-		Ti.Facebook.addEventListener('logout', logoutListener);
-	}
-	
 
 	
 	exports.initFBIntegration = initFBIntegration;
@@ -170,4 +175,4 @@
 	exports.postToWall = postToWall;
 	exports.getAllFBFriends = getAllFBFriends;
 
-}) ();
+} ());

@@ -2,7 +2,7 @@
  * Library to wrap app-specific functionality around the ACS APIs
  * Copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  * @author: Monique Barbanson
-*/
+ */
 
 (function () {
 	'use strict';
@@ -23,6 +23,10 @@
 	
 	function currentUser () {
 		return privCurrentUser;
+	}
+	
+	function currentUserId () {
+		return privCurrentUser.id;
 	}
 	
 	function setCurrentUser (cu) {
@@ -167,7 +171,7 @@
 	            setCurrentUser(user);
 				setIsLoggedIn(true);
 				Notifications.initNotifications();					
-				if (callback) callback();
+				if (callback) { callback(); }
 	        } else {
 	            alert('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)) + " Please exit and start up again");
@@ -339,7 +343,7 @@
 	}
 	
 	function unsubscribeNotifications (channelName, callback) {
-		if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) return;
+		if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) { return; }
 		
 		Cloud.PushNotifications.unsubscribe({
 		    //channel: channelName,
@@ -352,7 +356,7 @@
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 		    // always execute callback, whether or not we successfully unregistered
-		    if (callback) callback();
+		    if (callback) { callback(); }
 		});		
 	}
 	
@@ -539,14 +543,16 @@
 	// Posts
 	function addPost (pTitle, pBody, pPhoto, callback) {
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + callback);
+		var sync_sizes = 'iphone';
 		Cloud.Posts.create({
 		    content: pBody,
 		    title: pTitle,
 		    photo: pPhoto,
 		    // since appcelerator limits photos to being square, use square aspect ratio for now
-		    'photo_sizes[preview]':'100x100#',
-			'photo_sizes[android]':'480x480#',
-			'photo_sizes[iphone]':'640x640#'
+		    'photo_sizes[preview]':'48x48#',
+			'photo_sizes[android]':'478x478#',
+			'photo_sizes[iphone]':'638x638#',
+			'photo_sync_sizes[]': 'iphone'
 //			'photo_sizes[iphone5]':'1136x640'
 // not using iPad to take photos, just to consume
 //			'photo_sizes[ipad]': '1024x768'
@@ -558,7 +564,7 @@
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
 		            'updated_at: ' + post.updated_at);
-		        if (callback) {callback(post);};
+		        if (callback) {callback(post);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
@@ -568,12 +574,13 @@
 	
 	
 	function showPost(savedPostId, callback) {
+		Ti.API.info("get updated values for post " + savedPostId);
 		Cloud.Posts.show({
 		    post_id: savedPostId
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
-		        Ti.API.info('Success:\\n' +
+		        Ti.API.info('showPost success:\\n' +
 		            'id: ' + post.id + '\\n' +
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
@@ -621,7 +628,7 @@
 		Cloud.Posts.query({
 		    page: 1,
 		    per_page: 20,
-		    order: '-updated_at',
+		    order: '-created_at',
 		    response_json_depth: 2,
 		    where: {
 		        "user_id": { '$in': usersList.map(getID)  }
@@ -664,6 +671,7 @@
 	exports.getUserCollectionIdPhotos = getUserCollectionIdPhotos;
 	exports.getUserPhotoCollection = getUserPhotoCollection;
 	exports.currentUser = currentUser;
+	exports.currentUserId = currentUserId;
 	exports.setCurrentUser = setCurrentUser;
 	exports.getUserPhotos = getUserPhotos;
 	exports.setUserPhotos = setUserPhotos;

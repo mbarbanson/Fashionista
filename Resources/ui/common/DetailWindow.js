@@ -1,6 +1,9 @@
-// copyright 2012 by Monique Barbanson. All rights reserved.
-// @author MONIQUE BARBANSON
-// Detail window for photos
+/*
+ * copyright 2012 by Monique Barbanson. All rights reserved.
+ * @author MONIQUE BARBANSON
+ * Detail window for photos
+ * 
+ */
 
 (function () {
 	'use strict';
@@ -14,7 +17,7 @@
 	function showPreview (thumbView) {
 		var imgView = null,
 			detailWindow = Ti.UI.createWindow({
-									title: title + "Fashionista Favorites",
+									title: "Fashionista Favorite",
 							        backgroundColor: 'black',
 							        barColor: '#5D3879',
 							        tabBarHidden: true
@@ -50,14 +53,14 @@
 	function likePost(row) {
 		var post = row.post,
 			createLikeCallback = function (like) {
+				var likesCount = row.likesCount;
 				social.newLikeNotification(post);
-				var likesCount = row.likesCount;	
-				likesCount.fireEvent('update_likesCount');
-			};
-		
+				row.addEventListener('update_likesCount', row.updateLikesCount);	
+				row.fireEvent('update_likesCount');
+			};	
 		if (post) {
-			Ti.API.info("Like a post " + post.content);
-			Likes.createLike(post, createLikeCallback);
+			Ti.API.info("Liked post " + post.content);
+			Likes.createLike(post.id, createLikeCallback);
 		}
 		else {
 			Ti.API.info("likePost: post is null " + post);			
@@ -68,10 +71,9 @@
 	function updateLikesCount (row, post) {
 		Ti.API.info('update like count');	
 		var likesCount = row.likesCount,
-			count =  post.likes_count; //commentsCount.text.split(" ", 1);
+			count =  post.ratings_count; 
 		row.post = post;
-		// Update likes count
-		likesCount.text = count + ' likes'; //parseInt(count[0], 10) + 1 + ' comments';			
+		likesCount.text = count + ' likes';		
 	}
 
 	
@@ -82,12 +84,12 @@
 	
 	
 	function updateCommentsCount (row, post) {
-		Ti.API.info('Need to updateCommentsCount');	
+		Ti.API.info('update CommentsCount');	
 		var commentsCount = row.commentsCount,
-			count =  post.reviews_count; //commentsCount.text.split(" ", 1);
+			count =  post.reviews_count - post.ratings_count;
 		row.post = post;
 		// Update comment count
-		commentsCount.text = count + ' comments'; //parseInt(count[0], 10) + 1 + ' comments';
+		commentsCount.text = count + ' comments';
 			
 	}
 
@@ -95,20 +97,21 @@
 
 	function createComment (tableView, row, commentText) {
 		var post = row.post,
-			createReviewCallback = function (review) {
+			createCommentCallback = function (comment) {
 				social.newCommentNotification(post, commentText);
 				var commentsCount = row.commentsCount;
 				if (tableView.displayComments) {
 					//FIXME also check that tableView is a child of win
-					CommentsView.addNewComment(tableView, review);									
-				}	
-				commentsCount.fireEvent('update_commentsCount');
+					CommentsView.addNewComment(tableView, comment);									
+				}
+				row.addEventListener('update_commentsCount', row.updateCommentsCount);
+				row.fireEvent('update_commentsCount');
 			};
-		Comments.createReview(post.id, commentText, createReviewCallback);
+		Comments.createComment(post.id, commentText, createCommentCallback);
 	}
 	
 
-	function addComment (tableView, row, postH) {
+	function inputComment (tableView, row, postH) {
 		var post = row.post,
 			contentTextInput,
 			sendBtn,
@@ -165,8 +168,8 @@
 		    
 		    sendBtn.addEventListener('click', 
 									function (e) {
-										var reviewText = contentTextInput.value || 'How does this look?';
-										createComment(tableView, row, reviewText);
+										var commentText = contentTextInput.value || 'How does this look?';
+										createComment(tableView, row, commentText);
 										// remove comment input UI
 										row.remove(contentTextInput);
 										row.remove(sendBtn);
@@ -174,7 +177,7 @@
 									});    
 		}
 		else {
-			Ti.API.info("addComment: post is null " + post);			
+			Ti.API.info("inputComment: post is null " + post);			
 		}
 	}
 
@@ -192,24 +195,6 @@
 		return row;
 	}
 	
-	//FIXME when do we pass in a photoBlob here?
-	function setRowEventHandlers (row, clickHandler, updateCommentsCountHandler, updateLikesCountJandler, photoBlob) {
-		row.action = function (e) {if (clickHandler) {clickHandler(row, photoBlob);}};
-		row.updateCommentsCount = function(e) {
-										Ti.API.info('Need to updateCommentsCount');	
-										if (updateCommentsCountHandler) {
-											var post = row.post;
-											// update post then the commentsCount in row from the new post values
-											acs.showPost(post.id, function (updatedPost) {updateCommentsCountHandler(row, updatedPost);});
-									}};	
-		row.updateLikesCount = function(e) {
-										Ti.API.info('Need to updateLikesCount');	
-										if (updateLikesCountHandler) {
-											var post = row.post;
-											// update post then the commentsCount in row from the new post values
-											acs.showPost(post.id, function (updatedPost) {updateLikesCountHandler(row, updatedPost);});
-									}};												
-	}
 	
 
 	function populateRow (tableView, row, photoBlob) {
@@ -235,15 +220,20 @@
 			
 			// if photoBlob is null, this was called to display a photo that's already uploaded
 			if (!photoBlob) {
-				if (post.photo.urls.iphone) {
-					img = post.photo.urls.iphone;
-					imgW = Ti.App.photoSizes[Ti.Platform.osname][0];
-					imgH = Ti.App.photoSizes[Ti.Platform.osname][1];
+				if (post.photo.urls) {
+					if (post.photo.urls.iphone) {
+						img = post.photo.urls.iphone;
+						imgW = Ti.App.photoSizes[Ti.Platform.osname][0];
+						imgH = Ti.App.photoSizes[Ti.Platform.osname][1];
+					}
+					else {
+						img = post.photo.urls.medium_320;
+						imgW = 320;
+						imgH = 480;
+					}					
 				}
 				else {
-					img = post.photo.urls.medium_320;
-					imgW = 320;
-					imgH = 480;
+					alert("no photo in post!");
 				}
 			}
 			else {
@@ -316,7 +306,7 @@
 			row.add(commentBtn);
 			commentBtn.addEventListener('click', 
 										function(e) {
-												addComment(tableView, row, postH);
+												inputComment(tableView, row, postH);
 										 }
 									 );
 			likeBtn = Ti.UI.createButton({
@@ -355,14 +345,13 @@
 			likesCount = Ti.UI.createLabel({
 								color:'#222',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (post.likes_count || 0)  + ' likes',
+								text: (post.ratings_count || 0)  + ' likes',
 								left: 30, top: postH + 100,
 								width: 200,
 								height: 15
 								});
 			row.add(likesCount);
 			row.likesCount = likesCount;
-			likesCount.addEventListener('update_likesCount', row.updateLikesCount);
 						
 			// number of comments
 			commentIcon = Ti.UI.createImageView({
@@ -375,7 +364,7 @@
 			commentsCount = Ti.UI.createLabel({
 								color:'#222',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (post.reviews_count || 0) + ' comments',
+								text: (post.reviews_count - post.ratings_count || 0) + ' comments',
 								left: 30, top: postH + 120,
 								width: 290,
 								height: 15
@@ -383,10 +372,76 @@
 			row.add(commentsCount);	
 			row.commentsCount = commentsCount;
 			commentsCount.addEventListener('click', row.action);
-			commentsCount.addEventListener('update_commentsCount', row.updateCommentsCount);
 	
 			return row;
 	}
+	
+	
+	//FIXME when do we have a photoBlob to pass in?
+	function displayPostDetails (post, photoBlob) {
+		Ti.API.info('show post details');
+		var detailWindow = createDetailWindow(),
+			FeedWindow = require('ui/common/FeedWindow'),
+			feedWindow = FeedWindow.currentFeedWindow(),
+			tab = feedWindow.containingTab;
+		showPostDetails(detailWindow, post, photoBlob);
+		tab.open(detailWindow);	
+	}
+	
+
+	function rowClickHandler (row, photo) {
+		Ti.API.info("Executing click handler callback for row " + row);
+		displayPostDetails(row.post, photo);
+	}
+
+
+	//FIXME when do we pass in a photoBlob here?
+	function setRowEventHandlers (row, photoBlob) {
+		var clickHandler = rowClickHandler, 
+			updateCommentsCountHandler = updateCommentsCount, 
+			updateLikesCountHandler = updateLikesCount;
+		row.action = function (e) {if (clickHandler) {clickHandler(row, photoBlob);}};
+		row.updateCommentsCount = function(e) {
+										Ti.API.info('updateCommentsCount');	
+										if (updateCommentsCountHandler) {
+											var post = row.post;
+											// update post then the commentsCount in row from the new post values
+											acs.showPost(post.id, function (updatedPost) {
+																		updateCommentsCountHandler(row, updatedPost);
+																		row.removeEventListener(row.updateCommentsCount);
+																	});
+									}};
+
+		row.updateLikesCount = function(e) {
+										Ti.API.info('updateLikesCount');	
+										if (updateLikesCountHandler) {
+											var post = row.post;
+											// update post then the likesCount in row from the new post values
+											acs.showPost(post.id, function (updatedPost) {
+																		updateLikesCountHandler(row, updatedPost);
+																		row.removeEventListener(row.updateLikesCount);
+																	});
+									}};																				
+	}
+
+
+	
+	// display post retrieved from cloud
+	function displayPostSummary (tableView, post, insertAtTop) {
+		if (tableView) {
+			var row = createRow(post);
+			setRowEventHandlers(row);
+			Ti.API.info('display post summary: adding a row to the feedWindow ');
+			populateRow(tableView, row);
+			if (insertAtTop)	   {
+				tableView.insertRowBefore(0, row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});
+			}
+			else {
+				tableView.appendRow(row);				
+			}
+		}
+	}
+	
 
 
 	function showPostAndComments(tableView, post, photoBlob, comments) {
@@ -402,6 +457,7 @@
 	}
 	
 	
+
 	function showPostDetails (win, post, photoBlob) {
 		var tableView = Ti.UI.createTableView({
 								objname: 'PostDetails',
@@ -421,12 +477,16 @@
 	}
 
 
+	
+
 	exports.showPreview = showPreview;	
 	exports.showPostDetails = showPostDetails;
 	exports.createDetailWindow = createDetailWindow;
 	exports.createRow = createRow;
 	exports.populateRow = populateRow;
-	exports.setRowEventHandlers = setRowEventHandlers;
-	exports.updateCommentsCount = updateCommentsCount;
-	exports.updateLikesCount = updateLikesCount;	
+	//exports.setRowEventHandlers = setRowEventHandlers;
+	//exports.updateCommentsCount = updateCommentsCount;
+	//exports.updateLikesCount = updateLikesCount;
+	exports.displayPostDetails = displayPostDetails;	
+	exports.displayPostSummary = displayPostSummary;
 } ());

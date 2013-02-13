@@ -1,4 +1,4 @@
-/**
+/*
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -10,10 +10,9 @@
 	var Cloud = require('ti.cloud');
 			
 	// Reviews aka Comments
-	function createReview(savedPostId, contentText, callback) {
+	function createComment(savedPostId, contentText, callback) {
 		Cloud.Reviews.create({
 		    post_id: savedPostId,
-		    rating: 1,
 		    content: contentText,
 		    allow_duplicate: 1
 		}, function (e) {
@@ -36,8 +35,9 @@
 	function getPostComments (postId, callback) {
 		Cloud.Reviews.query({
 			post_id: postId,
-		    order: 'updated_at',
-		    response_json_depth: 3,			
+			where: {"$and": [{"content": {"$exists" : true}}, {"content": {"$ne" : ""}}]},   //, {"rating": {"$ne" : "1"}}
+		    order: 'created_at',
+		    response_json_depth: 2,			
 		    page: 1,
 		    per_page: 20
 		}, function (e) {
@@ -63,6 +63,6 @@
 		});		
 	}
 	
-	exports.createReview = createReview;
+	exports.createComment = createComment;
 	exports.getPostComments = getPostComments;
 } ());

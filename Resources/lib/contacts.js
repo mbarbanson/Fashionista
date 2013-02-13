@@ -1,8 +1,13 @@
-function contacts(_args) {
+
+
+function contacts(args) {
+	"use strict";
+	
 	var self = Ti.UI.createWindow();
 	// create table view data object
+	/*
 	Ti.include("/etc/version.js");
-	
+
 	var needsAuth = false;
 	
 	var supportsAuthAPI = (Ti.version >= '2.1.3');
@@ -24,7 +29,7 @@ function contacts(_args) {
 	
 	self.add(infoLabel);
 	self.add(b1);
-	
+
 	var requestPermission = function(e) {
 		var privs = Ti.Contacts.contactsAuthorization;
 		if (privs===Ti.Contacts.AUTHORIZATION_AUTHORIZED){
@@ -119,8 +124,8 @@ function contacts(_args) {
 		performAddressBookFunction();
 	}
 
-	
+*/	
 	return self;
-};
+}
 
 module.exports = contacts;

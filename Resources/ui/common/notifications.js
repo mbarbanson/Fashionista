@@ -10,7 +10,8 @@
 	// call this before initNotification so that the event handlers are defined before the events are fired
 	function initNotificationHandlers () {
 		var acs = require('lib/acs'),
-			FeedWindow = require('ui/common/FeedWindow');
+			FeedWindow = require('ui/common/FeedWindow'),
+			DetailWindow = require('ui/common/DetailWindow');
 		Ti.API.info("calling initSubscriptions to setup event handlers");
 		
 						
@@ -18,15 +19,20 @@
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
 			var feedWin = FeedWindow.currentFeedWindow(),
-				tab, postId = e.post_id, message = e.message;
-			Ti.API.info("new post. " +  message + " Updating feed window " + feedWin);
+				tab, tableView, postId = e.post_id, message = e.message;
 			if (feedWin) {
-				FeedWindow.showFriendsFeed(feedWin);
+				Ti.API.info("new post. " +  message + " Updating feed window " + feedWin);				
 				tab = feedWin.containingTab;
+				tableView = feedWin.table;
+				
 				if (postId) {
-					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
-				}				
-			}			
+					acs.showPost(postId, function (p) {
+											tableView.deleteRow(0, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT}); 
+											DetailWindow.displayPostSummary(tableView, p, true); 
+											});				
+				}
+
+			}		
 		});
 	
 		// handle new comment notifications. Define event listener before the event is ever fired
@@ -39,7 +45,8 @@
 				tab = feedWin.containingTab;
 				FeedWindow.showFriendsFeed(feedWin);
 				if (postId) {
-					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
+					Ti.API.info("display post in details window on top of tab " + tab);
+					acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
 				}								
 			}			
 		});
@@ -55,7 +62,7 @@
 				FeedWindow.showFriendsFeed(feedWin);	
 				tab = feedWin.containingTab;
 				if (postId) {
-					acs.showPost(postId, function (p) { FeedWindow.displayPostDetails(tab, p);});
+					acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
 				}											
 			}			
 		});
@@ -115,11 +122,6 @@
 					currentUser = acs.currentUser();
 				Ti.API.info(notificationType + " \n time " + Date.now());
 				
-				if (acs.currentUser() && acs.currentUser().id === senderId) {
-					Ti.API.info("PUSH Notification was sent by current user. No further action");
-					return;
-				}
-				
 				switch (notificationType) {
 					case 'newPost':
 						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
@@ -144,10 +146,16 @@
 					Ti.API.info('Unknown Notification Type: ' +  notificationType + ' from ' + senderId + " to " + currentUser);
 				}
 				// FIXME: bring up a temporary overlay instead of an alert which looks too much like the os alert for push notifications
-		        Ti.UI.createAlertDialog({
-		            title : "Fashionista",
-		            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
-		        }).show();				
+
+				if (acs.currentUser() && acs.currentUser().id === senderId) {
+					Ti.API.info("PUSH Notification was sent by current user. No further action");
+				}	
+				else {			
+			        Ti.UI.createAlertDialog({
+			            title : "Fashionista",
+			            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
+			        }).show();
+		        }				
 		    }
 		});
 	}

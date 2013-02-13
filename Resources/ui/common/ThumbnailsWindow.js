@@ -299,4 +299,4 @@
 	exports.refreshThumbnails = refreshThumbnails;
 	exports.thumbnailsWindow = thumbnailsWindow;
 
-}) ();
+} ());

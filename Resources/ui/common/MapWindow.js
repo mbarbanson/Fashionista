@@ -1,5 +1,9 @@
+/*
+ * 
+ */
+
 var MapWindow = function(/*Object*/ _bounty) {
-	
+	'use strict';
 	var win = Ti.UI.createWindow({
 		title:L('busted_at'),
 		barColor: '#6d0a0c',

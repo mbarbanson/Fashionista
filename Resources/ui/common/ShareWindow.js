@@ -2,7 +2,7 @@
  * @author MONIQUE BARBANSON
  */
 
-function createShareWindow(photoBlob, post, shareAction) {'use strict';
+function createShareWindow(postModel, shareAction) {'use strict';
 	var ApplicationTabGroup, 
 		ListWindow, 
 		social, 
@@ -21,7 +21,8 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 		shareToFBFriends, 
 		shareToAddressBook, 
 		inviteFBFriends, inviteContacts, selectFBFriend, addSelectedFBFriends, 
-		fashionistaFriends = [];
+		fashionistaFriends = [],
+		photoBlob = postModel.photo;
 
 	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 	ListWindow = require('ui/common/ListWindow');
@@ -29,7 +30,9 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 	acs = require('lib/acs');
 	FeedWindow = require('ui/common/FeedWindow');
 
-	thumbnail = photoBlob.imageAsThumbnail(100);
+	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
+	thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_75, top: 10, left: '5%'});
+	
 	// right nav button is Share
 	shareBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.DONE,
@@ -53,24 +56,27 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 	shareBtn.addEventListener('click', function(e) {
 		Ti.API.info("calling sharePhoto. photoBlob width " + photoBlob.width + " height " + photoBlob.height);
 		var captionValue = caption.getValue(),
+			senderId = acs.currentUserId(),
+			message = "Your new post has been published",
 			feedWin = FeedWindow.currentFeedWindow(),
 			newPostNotify;
 						
 		newPostNotify = function (post) {
 				// newPostNotification
 				Ti.API.info("Notifying friends of new post");
-				social.newPostNotification(post);
+				//social.newPostNotification(post);
 				//update feed window with local info after caption has been updated in the cloud
+				
 				Ti.API.info("update local feed window with new post");
-				if (feedWin) {
-					FeedWindow.showFriendsFeed(feedWin);				
-				}						
+				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
+				Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": post.id, "message": message});						
 		};
 			
-		// go back to friend page
+		// go back to feed page
 		shareTabGroup.close();
-		// upload post update
-		FeedWindow.updatePost(post.id, "", captionValue, newPostNotify);
+		// add post 
+		postModel.caption = captionValue;
+		FeedWindow.addPost(postModel, newPostNotify);
 								
 	});
 	
@@ -92,12 +98,13 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 
 	// create share window elements
 	caption = Ti.UI.createTextArea({
-        hintText: 'Add a caption, e.g.: How does this look?',
+        value: 'Add a caption...',
+        color: '#aaa',
 		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 		top : 10,
-		left : '5%',
-		width : '90%',
-		height : 100,
+		left : '30%',
+		width : '65%',
+		height : 75,
 		font : {
 			fontWeight : 'normal',
 			fontSize : '17'
@@ -110,7 +117,9 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 		//borderColor: 'black',
 		//borderWidth: 1
 	});
+	shareWindow.add(thumbnail);
 	shareWindow.add(caption);
+	
 
 	caption.privHintText = caption.value;
 
@@ -260,3 +269,4 @@ function createShareWindow(photoBlob, post, shareAction) {'use strict';
 }
 
 exports.createShareWindow = createShareWindow;
+
