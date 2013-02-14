@@ -94,11 +94,11 @@ if (Ti.version < 2.0 ) {
 	
 	Ti.App.photoSizes ={"thumbnail": [48,48], "iphone": [638,638], "android": [478,478]};
 	
-	rootWindow = AppWindow.createApplicationWindow(L('Fashionista'));
+	rootWindow = AppWindow.createApplicationWindow(L('Fashionist'));
 	
 	// for now exit if device is offline
 	if (!Ti.Network.online) {
-		alert("Sorry - Fashionista requires an internet connection. Your device is offline. Please make sure you are connected to the internet, then exit and restart.");
+		alert("Sorry - Fashionist requires an internet connection. Your device is offline. Please make sure you are connected to the internet, then exit and restart.");
 		rootWindow.close();
 	}
 	else {
@@ -125,7 +125,7 @@ if (Ti.version < 2.0 ) {
 			Ti.API.info("Exception caught" + e.Message);
 		}
 	
-		Ti.API.info("Fashionista is running...");
+		Ti.API.info("Fashionist is running...");
 
 		
 	}

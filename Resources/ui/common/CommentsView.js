@@ -11,7 +11,7 @@
 	function createCommentRow(comment) {
 		var	commenter = comment.user.username,
 			row = Ti.UI.createTableViewRow({
-					    className:'fashionistaComment', // used to improve table performance
+					    className:'fashionistComment', // used to improve table performance
 						color: 'black',
 						backgroundColor: 'white',
 						selectedBackgroundColor:'white',

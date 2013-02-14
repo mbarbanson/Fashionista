@@ -113,7 +113,7 @@
 		    },
 		    // called when app receives a push notification
 		    callback : function(e) {
-				Ti.API.info('PUSH NOTIFICATION: Fashionista received a push notification ');
+				Ti.API.info('PUSH NOTIFICATION: Fashionist received a push notification ');
 				var customPayload = e.data.custom,
 					notificationType = customPayload.type,
 					senderId = customPayload.user_id,
@@ -152,7 +152,7 @@
 				}	
 				else {			
 			        Ti.UI.createAlertDialog({
-			            title : "Fashionista",
+			            title : "Fashionist",
 			            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
 			        }).show();
 		        }				

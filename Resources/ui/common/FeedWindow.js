@@ -152,7 +152,7 @@
 		}
 		containingTab = feedWin.containingTab;
 		if (containingTab && containingTab.getActive()) {
-			Ti.API.info('PUSH NOTIFICATION? Fashionista resumed ' + "\n time " + Date.now());
+			Ti.API.info('PUSH NOTIFICATION? Fashionist resumed ' + "\n time " + Date.now());
 			//clearFeed(feedWin);
 			showFriendsFeed(feedWin);
 		}
@@ -160,7 +160,7 @@
 	
 	function createFeedWindow() {
 		var feedWin = Ti.UI.createWindow({
-				title: "Fashionista",
+				title: "Fashionist",
 		        backgroundColor: 'white',
 		        barColor: '#5D3879'				
 			}),

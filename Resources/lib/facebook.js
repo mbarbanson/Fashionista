@@ -101,12 +101,12 @@
 	}
 	
 	// make sure user is authorized for facebook before executing action
-	// if the current user has a linked fb account already, logging into Fashionista will have already updated Ti.Facebook.accessToken
+	// if the current user has a linked fb account already, logging into Fashionist will have already updated Ti.Facebook.accessToken
 	function authorize(actionCB) {
 		var currentUser = acs.currentUser();
 
 		if (!currentUser) {
-			alert("No currentUser while trying to authorize with Facebook. Please send your system console log to the Fashionista team!");
+			alert("No currentUser while trying to authorize with Facebook. Please send your system console log to the Fashionist team!");
 			return;
 		}
 		if (!Ti.Facebook.accessToken) {
@@ -126,7 +126,7 @@
 	function postToWall(photoUrl, message) {
 		var name, 
 			data;
-		name = L("Fashionista for iPhone");
+		name = L("Fashionist for iPhone");
 		data = {
 			    link : "http://signup.3pmrevolution.com",
 			    name : name,

@@ -100,7 +100,7 @@
 					}
 					a.show();
 				},
-				saveToPhotoGallery:true,
+				saveToPhotoGallery:false,
 				allowEditing:true,
 				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO],
 				overlay: cameraOverlay

@@ -87,7 +87,7 @@ function createGuestWindow() {
 		color: 'white',
 		backgroundColor: 'transparent',
 		font: { fontSize: 20 },
-		text: 'Welcome! Use Fashionista to take a photo, choose your fashion buddies and ask for immediate fashion advice.',
+		text: 'Welcome! Use Fashionist to take a photo, choose your fashion buddies and ask for immediate fashion advice.',
 		textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
 		wordWrap : true,
 		horizontalWrap : true,		

@@ -20,7 +20,7 @@
 		
 		// post to wall
 		FB.postPhoto(photoBlob, message);
-		// call this to login with facebook instead of having fashionista specific credentials
+		// call this to login with facebook instead of having fashionist specific credentials
 		//FB.linktoFBAccount();
 	}
 	
@@ -50,7 +50,7 @@
 		
 		// get full list of FB friends
 		FB.getAllFBFriends();
-		// call this to login with facebook instead of having fashionista specific credentials
+		// call this to login with facebook instead of having fashionist specific credentials
 		//FB.linktoFBAccount();
 	}
 	
@@ -63,7 +63,7 @@
 					Ti.API.info('Success:\\n' + 'Count: ' + e.users.length);
 		           }
 		        else {
-					Ti.API.info("Current user doesn;t have any friends using on Fashionista");
+					Ti.API.info("Current user doesn;t have any friends using on Fashionist");
 		        }
 		        for (i = 0; i < e.users.length; i = i + 1) {
 		            var user = e.users[i];

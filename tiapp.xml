@@ -7,20 +7,20 @@
     <property name="acs-oauth-key-development" type="string">3N74de2Kv8fvjQ4bQX23U7PznKFhTqrh</property>
     <property name="acs-api-key-development" type="string">VtBOemkWS2i8oF8ky5Zw72RlLnRaRRov</property>
     <deployment-targets>
-        <target device="mobileweb">true</target>
+        <target device="mobileweb">false</target>
         <target device="iphone">true</target>
         <target device="ipad">true</target>
         <target device="android">false</target>
         <target device="blackberry">false</target>
     </deployment-targets>
     <sdk-version>2.1.4.GA</sdk-version>
-    <id>com.5pmrevolution.fashionista</id>
-    <name>Fashionista</name>
+    <id>com.3pmrevolution.fashionist</id>
+    <name>Fashionist</name>
     <version>1.0</version>
     <publisher>monique</publisher>
-    <url>http://5pmrevolution.com</url>
+    <url>http://3pmrevolution.com</url>
     <description>social shopping</description>
-    <copyright>2012 by 5pmrevolution</copyright>
+    <copyright>2013 by 3pmrevolution</copyright>
     <icon>appicon.png</icon>
     <persistent-wifi>false</persistent-wifi>
     <prerendered-icon>false</prerendered-icon>

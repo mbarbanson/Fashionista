@@ -17,7 +17,7 @@
 	function showPreview (thumbView) {
 		var imgView = null,
 			detailWindow = Ti.UI.createWindow({
-									title: "Fashionista Favorite",
+									title: "Fashionist Favorite",
 							        backgroundColor: 'black',
 							        barColor: '#5D3879',
 							        tabBarHidden: true
@@ -184,7 +184,7 @@
 
 	function createRow (post) {
 		var row = Ti.UI.createTableViewRow({
-				    className:'fashionistaPost', // used to improve table performance
+				    className:'fashionistPost', // used to improve table performance
 					color: 'black',
 					backgroundColor: 'white',
 					selectedBackgroundColor:'white',

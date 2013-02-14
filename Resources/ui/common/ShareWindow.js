@@ -64,7 +64,7 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		newPostNotify = function (post) {
 				// newPostNotification
 				Ti.API.info("Notifying friends of new post");
-				//social.newPostNotification(post);
+				social.newPostNotification(post);
 				//update feed window with local info after caption has been updated in the cloud
 				
 				Ti.API.info("update local feed window with new post");
@@ -206,7 +206,7 @@ function createShareWindow(postModel, shareAction) {'use strict';
 								listWin.containingTab = tab;
 								tab.open(listWin);
 							} else {
-								alert('You are the first of your facebook to use Fashionista. Kudos! Invite your fashion brain trust to Fashionista now.');
+								alert('You are the first of your facebook to use Fashionist. Kudos! Invite your fashion buddies to Fashionist now.');
 							}
 						},
 			fashionBuddiesFilter = function (fbFriends) {acs.getFriendsList(function (fashionBuddies) {callback(fbFriends, fashionBuddies);});},

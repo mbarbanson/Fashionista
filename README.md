@@ -1,2 +1,2 @@
-Fashionista
+Fashionist
 ===========

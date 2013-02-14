@@ -101,7 +101,7 @@
 			Cloud.Users.logout(
 				function (e) {
 					    if (e.success) {
-							Ti.API.info("Logged out of Fashionista and unsubscribed from test channel");
+							Ti.API.info("Logged out of Fashionist and unsubscribed from test channel");
 					        privCurrentUser = null;
 					        loggedIn = false;
 					        // clear session id
