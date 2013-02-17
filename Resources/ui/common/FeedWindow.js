@@ -102,10 +102,10 @@
 		if (tableView) {
 			// FIXME is this refresh hack really needed?
 			//reset table property
-			fWin.table = null;
+			//fWin.table = null;
 			//force table layout update
-			fWin.remove(tableView);
-			tableView.setData([]);	
+			//fWin.remove(tableView);
+			//tableView.setData([]);	
 			tableView.displayComments = false;		
 			Ti.API.info("showFriendFeed. Refreshing Feed window");
 			showPost = function (post) { 
@@ -119,10 +119,8 @@
 			acs.getFriendsList(friendsListCallback, cleanupAction);
 			
 			// add tableView back
-			fWin.add(tableView);
-			// force update layout to show posts
-			fWin.updateLayout();
-			fWin.table = tableView;		
+			//fWin.add(tableView);
+			//fWin.table = tableView;		
 			tableView.parentWin = fWin;	
 		}
 		else {

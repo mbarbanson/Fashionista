@@ -86,7 +86,7 @@ if (Ti.version < 2.0 ) {
 	else {
 		AppWindow = require('ui/handheld/ApplicationWindow');
 		if (Ti.Platform.name === 'iPhone OS') { 
-			//Ti.UI.iPhone.hideStatusBar(); 
+			Ti.UI.iPhone.setStatusBarStyle(Titanium.UI.iPhone.StatusBar.GREY); 
 			Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
 		}
 	}

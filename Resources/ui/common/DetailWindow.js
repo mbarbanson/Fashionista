@@ -86,7 +86,7 @@
 	function updateCommentsCount (row, post) {
 		Ti.API.info('update CommentsCount');	
 		var commentsCount = row.commentsCount,
-			count =  post.reviews_count - post.ratings_count;
+			count =  (post.reviews_count || 0) - (post.ratings_count || 0);
 		row.post = post;
 		// Update comment count
 		commentsCount.text = count + ' comments';
@@ -141,13 +141,13 @@
 			closeBtn = Ti.UI.createButton({
 					image: '/icons/dark_x.png',
 					style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
-					left:245, top:postH + 140,
-					//borderWidth: 1,
-					//borderColor: 'black',
+					left:235, top:postH + 140,
+					borderWidth: 1,
+					borderColor: 'black',
 					backgroundColor: 'grey',
-					backgroundFocusedColor: 'grey',
-					width: 10,
-					height: 10
+					backgroundFocusedColor: 'blue',
+					width: 15,
+					height: 15
 					});
 			row.add(closeBtn);
 			closeBtn.addEventListener('click', function(e) { 
@@ -169,11 +169,15 @@
 		    sendBtn.addEventListener('click', 
 									function (e) {
 										var commentText = contentTextInput.value || 'How does this look?';
-										createComment(tableView, row, commentText);
 										// remove comment input UI
+										contentTextInput.blur();
+										contentTextInput.hide();
 										row.remove(contentTextInput);
+										sendBtn.hide();
 										row.remove(sendBtn);
-										row.remove(closeBtn);
+										closeBtn.hide();
+										row.remove(closeBtn);										
+										createComment(tableView, row, commentText);
 									});    
 		}
 		else {
@@ -364,7 +368,7 @@
 			commentsCount = Ti.UI.createLabel({
 								color:'#222',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (post.reviews_count - post.ratings_count || 0) + ' comments',
+								text: ((post.reviews_count|| 0) - (post.ratings_count || 0)) + ' comments',
 								left: 30, top: postH + 120,
 								width: 290,
 								height: 15
@@ -408,7 +412,7 @@
 											// update post then the commentsCount in row from the new post values
 											acs.showPost(post.id, function (updatedPost) {
 																		updateCommentsCountHandler(row, updatedPost);
-																		row.removeEventListener(row.updateCommentsCount);
+																		row.removeEventListener('update_commentsCount', row.updateCommentsCount);
 																	});
 									}};
 
@@ -419,7 +423,7 @@
 											// update post then the likesCount in row from the new post values
 											acs.showPost(post.id, function (updatedPost) {
 																		updateLikesCountHandler(row, updatedPost);
-																		row.removeEventListener(row.updateLikesCount);
+																		row.removeEventListener('update_likesCount', row.updateLikesCount);
 																	});
 									}};																				
 	}
@@ -484,9 +488,6 @@
 	exports.createDetailWindow = createDetailWindow;
 	exports.createRow = createRow;
 	exports.populateRow = populateRow;
-	//exports.setRowEventHandlers = setRowEventHandlers;
-	//exports.updateCommentsCount = updateCommentsCount;
-	//exports.updateLikesCount = updateLikesCount;
 	exports.displayPostDetails = displayPostDetails;	
 	exports.displayPostSummary = displayPostSummary;
 } ());

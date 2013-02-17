@@ -438,7 +438,8 @@
 				    "badge": 1,
 				    "sound": "default",
 				    "alert" : message
-				}
+				},
+			    response_json_depth: 2
 			}, function (e) {
 			    if (e.success) {
 			        Ti.API.info('Successfully notified friends remoteUUID ' + Ti.Network.remoteDeviceUUID);
@@ -474,7 +475,8 @@
 		Ti.API.info('acs.addFriends');
 		var userIdList = friends.join();
 		Cloud.Friends.add({
-		    user_ids: userIdList
+		    user_ids: userIdList,
+		    response_json_depth: 2
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Friend(s) added ' + friends);
@@ -491,7 +493,8 @@
 		Ti.API.info('acs.approveFriendRequests ' + friends.toString());
 		var userIdList = friends.join();
 		Cloud.Friends.approve({
-		    user_ids: userIdList
+		    user_ids: userIdList,
+		    response_json_depth: 2
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Friend(s) approved ' + friends);
@@ -521,7 +524,8 @@
 
 	function getFriendsList (successCallback, cleanupAction) {
 		Cloud.Friends.search({
-		    user_id: privCurrentUser.id
+		    user_id: privCurrentUser.id,
+		    response_json_depth: 2
 		}, function (e) {
 			var i,
 				user;
@@ -545,6 +549,7 @@
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + callback);
 		var sync_sizes = 'iphone';
 		Cloud.Posts.create({
+		    response_json_depth: 2,
 		    content: pBody,
 		    title: pTitle,
 		    photo: pPhoto,
@@ -576,7 +581,8 @@
 	function showPost(savedPostId, callback) {
 		Ti.API.info("get updated values for post " + savedPostId);
 		Cloud.Posts.show({
-		    post_id: savedPostId
+		    post_id: savedPostId,
+		    response_json_depth: 2
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];

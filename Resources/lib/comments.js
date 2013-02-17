@@ -18,14 +18,14 @@
 		}, function (e) {
 		    if (e.success) {
 		        var review = e.reviews[0];
-		        Ti.API.info('Success:\\n' +
+		        Ti.API.info('createComment success:\\n' +
 		            'id: ' + review.id + '\\n' +
 		            'rating: ' + review.rating + '\\n' +
 		            'content: ' + review.content + '\\n' +
 		            'updated_at: ' + review.updated_at);
 	            callback(review);
 		    } else {
-		        Ti.API.info('Error:\\n' +
+		        Ti.API.info('createComment error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 		});		
@@ -35,7 +35,8 @@
 	function getPostComments (postId, callback) {
 		Cloud.Reviews.query({
 			post_id: postId,
-			where: {"$and": [{"content": {"$exists" : true}}, {"content": {"$ne" : ""}}]},   //, {"rating": {"$ne" : "1"}}
+//			where: {"$and": [{"content": {"$ne" : undefined}}, {"content": {"$ne" : ""}}]},   //, {"rating": {"$ne" : "1"}}
+			where: {"rating": {"$ne" : "1"}},
 		    order: 'created_at',
 		    response_json_depth: 2,			
 		    page: 1,
@@ -57,7 +58,7 @@
 		        */
 		        callback(e.reviews);
 		    } else {
-		        Ti.API.info('Error:\\n' +
+		        Ti.API.info('Reviews query Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 		});		

@@ -69,7 +69,7 @@ function createShareWindow(postModel, shareAction) {'use strict';
 				
 				Ti.API.info("update local feed window with new post");
 				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-				Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": post.id, "message": message});						
+				Ti.App.fireEvent('newPost', {"user_id": senderId, "post_id": post.id, "message": message});						
 		};
 			
 		// go back to feed page
@@ -98,7 +98,7 @@ function createShareWindow(postModel, shareAction) {'use strict';
 
 	// create share window elements
 	caption = Ti.UI.createTextArea({
-        value: 'Add a caption...',
+        value: 'Add a caption...and tag your photo e.g.:#cute, #skinnyjeans',
         color: '#aaa',
 		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 		top : 10,

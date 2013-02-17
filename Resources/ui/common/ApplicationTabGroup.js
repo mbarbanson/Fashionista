@@ -15,7 +15,9 @@
 	//no need to add the tab group to the rootwindow	
 	function createApplicationTabGroup() {
 		var tabGroup =	Ti.UI.createTabGroup({
-				tabHeight: 30
+				tabHeight: 30,
+				color: '#5D3879',
+				backgroundColor: '#5D3879'
 			});	
 		return tabGroup;
 	}
@@ -42,9 +44,10 @@
 		});
 
 		tab1 = Ti.UI.createTab({
-			backgroundColor: '#5D3879',
 			icon: '/icons/light_home.png',
 			height: Ti.UI.FILL,
+			color: '#5D3879',
+			backgroundColor: '#5D3879',			
 			window: feedWindow   //thumbnailsWindow
 		});
 		tab1.tabGroup = tabGroup;
@@ -117,14 +120,17 @@
 			tabGroup.setActiveTab(tab5);
 		});
 		
+
 		cameraBtn = Ti.UI.createButton({
 			left: 128,
 			bottom: 0,
 			width: 64,
 			height: 55,
-			backgroundColor: 'transparent',  // '#5D3879',
+			backgroundColor: 'transparent',
+			//borderColor: '#8D3879',
 			//image: '/icons/light_camera.png',
-			borderRadius: 5,
+			//borderRadius: 5,
+			//borderWidth: 8,
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 		});
 		

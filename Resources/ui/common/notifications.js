@@ -14,22 +14,48 @@
 			DetailWindow = require('ui/common/DetailWindow');
 		Ti.API.info("calling initSubscriptions to setup event handlers");
 		
+		// handle new post notifications. Define event listener before the event is ever fired
+		Ti.API.info("Adding newPost handler");
+		Ti.App.addEventListener('newPost', function (e) {
+			var feedWin = FeedWindow.currentFeedWindow(),
+				tab, tableView, postId = e.post_id, message = e.message, senderId = e.user_id;
+			if (feedWin) {
+				Ti.API.info("new post: " +  message);				
+				tab = feedWin.containingTab;
+				tableView = feedWin.table;
+				
+				if (postId && acs.currentUser() && acs.currentUser().id === senderId) {
+						Ti.API.info("your post " + message + " has been posted");
+						acs.showPost(postId, function (p) {
+												tableView.deleteRow(0, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT}); 
+												DetailWindow.displayPostSummary(tableView, p, true); 
+												});							
+				}
+				else {
+					Ti.API.info("something went wrong while posting postId " + postId + " message " + message);
+				}
+			}		
+		});
 						
 		// handle new friend post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
 			var feedWin = FeedWindow.currentFeedWindow(),
-				tab, tableView, postId = e.post_id, message = e.message;
+				tab, tableView, postId = e.post_id, message = e.message, senderId = e.user_id;
 			if (feedWin) {
 				Ti.API.info("new post. " +  message + " Updating feed window " + feedWin);				
 				tab = feedWin.containingTab;
 				tableView = feedWin.table;
 				
 				if (postId) {
-					acs.showPost(postId, function (p) {
-											tableView.deleteRow(0, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT}); 
-											DetailWindow.displayPostSummary(tableView, p, true); 
-											});				
+					if (acs.currentUser() && acs.currentUser().id === senderId) {
+						Ti.API.info("your comment " + message + " has been posted");
+					}
+					else {
+						acs.showPost(postId, function (p) {
+												DetailWindow.displayPostSummary(tableView, p, true); 
+												});						
+					}
 				}
 
 			}		
@@ -39,14 +65,28 @@
 		// just received a notification that a comment was added
 		Ti.API.info("Adding newComment handler");
 		Ti.App.addEventListener('newComment', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(), tab, postId = e.post_id, message = e.message;
+			var feedWin = FeedWindow.currentFeedWindow(), 
+				postId = e.post_id, message = e.message, senderId = e.user_id,
+				tab;
 			Ti.API.info("new comment " + message + " Updating feed window " + feedWin + " postId " + postId );
 			if (feedWin) {
 				tab = feedWin.containingTab;
-				FeedWindow.showFriendsFeed(feedWin);
+
 				if (postId) {
-					Ti.API.info("display post in details window on top of tab " + tab);
-					acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
+					if (acs.currentUser() && acs.currentUser().id === senderId) {
+						Ti.API.info("your comment " + message + " has been posted");
+					}
+					else {
+						Ti.API.info("display post in details window on top of tab " + tab);
+						FeedWindow.showFriendsFeed(feedWin);
+						acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});						
+					}
+				}
+				else {
+			        Ti.UI.createAlertDialog({
+			            title : "Fashionist",
+			            message : "Ooops...something went wrong with this comment: " + JSON.stringify(message)  //if you want to access additional custom data in the payload
+			        }).show();					
 				}								
 			}			
 		});
@@ -56,16 +96,31 @@
 		// just received a notification that a like was added
 		Ti.API.info("Adding newLike handler");
 		Ti.App.addEventListener('newLike', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(), tab, postId = e.post_id, message = e.message;
+			var feedWin = FeedWindow.currentFeedWindow(), 
+				postId = e.post_id, message = e.message, senderId = e.user_id,
+				tab;
 			Ti.API.info("new like " + message + " Updating feed window " + feedWin);
 			if (feedWin) {
-				FeedWindow.showFriendsFeed(feedWin);	
+	
 				tab = feedWin.containingTab;
 				if (postId) {
-					acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
-				}											
+					if (acs.currentUser() && acs.currentUser().id === senderId) {
+						Ti.API.info("your like " + message + " has been posted");
+					}
+					else {
+						FeedWindow.showFriendsFeed(feedWin);
+						acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
+					}
+				}
+				else {
+			        Ti.UI.createAlertDialog({
+			            title : "Fashionist",
+			            message : "Ooops...something went wrong with your like: " + JSON.stringify(message)  //if you want to access additional custom data in the payload
+			        }).show();					
+				}																							
 			}			
 		});
+		
 		
 		Ti.API.info("Adding approveFriendRequest handler");
 		Ti.App.addEventListener('approveFriendRequest', function (e) {
@@ -80,7 +135,6 @@
 			else {
 				Ti.API.info("got a request to add self as a friend. do nothing currentUser is " + currentUser);
 			}
-			
 		});		
 	}
 	
@@ -109,7 +163,7 @@
 		    },
 		    // there was an error during push registration
 		    error : function(e) {
-		        Ti.API.warn("failed to register push notifications: " + e);
+		        alert("failed to register push notifications: " + e);
 		    },
 		    // called when app receives a push notification
 		    callback : function(e) {
