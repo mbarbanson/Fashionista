@@ -2,7 +2,8 @@
  * @author MONIQUE BARBANSON
  */
 
-function createShareWindow(postModel, shareAction) {'use strict';
+function createShareWindow(postModel, shareAction) {
+	'use strict';
 	var ApplicationTabGroup, 
 		ListWindow, 
 		social, 
@@ -14,7 +15,9 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		shareTabGroup,
 		thumbnail, 
 		tab, 
-		caption, 
+		caption,
+		captionHintText = 'Add a caption or tags',
+		defaultCaption = 'How does this look?', 
 		shareLabel, 
 		shareTable, 
 		tableData, 
@@ -22,16 +25,14 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		shareToAddressBook, 
 		inviteFBFriends, inviteContacts, selectFBFriend, addSelectedFBFriends, 
 		fashionistaFriends = [],
-		photoBlob = postModel.photo;
-
+		photoBlob = postModel.photo,
+		activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
+			
 	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 	ListWindow = require('ui/common/ListWindow');
 	social = require('lib/social');
 	acs = require('lib/acs');
 	FeedWindow = require('ui/common/FeedWindow');
-
-	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
-	thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_75, top: 10, left: '5%'});
 	
 	// right nav button is Share
 	shareBtn = Titanium.UI.createButton({
@@ -44,29 +45,28 @@ function createShareWindow(postModel, shareAction) {'use strict';
 	});
 
 	// share window
+	// hide tab Bar. We're just using a Tab Group to have a stack of windows without explicitly creating a navigation group which is an iOS only solution
 	shareWindow = Ti.UI.createWindow({
 		backgroundColor : '#ddd',
 		color : 'black',
 		barColor : '#5D3879',
-		rightNavButton : shareBtn,
+		tabBarHidden: 'true',
 		leftNavButton : cancelBtn,
 		title : L('shareWindow')
 	});
-
+	
 	shareBtn.addEventListener('click', function(e) {
 		Ti.API.info("calling sharePhoto. photoBlob width " + photoBlob.width + " height " + photoBlob.height);
 		var captionValue = caption.getValue(),
 			senderId = acs.currentUserId(),
 			message = "Your new post has been published",
-			feedWin = FeedWindow.currentFeedWindow(),
-			newPostNotify;
+			newPostNotify, addPostError;
 						
 		newPostNotify = function (post) {
 				// newPostNotification
 				Ti.API.info("Notifying friends of new post");
 				social.newPostNotification(post);
 				//update feed window with local info after caption has been updated in the cloud
-				
 				Ti.API.info("update local feed window with new post");
 				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
 				Ti.App.fireEvent('newPost', {"user_id": senderId, "post_id": post.id, "message": message});						
@@ -74,9 +74,14 @@ function createShareWindow(postModel, shareAction) {'use strict';
 			
 		// go back to feed page
 		shareTabGroup.close();
-		// add post 
-		postModel.caption = captionValue;
-		FeedWindow.addPost(postModel, newPostNotify);
+		// add post
+		if (captionValue === captionHintText || captionValue === "") {
+			postModel.caption = defaultCaption;			
+		} else {
+			postModel.caption = captionValue;			
+		}
+
+		FeedWindow.beforeSharePost(postModel, newPostNotify);
 								
 	});
 	
@@ -84,21 +89,24 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		shareTabGroup.close();
 	});
 	//  crate a tab group with a single tab to hold the share window stack
-	shareTabGroup = ApplicationTabGroup.createApplicationTabGroup();
+	shareTabGroup = Ti.UI.createTabGroup();
 	tab = Ti.UI.createTab({
 		icon : '/icons/light_grid.png',
 		window : shareWindow
 	});
 	shareWindow.containingTab = tab;
-	// hide tab Bar. We're just using a Tab Group to have a stack of windows without explicitly creating a navigation group which is an iOS only solution
-	shareWindow.setTabBarHidden(true);
+	
 	shareTabGroup.addTab(tab);
+	shareTabGroup.setActiveTab(0);
+	
+	Ti.API.info("open shareTabGroup with spinner");
+	shareWindow.setRightNavButton(activityIndicator);
+	activityIndicator.show();
 	shareTabGroup.open();
-	shareTabGroup.setVisible(true);
-
+	
 	// create share window elements
 	caption = Ti.UI.createTextArea({
-        value: 'Add a caption...and tag your photo e.g.:#cute, #skinnyjeans',
+        value: captionHintText,
         color: '#aaa',
 		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 		top : 10,
@@ -117,12 +125,8 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		//borderColor: 'black',
 		//borderWidth: 1
 	});
-	shareWindow.add(thumbnail);
-	shareWindow.add(caption);
-	
-
 	caption.privHintText = caption.value;
-
+	// define eveng listeners before events are fired the first time
 	caption.addEventListener('focus', function(e) {
 		if (e.source.value === e.source.privHintText) {
 			e.source.value = "";
@@ -135,14 +139,18 @@ function createShareWindow(postModel, shareAction) {'use strict';
 			e.source.color = '#aaa';
 		}
 	});
-
+	
+	shareWindow.add(caption);
+	
+	// add remaining of the objects on the page
 	shareLabel = Ti.UI.createLabel({
-		text : 'Choose friends to share with',
+		text : 'Add friends to share with',
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
 		wordWrap : true,
 		color : 'black',
-		top : 120,
+//		top : 120,
+		bottom: 140,
 		left : '5%',
 		height : 40,
 		width : '90%',
@@ -156,7 +164,8 @@ function createShareWindow(postModel, shareAction) {'use strict';
 	shareWindow.add(shareLabel);
 
 	shareTable = Ti.UI.createTableView({
-		top : 170,
+//		top : 170,
+		bottom: 40,
 		height : Ti.UI.SIZE,
 		rowHeight : 50,
 		width : '90%',
@@ -233,6 +242,7 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		hasChild : true
 	});
 
+/*
 	inviteFBFriends = Ti.UI.createTableViewRow({
 		className : 'shareSource',
 		title : 'invite via facebook',
@@ -259,12 +269,22 @@ function createShareWindow(postModel, shareAction) {'use strict';
 		//leftImage: '/images/contacts-medium.png',
 		hasChild : true
 	});
+	
+	*/
 	shareTable.appendRow(shareToFBFriends);
 	shareTable.appendRow(shareToAddressBook);
-	shareTable.appendRow(inviteFBFriends);
-	shareTable.appendRow(inviteContacts);
+//	shareTable.appendRow(inviteFBFriends);
+//	shareTable.appendRow(inviteContacts);
 	shareWindow.add(shareTable);
 
+	// show pic thumbnail
+	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
+	thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_75, top: 10, left: '5%'});	
+	shareWindow.add(thumbnail);
+	
+	activityIndicator.hide();
+	shareWindow.setRightNavButton(shareBtn);
+	Ti.API.info("Stop spinner, show share button");
 	return shareWindow;
 }
 

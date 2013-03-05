@@ -1,28 +1,16 @@
-function ApplicationWindow(title) {
+/*
+ * Copyright 2013 by Monique Barbanson. All rights reserved.
+ * @author Monique Barbanson
+ */
+
+exports.createApplicationWindow = function (title) {
+	'use strict';
 	var self = Ti.UI.createWindow({
 		title:title,
-		backgroundColor:'black',
+		barColor: '#5D3879',
+		visible: false,
 		exitOnclose: true
-	});
-	
-	var button = Ti.UI.createButton({
-		height:44,
-		width:200,
-		title:L('openWindow'),
-		top:20
-	});
-	self.add(button);
-	
-	button.addEventListener('click', function() {
-		//containingTab attribute must be set by parent tab group on
-		//the window for this work
-		self.containingTab.open(Ti.UI.createWindow({
-			title: L('newWindow'),
-			backgroundColor: 'black'
-		}));
 	});
 	
 	return self;
 };
-
-module.exports = ApplicationWindow;

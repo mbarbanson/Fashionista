@@ -38,12 +38,11 @@ function initLogoutWindow(logoutWin, containingTab) {
     logoutWin.add(logoutBtn);
 
 	function loginCallback (loginWin) {
-		var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
+		var //ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			acs = require('lib/acs');
 			
 		// successfully logged in
-		if(acs.isLoggedIn()) {
-			//acs.getCurrentUserDetails();				
+		if(acs.isLoggedIn()) {			
 		    logoutWin.fireEvent('newLoggedInUser');
 			containingTab.close(loginWin);
 		}
@@ -72,7 +71,7 @@ function initLogoutWindow(logoutWin, containingTab) {
 	});
 	
 	logoutWin.addEventListener('newLoggedInUser', function () {
-		var tabGroup = logoutWin.containingTab.tabGroup;
+		var tabGroup = Ti.App.mainTabGroup;
 		logoutBtn.title = L('logout') + " " + acs.currentUser().username;
 		tabGroup.fireEvent('newLoggedInUser');
 		ApplicationTabGroup.setDefaultActiveTab(tabGroup);

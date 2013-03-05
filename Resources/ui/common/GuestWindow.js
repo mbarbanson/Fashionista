@@ -37,12 +37,11 @@ function createGuestWindow() {
     });
 
 	ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
-	//alert("calling createThumbnailsWindow");
 	thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow();
 	ThumbnailsWindow.refreshThumbnails();
 	
 	//  crate a tab group with a single tab to hold the thubnail window stack
-	guestTabGroup = ApplicationTabGroup.createApplicationTabGroup();
+	guestTabGroup = Ti.UI.createTabGroup();
 	tab1 = Ti.UI.createTab({
 		icon: '/icons/light_grid.png',
 		window: thumbnailsWindow
@@ -51,8 +50,8 @@ function createGuestWindow() {
 	// hide tab Bar. We're just using a Tab Group to have a stack of windows without explicitly creating a navigation group which is an iOS only solution
 	thumbnailsWindow.setTabBarHidden(true);
 	guestTabGroup.addTab(tab1);
-	guestTabGroup.open();
-	guestTabGroup.setVisible(true);
+	guestTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+	//guestTabGroup.setVisible(true);
 
 	// create fixed toolbar at bottom
     signup = Ti.UI.createButton({
@@ -96,10 +95,12 @@ function createGuestWindow() {
 		width: 280
     });
     
-    dialog = Ti.UI.createView({
+    dialog = Ti.UI.createWindow({
+		modal: true,
+		modalStyle: Titanium.UI.iPhone.MODAL_PRESENTATION_FORMSHEET,
 		color: 'white',
 		backgroundColor: '#5D3879',
-		borderRadius: 6,
+		borderRadius: 2,
 		top: 55,
 		height: 200,
 		width: 300
@@ -112,12 +113,14 @@ function createGuestWindow() {
 		if(acs.isLoggedIn()===true) {	
 			try {
 				Ti.API.info("loginCallback");
+				if (!Ti.App.mainTabGroup) {
+					ApplicationTabGroup.initAppUI();					
+				}
+				// hide guest tabgroup
 				if (guestTabGroup) {
-					guestTabGroup.hide();
 					guestTabGroup.close();
 					guestTabGroup = null;					
 				}
-				ApplicationTabGroup.initAppUI();
 			}				
 			catch (ex) {
 				Ti.API.info("Caught exception " + ex.message);
@@ -136,9 +139,10 @@ function createGuestWindow() {
 	 
     login.addEventListener('click', function(e){
         tab1.open(LoginWindow.createLoginWindow('login', loginCallback));
-    });	   
-   //FIXME do we need to return this?
-    return thumbnailsWindow;
+    });
+	   
+	//FIXME do we need to return this?
+	return thumbnailsWindow;
 }
 
 exports.createGuestWindow = createGuestWindow;

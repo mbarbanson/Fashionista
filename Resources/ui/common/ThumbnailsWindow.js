@@ -18,10 +18,36 @@
 		}
 		return thumbnailsWin;
 	}
+	
+	
+	function showPreview (thumbView) {
+		var imgView = null,
+			detailWindow = Ti.UI.createWindow({
+									title: "Fashionist Pick",
+							        backgroundColor: 'black',
+							        barColor: '#5D3879',
+							        tabBarHidden: true
+							});
+
+		imgView = Ti.UI.createImageView({
+			backgroundColor: 'black',
+			width: Ti.UI.FILL
+		});
+		detailWindow.imgView = imgView;
+		detailWindow.add(imgView);
+
+		// use small_240 if present, otherwise use the thumbnail itself or fallback image if neither has a value
+		imgView.image = thumbView.image || '/photos/IMG_0001.JPG';
+		imgView.show();
+		
+		return detailWindow;
+	}
+
+	
 
 	function showDetail (image) {
 		//alert("showing Image detail" + image);
-		var detailWindow = DetailWindow.showPreview(image),
+		var detailWindow = showPreview(image),
 			navGroup = thumbnailsWindow().containingTab;
 		if (navGroup) {
 			navGroup.open(detailWindow);
@@ -101,7 +127,6 @@
 				thumb = null;
 				imgView = Ti.UI.createImageView({
 				    top: 0,
-					height:100,
 					width:100,
 					left: 5 + 105 * col
 				});
@@ -235,7 +260,6 @@
 				tableView = Ti.UI.createTableView ({
 					objname: 'ThumbnailView',
 					backgroudColor: 'transparent',
-					//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
 					visible: false
 				});
 				privThumbnailsWindow.tableView = tableView;
@@ -298,5 +322,6 @@
 	exports.createThumbnailsWindow = createThumbnailsWindow;
 	exports.refreshThumbnails = refreshThumbnails;
 	exports.thumbnailsWindow = thumbnailsWindow;
+	exports.showPreview = showPreview;	
 
 } ());

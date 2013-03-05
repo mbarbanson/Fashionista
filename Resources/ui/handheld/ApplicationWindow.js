@@ -7,7 +7,6 @@ exports.createApplicationWindow = function (title) {
 	"use strict";
 	var self = Ti.UI.createWindow({
 		title: title,
-		backgroundColor: 'black',
 		barColor: '#5D3879',
 		tabBarHidden: true,
 		visible:true,

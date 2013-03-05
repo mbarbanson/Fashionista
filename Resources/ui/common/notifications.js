@@ -11,28 +11,24 @@
 	function initNotificationHandlers () {
 		var acs = require('lib/acs'),
 			FeedWindow = require('ui/common/FeedWindow'),
-			DetailWindow = require('ui/common/DetailWindow');
+			PostView = require('ui/common/PostView');
 		Ti.API.info("calling initSubscriptions to setup event handlers");
 		
 		// handle new post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newPost handler");
 		Ti.App.addEventListener('newPost', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(),
-				tab, tableView, postId = e.post_id, message = e.message, senderId = e.user_id;
-			if (feedWin) {
-				Ti.API.info("new post: " +  message);				
-				tab = feedWin.containingTab;
-				tableView = feedWin.table;
-				
-				if (postId && acs.currentUser() && acs.currentUser().id === senderId) {
-						Ti.API.info("your post " + message + " has been posted");
+			var tab = Ti.App.getFeedTab(), 
+				postId = e.post_id, message = e.message, senderId = e.user_id,
+				currentUser = acs.currentUser();
+			if (tab) {			
+				if (postId && currentUser && currentUser.id === senderId) {
+						Ti.API.info(message);
 						acs.showPost(postId, function (p) {
-												tableView.deleteRow(0, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT}); 
-												DetailWindow.displayPostSummary(tableView, p, true); 
+													FeedWindow.afterSharePost(p);
 												});							
 				}
 				else {
-					Ti.API.info("something went wrong while posting postId " + postId + " message " + message);
+					Ti.API.info("something went wrong while posting postId " + postId + " message " + message + " tab " + tab);
 				}
 			}		
 		});
@@ -40,12 +36,10 @@
 		// handle new friend post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(),
-				tab, tableView, postId = e.post_id, message = e.message, senderId = e.user_id;
-			if (feedWin) {
-				Ti.API.info("new post. " +  message + " Updating feed window " + feedWin);				
-				tab = feedWin.containingTab;
-				tableView = feedWin.table;
+			var tab = Ti.App.getFeedTab(), 
+				postId = e.post_id, message = e.message, senderId = e.user_id;
+			if (tab) {
+				Ti.API.info("new post. " +  message + " Updating feed window ");				
 				
 				if (postId) {
 					if (acs.currentUser() && acs.currentUser().id === senderId) {
@@ -53,11 +47,10 @@
 					}
 					else {
 						acs.showPost(postId, function (p) {
-												DetailWindow.displayPostSummary(tableView, p, true); 
+												FeedWindow.displayPostInFeed(p, true); 
 												});						
 					}
 				}
-
 			}		
 		});
 	
@@ -65,21 +58,21 @@
 		// just received a notification that a comment was added
 		Ti.API.info("Adding newComment handler");
 		Ti.App.addEventListener('newComment', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(), 
-				postId = e.post_id, message = e.message, senderId = e.user_id,
-				tab;
-			Ti.API.info("new comment " + message + " Updating feed window " + feedWin + " postId " + postId );
-			if (feedWin) {
-				tab = feedWin.containingTab;
-
+			var postId = e.post_id, message = e.message, senderId = e.user_id,
+				tab = Ti.App.getFeedTab();
+			Ti.API.info("new comment " + message + " Updating feed window postId " + postId );
+			if (tab) {
+				//refresh comments count on local and friends' device
+				FeedWindow.showFriendsFeed();
 				if (postId) {
 					if (acs.currentUser() && acs.currentUser().id === senderId) {
 						Ti.API.info("your comment " + message + " has been posted");
 					}
 					else {
 						Ti.API.info("display post in details window on top of tab " + tab);
-						FeedWindow.showFriendsFeed(feedWin);
-						acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});						
+						//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
+						// this would also avoid having closures point to stale copies of post
+						acs.showPost(postId, function (p) { PostView.displayPostDetails(p);});						
 					}
 				}
 				else {
@@ -96,29 +89,26 @@
 		// just received a notification that a like was added
 		Ti.API.info("Adding newLike handler");
 		Ti.App.addEventListener('newLike', function (e) {
-			var feedWin = FeedWindow.currentFeedWindow(), 
-				postId = e.post_id, message = e.message, senderId = e.user_id,
-				tab;
-			Ti.API.info("new like " + message + " Updating feed window " + feedWin);
-			if (feedWin) {
-	
-				tab = feedWin.containingTab;
-				if (postId) {
-					if (acs.currentUser() && acs.currentUser().id === senderId) {
-						Ti.API.info("your like " + message + " has been posted");
-					}
-					else {
-						FeedWindow.showFriendsFeed(feedWin);
-						acs.showPost(postId, function (p) { DetailWindow.displayPostDetails(p);});
-					}
+			var postId = e.post_id, message = e.message, senderId = e.user_id;
+			Ti.API.info("new like " + message + " Updating likes count ");
+			if (postId) {
+				if (acs.currentUser() && acs.currentUser().id === senderId) {
+					Ti.API.info("your like " + message + " has been registered");
 				}
 				else {
-			        Ti.UI.createAlertDialog({
-			            title : "Fashionist",
-			            message : "Ooops...something went wrong with your like: " + JSON.stringify(message)  //if you want to access additional custom data in the payload
-			        }).show();					
-				}																							
-			}			
+					// update likes count on friends' devices
+					Ti.API.info("received a like " + message + " from user " + senderId);
+					FeedWindow.showFriendsFeed();
+					//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
+					acs.showPost(postId, function (p) { PostView.displayPostDetails(p);});
+				}
+			}
+			else {
+		        Ti.UI.createAlertDialog({
+		            title : "Fashionist",
+		            message : "Ooops...something went wrong with your like: " + JSON.stringify(message)  //if you want to access additional custom data in the payload
+		        }).show();					
+			}																								
 		});
 		
 		
@@ -167,44 +157,46 @@
 		    },
 		    // called when app receives a push notification
 		    callback : function(e) {
-				Ti.API.info('PUSH NOTIFICATION: Fashionist received a push notification ');
 				var customPayload = e.data.custom,
 					notificationType = customPayload.type,
 					senderId = customPayload.user_id,
 					postId = customPayload.post_id,
 					message = e.data.alert,
 					currentUser = acs.currentUser();
-				Ti.API.info(notificationType + " \n time " + Date.now());
+									
+				Ti.API.info('PUSH NOTIFICATION: Fashionist received a push notification ' + message);
 				
-				switch (notificationType) {
-					case 'newPost':
-						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-						Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": postId, "message": message});
-					break;
-					case 'newComment':
-						Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
-						Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": postId, "message": message});
-					break;		
-					case 'newLike':
-						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-						Ti.App.fireEvent('newLike', {"user_id": senderId, "post_id": postId, "message": message});
-					break;								
-					case 'friend_request':
-						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
-						Ti.App.fireEvent('approveFriendRequest', {"user_id": senderId});
-					break;
-					case 'friend_approved':
-					Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);
-					break;
-					default:
-					Ti.API.info('Unknown Notification Type: ' +  notificationType + ' from ' + senderId + " to " + currentUser);
-				}
-				// FIXME: bring up a temporary overlay instead of an alert which looks too much like the os alert for push notifications
-
 				if (acs.currentUser() && acs.currentUser().id === senderId) {
-					Ti.API.info("PUSH Notification was sent by current user. No further action");
+					Ti.API.info("PUSH Notification was sent by current user. No further action. Local side effects should not rely on push notification succeeding");
 				}	
-				else {			
+				else {	
+
+					Ti.API.info(notificationType + " \n time " + Date.now());
+					
+					switch (notificationType) {
+						case 'newPost':
+							Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
+							Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": postId, "message": message});
+						break;
+						case 'newComment':
+							Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
+							Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": postId, "message": message});
+						break;		
+						case 'newLike':
+							Ti.API.info("FIRE EVENT: NEW LIKE from " + senderId);
+							Ti.App.fireEvent('newLike', {"user_id": senderId, "post_id": postId, "message": message});
+						break;								
+						case 'friend_request':
+							Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
+							Ti.App.fireEvent('approveFriendRequest', {"user_id": senderId});
+						break;
+						case 'friend_approved':
+						Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);
+						break;
+						default:
+						Ti.API.info('Unknown Notification Type: ' +  notificationType + ' from ' + senderId + " to " + currentUser);
+					}
+		
 			        Ti.UI.createAlertDialog({
 			            title : "Fashionist",
 			            message : JSON.stringify(message)  //if you want to access additional custom data in the payload

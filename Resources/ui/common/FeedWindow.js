@@ -6,19 +6,43 @@
 (function () {
 	'use strict';
 	
-	var acs = require('lib/acs'),
-		DetailWindow = require('ui/common/DetailWindow'),
-		social = require('lib/social'),
-		privFeedWindow = null;
+	var privFeedWindow = null;
 		
 	function currentFeedWindow() {
 		return privFeedWindow;
 	}	
+
+
+	function displayPostInFeed(post, insertAtTop) {
+		var PostView = require('ui/common/PostView'),
+			row = PostView.displayPostSummaryView(post),
+			tableView = privFeedWindow.table,
+			tabGroup;
+			
+		if (tableView) {
+			if (insertAtTop)	   {
+				tableView.insertRowBefore(0, row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});
+			}
+			else {
+				tableView.appendRow(row);				
+			}
+			// this code can be executed twice with no problems in case we have a race condition
+			if (!tableView.flipped) {
+				tableView.flipped = true;
+				tabGroup = Ti.App.mainTabGroup;
+				tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+				Ti.API.info("Flipped tabgroup open");
+			}
+		}
+	}
+	
+	
 	
 	
 	function createFinishingUpRow(postModel) {
 		var row = Ti.UI.createTableViewRow({
 					title: "            Finishing Up...",
+					className:'finishingUp',
 					color: 'white',
 					backgroundColor:'black',
 					width: Ti.UI.FILL,
@@ -37,160 +61,139 @@
 	
 	function addFinishingUpRow(postModel) {
 		Ti.API.info('Calling addFinishingUpRow');
-		var fWin = currentFeedWindow(),
-			tableView = fWin.table,
+		var tableView = privFeedWindow.table,
 			fRow = createFinishingUpRow(postModel);
-		if (tableView) {			
+		if (tableView && tableView.data && tableView.data.length !== 0) {			
 			tableView.insertRowBefore(0, fRow);			
 			tableView.scrollToTop(0);
-		}	
-				
-	}	
-
-	function updatePost(postId, title, caption, callback) {
-		
-		var style = privFeedWindow.spinnerStyle,
-			activityIndicator = Ti.UI.createActivityIndicator({style: style}),
-			updatePostCallback = function (post) {
-									Ti.API.info("successfully updated post " + post.content);
-									activityIndicator.hide();
-									privFeedWindow.setRightNavButton(null);
-									callback(post);												
-								};
+		}
+		else {
+			Ti.API.info("FeedWindow tableView is corrupted tableView " + tableView + " data " + tableView.data);
+			alert("Cannot add finishing up row. FeedWindow tableView is corrupted tableView " + tableView + " data " + tableView.data);
+		}				
+	}
 	
-		privFeedWindow.setRightNavButton(activityIndicator); 
-		activityIndicator.show(); 
-		acs.updatePost(postId, title, caption, updatePostCallback);		
+	
+	function removeFinishingUpRow() {
+		Ti.API.info('Calling removeFinishingUpRow');
+		var tableView = privFeedWindow.table,
+			section, rows, fRow;
+		if (tableView && tableView.data && tableView.data.length !== 0) {
+			section = tableView.data[0];
+			rows = section.getRows();
+			fRow = rows[0];			
+			if (fRow.className === 'finishingUp') {
+				tableView.deleteRow(0, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT}); 
+			}
+			else {
+				Ti.API.error("Expected first row to be a finishing up row. Found " + fRow.content);
+				alert("Cannot remove finishing up row. FeedWindow tableView is corrupted tableView " + tableView + " data " + tableView.data);
+			}
+		}
+		else {
+			Ti.API.info("FeedWindow tableView is corrupted tableView " + tableView + " data " + tableView.data);
+			alert("FeedWindow tableView is corrupted tableView " + tableView + " data " + tableView.data);
+		}				
 	}	
+	
 
-	function addPost(postModel, callback) {
+	function beforeSharePost(postModel, callback) {
 		
-		var style = privFeedWindow.spinnerStyle,
+		var acs = require('lib/acs'),
+			style = Ti.App.spinnerStyle,
 			image = postModel.photo,
 			imgH = image.height,
 			imgW = image.width,
 			newSize = Ti.App.photoSizes[Ti.Platform.osname],
-			//activityIndicator = Ti.UI.createActivityIndicator({style: style}),
-			addPostCallback = function (post) {
+			addPostSuccess = function (post) {
 									Ti.API.info("successfully added post " + post.content);
-									//activityIndicator.hide();
-									//privFeedWindow.setRightNavButton(null);
 									callback(post);												
+								},
+			addPostError = function () {
+									Ti.API.info("Calling addPostError callback. Removing finishing up row");
 								};
 		// crop the dimension that's larger than the screen if any						
 		if (imgH > newSize[1]) { imgH = newSize[1]; }
 		if (imgW > newSize[0]) { imgW = newSize[0]; }					
 		image = image.imageAsResized(imgW, imgH);
-		//privFeedWindow.setRightNavButton(activityIndicator); 
-		//activityIndicator.show(); 
-		acs.addPost("", postModel.caption, image, addPostCallback);
+		acs.addPost("", postModel.caption, image, addPostSuccess, addPostError);
 		addFinishingUpRow(postModel);		
 	}
 	
-	function showFriendsFeed(fWin) {
+	
+	function afterSharePost (post) {
+
+		removeFinishingUpRow();
+		displayPostInFeed(post, true); 
+		
+	}
+	
+	
+	function clearFeed() {
+		Ti.API.info('Calling clear feed');
+		
+		if (privFeedWindow.table) {
+			privFeedWindow.table.setData([]);
+		}	
+	}
+	
+	/*
+	 * showFriendsFeed
+	 */
+	function showFriendsFeed() {
 		Ti.API.info('Calling show feed');
-		var tableView = fWin.table,
+		var DetailWindow = require('ui/common/DetailWindow'),
+			PostView = require('ui/common/PostView'),
+			acs = require('lib/acs'),
 			showPostDetails,
 			showPost,
 			friendsListCallback,
-			style = fWin.spinnerStyle,
-			activityIndicator = Ti.UI.createActivityIndicator({style: style}),
+			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
 			cleanupAction = function() {
-								activityIndicator.hide(); fWin.rightNavButton = null;
+								activityIndicator.hide(); 
+								privFeedWindow.rightNavButton = null;
 							};
-
-		if (tableView) {
-			// FIXME is this refresh hack really needed?
-			//reset table property
-			//fWin.table = null;
-			//force table layout update
-			//fWin.remove(tableView);
-			//tableView.setData([]);	
-			tableView.displayComments = false;		
+							
+		//clear table view
+		clearFeed();
+		if (privFeedWindow.table) {
+			privFeedWindow.table.displayComments = false;	
 			Ti.API.info("showFriendFeed. Refreshing Feed window");
 			showPost = function (post) { 
-					DetailWindow.displayPostSummary(tableView, post);
-				};
+							displayPostInFeed(post, false);
+						};
 			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
 			
-			fWin.rightNavButton = activityIndicator;
+			privFeedWindow.rightNavButton = activityIndicator;
 			activityIndicator.show(); 
 
 			acs.getFriendsList(friendsListCallback, cleanupAction);
-			
-			// add tableView back
-			//fWin.add(tableView);
-			//fWin.table = tableView;		
-			tableView.parentWin = fWin;	
+	
 		}
 		else {
 			Ti.API.info("FeedWindow doesn't have a tableView");
 		}
 	}
 	
-
-	function clearFeed(fWin) {
-		Ti.API.info('Calling clear feed');
-		var oldTable = fWin.table;
 		
-		if (oldTable) {
-			fWin.remove(oldTable);
-			oldTable.setData([]);
-			fWin.add(oldTable);
-			fWin.updateLayout();
-		}	
-	}
-	
-	//refresh the feedWindow when the app comes back to the foreground in case posts have been added	
-	function appResumedHandler(event) {
-		var feedWin = currentFeedWindow(),
-			containingTab;
-		if (!acs.currentUser || !feedWin) {
-			return;
-		}
-		containingTab = feedWin.containingTab;
-		if (containingTab && containingTab.getActive()) {
-			Ti.API.info('PUSH NOTIFICATION? Fashionist resumed ' + "\n time " + Date.now());
-			//clearFeed(feedWin);
-			showFriendsFeed(feedWin);
-		}
-	}	
-	
+	/*
+	 * createFeedWindow
+	 */
 	function createFeedWindow() {
-		var feedWin = Ti.UI.createWindow({
+		privFeedWindow = Ti.UI.createWindow({
 				title: "Fashionist",
-		        backgroundColor: 'white',
 		        barColor: '#5D3879'				
-			}),
-			tableView = Ti.UI.createTableView ({
-				objname: 'PostSummary',
-				backgroundColor: 'white',
-				color: 'black',
-				data: [],
-				visible: true
-			}),
-			style,
-			activityIndicator;	
-		privFeedWindow = feedWin;
-		feedWin.add(tableView);
-		feedWin.table = tableView;
-		
-		//setup spinny activity indicator
-		if (Ti.Platform.name === 'iPhone OS'){
-			style = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
-		}
-		else {
-			style = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
-		}
-		feedWin.spinnerStyle = style;
-		
+		});
+		privFeedWindow.table =  Ti.UI.createTableView ({
+				objname: 'PostSummary'
+		});
+		privFeedWindow.table.flipped = false;
+		privFeedWindow.add(privFeedWindow.table);
+				
 		// create table view click event listener
 		// tableView.addEventListener('click', feedWindowClickHandler);
-		// listen for resume events until we find a better criteria for when to proactively update the feed
-		// need to be able to distinguish between different notifications. Until then, this is not helping.
-		//Ti.App.addEventListener('resumed', appResumedHandler);	
 														
-		return feedWin;
+		return privFeedWindow;
 	}
 		
 	
@@ -199,7 +202,9 @@
 	exports.currentFeedWindow = currentFeedWindow;
 	exports.clearFeed = clearFeed;
 	exports.showFriendsFeed = showFriendsFeed;
-	exports.addPost = addPost;
-	exports.updatePost = updatePost;
+	exports.beforeSharePost = beforeSharePost;
+	exports.afterSharePost = afterSharePost;
+	exports.displayPostInFeed = displayPostInFeed;
+	exports.removeFinishingUpRow = removeFinishingUpRow;
 
 } ());

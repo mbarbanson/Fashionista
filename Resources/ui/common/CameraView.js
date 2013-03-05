@@ -10,9 +10,8 @@
 		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
 		ShareWindow = require('ui/common/ShareWindow'),
 		FeedWindow = require('ui/common/FeedWindow'),
-		PostModel = require('models/posts'),
-		activityIndicator, 
-		cameraOverlay = Ti.UI.createView({opacity:0.0, width: Ti.UI.FILL, height: Ti.UI.FILL});
+		PostModel = require('models/posts'); 
+		//cameraOverlay = Ti.UI.createView({opacity:0.0, width: Ti.UI.FILL, height: Ti.UI.FILL});
 
 
 	function goToShareWindow (postModel) {
@@ -26,46 +25,25 @@
 			newSize = Ti.App.photoSizes[Ti.Platform.osname],
 			user = acs.currentUser(),
 			curWin = FeedWindow.currentFeedWindow(),
-			style = Ti.App.spinnerStyle,
-			activityIndicator,
 			photoBlob,
 			postModel;
-		/*				
-		activityIndicator = Ti.UI.createActivityIndicator({
-							  style: style
-							});
-
-		if (activityIndicator) {
-			curWin.rightNavButton = activityIndicator; 
-			activityIndicator.show();
-		}
-		*/	
-		// resize to platform optimized size before uploading, by default could be up to 2448x2449!		
+		
+		Ti.Media.hideCamera();	
+		// resize to platform optimized size before uploading, by default the original could be up to 2448x2449!
+		// actually, comment this out for now to speed up synchronous actions		
 		photoBlob = image; //image.imageAsResized(newSize[0], newSize[1]);
-		//start uploading now!
-		/*
-		acs.addPost (user.username + " needs your help!", "How does this look?", photoBlob, 
-				function(post) {
-					Ti.API.info("finished uploading post, now share it. photo width " + photoBlob.width + " height " + photoBlob.height);
-					if (activityIndicator) { 
-						activityIndicator.hide();
-						curWin.rightNavButton = null; 
-					}
-					goToShareWindow(photoBlob, post);
-				});	
-		*/	
 		postModel = new PostModel(user, photoBlob);
-		goToShareWindow(postModel);	
+		goToShareWindow(postModel);
 	}
 
 	 
-	function createCameraView (cancelCallback, mode) {
+	function createCameraView (successCallback, cancelCallback, mode) {
 		if (Ti.Media.isCameraSupported && mode === 'camera') {
 			//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
 			Ti.Media.showCamera({
-//				animated: true,
-				success: photoSuccessCallback,
-				cancel:cancelCallback(),
+				animated: false,
+				success: successCallback,
+				cancel:cancelCallback,
 				error:function(error) {
 					cancelCallback();
 					var a = Ti.UI.createAlertDialog({title: L('camera_error')});
@@ -79,14 +57,15 @@
 				},
 				saveToPhotoGallery:true,
 				allowEditing:true,
-				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO, Ti.Media.MEDIA_TYPE_VIDEO]
-//				showControls: true,
-//				overlay: cameraOverlay
+				autohide: false,
+				showControls: true,				
+				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
+				//overlay: cameraOverlay
 			});
 		} else {
 			Ti.Media.openPhotoGallery({
 				animated: false,
-				success: photoSuccessCallback,
+				success: successCallback,
 				cancel: cancelCallback,			
 				error:function(error) {
 					Ti.API.info("selected a photo from photo gallery. returned an error");
@@ -102,18 +81,19 @@
 				},
 				saveToPhotoGallery:false,
 				allowEditing:true,
-				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO],
-				overlay: cameraOverlay
+				autohide: false,
+				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
+				//overlay: cameraOverlay
 			});
 		}
 	}
 
 
 	
-	function takePhoto (cancelCallback) {
+	function takePhoto (successCallback, cancelCallback) {
 		Ti.API.info("takePhoto");				
 		try {
-			createCameraView(cancelCallback, 'camera');		
+			createCameraView(successCallback, cancelCallback, 'camera');		
 		}
 		catch (ex) {
 			Ti.API.info("takePhoto threw an exception. " + ex.message);
@@ -121,10 +101,10 @@
 	}
 	
 	
-	function pickPhoto (cancelCallback) {
+	function pickPhoto (successCallback, cancelCallback) {
 		Ti.API.info("pick Photo");				
 		try {
-			createCameraView(cancelCallback);		
+			createCameraView(successCallback, cancelCallback);		
 		}
 		catch (ex) {
 			Ti.API.info("pickPhoto threw an exception. " + ex.message);
@@ -134,6 +114,7 @@
 		
 	
 	exports.createCameraView = createCameraView;
+	exports.photoSuccessCallback = photoSuccessCallback;
 	exports.takePhoto = takePhoto;
 	exports.pickPhoto = pickPhoto;
 } ());

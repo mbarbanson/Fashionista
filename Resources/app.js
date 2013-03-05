@@ -62,14 +62,23 @@ if (Ti.version < 2.0 ) {
 	Ti.App.SCREEN_WIDTH = (width > height) ? height : width;
 	Ti.App.SCREEN_HEIGHT = (width > height) ? width : height;
 	
+	// initialize main tabgroup
+	Ti.App.mainTabGroup = null;
+	Ti.App.getFeedTab = null;
+	
+	//setup spinny activity indicator
+	if (Ti.Platform.name === 'iPhone OS'){
+		Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
+	}
+	else {
+		Ti.App.spinnerStyle = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
+	}
+	
 	if(Ti.Platform.osname === 'android'){
 	  Ti.API.info('Ti.Platform.displayCaps.xdpi: ' + Ti.Platform.displayCaps.xdpi);
 	  Ti.API.info('Ti.Platform.displayCaps.ydpi: ' + Ti.Platform.displayCaps.ydpi);
 	  Ti.API.info('Ti.Platform.displayCaps.logicalDensityFactor: ' + Ti.Platform.displayCaps.logicalDensityFactor);
 	}
-	
-	// TODO: This is failing
-	//Ti.API.info("should be 1.0, was = "+String.format('%1.1f',1));
 	
 	Ti.API.info("should be hello, was = "+String.format('%s','hello'));
 			
@@ -78,7 +87,8 @@ if (Ti.version < 2.0 ) {
 		GuestWindow.createGuestWindow(rootWindow);
 		//rootWindow.open();
 	};
-		
+	//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
+	//yourself what you consider a tablet form factor for android		
 	isTablet = osname === 'ipad' || (osname === 'android' && (width > 899 || height > 899));
 	if (isTablet) {
 		AppWindow = require('ui/tablet/ApplicationWindow');
@@ -92,7 +102,7 @@ if (Ti.version < 2.0 ) {
 	}
 	Cloud.debug = true;
 	
-	Ti.App.photoSizes ={"thumbnail": [48,48], "iphone": [638,638], "android": [478,478]};
+	Ti.App.photoSizes ={"thumbnail": [50,50], "iphone": [640,640], "ipad": [768,768], "android": [478,478]};
 	
 	rootWindow = AppWindow.createApplicationWindow(L('Fashionist'));
 	
@@ -103,9 +113,7 @@ if (Ti.version < 2.0 ) {
 	}
 	else {
 	    // Check here whether there is a logged in user
-		try {	
-			//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
-			//yourself what you consider a tablet form factor for android	
+		try {		
 			sessionId = Ti.App.Properties.getString('sessionId');
 			Ti.API.info("Check whether we have a stored sessionId " + sessionId + " Cloud.sessionId " + Cloud.sessionId);
 			Cloud.sessionId = sessionId;
@@ -126,7 +134,6 @@ if (Ti.version < 2.0 ) {
 		}
 	
 		Ti.API.info("Fashionist is running...");
-
-		
 	}
+		
 } ());
