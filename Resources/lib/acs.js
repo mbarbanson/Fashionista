@@ -67,99 +67,43 @@
 	}
 	
 	
-	function login(username, password, callback) {
-		Cloud.Users.login({
-		    login: username,
-		    password: password
-		}, function (e) {
-		    if (e.success) {
-				var Notifications = require('ui/common/notifications');
-
-				privCurrentUser = e.users[0];
-				if (!privCurrentUser.custom_fields) {
-					privCurrentUser.custom_fields = {};
-				}
-				loggedIn = true;
-				Cloud.sessionId = e.meta.session_id;
-				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
-				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
-				// once we have a logged in user, setup Notifications	
-				Notifications.initNotifications();	
-				callback();
-		    } else {
-		        Ti.API.info('Error: acs.login e.success ' + e.success + '\\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
-		        loggedIn = false;
-		        privCurrentUser = null;
-				callback();
-		    }
-		});	
-	}
-	
-	// logout user and cancel all subscriptions so APS can stop sending notifications to this user
-	function logout(callback) {
-		var doLogout = function () {
-			Cloud.Users.logout(
-				function (e) {
-					    if (e.success) {
-							Ti.API.info("Logged out of Fashionist and unsubscribed from test channel");
-					        privCurrentUser = null;
-					        loggedIn = false;
-					        // clear session id
-							Cloud.sessionId = null;
-							Ti.App.Properties.setString('sessionId', null);
-					        callback();
-					    }
-					    else {
-							Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
-					    }
-				}
-			);				
-		};
-		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
-			unsubscribeNotifications("test", doLogout);
-		}
-		else {	
-			doLogout();					
-		}
-	}
 	
 	
 	function createUser (username, password, callback) {
 		// ACS API requires password & confirm, but we do the checking elsewhere so use the same for both here
 		Cloud.Users.create({
 			username: username,
-			first_name: "test",
-		    last_name: "user",
+			first_name: username,
+		    last_name: "",
 			password: password,
-			password_confirmation: password,
-			custom_fields: {photos: null, photoCollection: null}
+			password_confirmation: password
+			//custom_fields: {photos: null, photoCollection: null}
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('user = ' + JSON.stringify(e.users[0]));
 				var Notifications = require('ui/common/notifications');
 		        privCurrentUser = e.users[0];
 		        loggedIn = true;
-		        
-				Cloud.sessionId = e.meta.session_id;
+		        // Cloud.sessionId is associated with currentUser. Save it and retrieve current user info from it
 				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
 				Ti.API.info("Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
 				
 				// once we have a logged in user, setup Notifications	
 				Notifications.initNotifications();	
 				
-		        callback();
+		        callback(e);
 		    } else {
 				alert('Error create User failed' + JSON.stringify(e));
 				loggedIn = false;
 				privCurrentUser = null;
-				callback();
+				callback(e);
 		    }
 		});
 	}
 	
 	
 	// get user details 
-	function getCurrentUserDetails(callback) {
+	function getCurrentUserDetails(successCallback, errorCallback) {
 		Cloud.Users.showMe(function (e) {
 	        if (e.success) {
 	            var user = e.users[0],
@@ -171,11 +115,12 @@
 	            setCurrentUser(user);
 				setIsLoggedIn(true);
 				Notifications.initNotifications();					
-				if (callback) { callback(); }
+				if (successCallback) { successCallback(); }
 	        } else {
-	            alert('Error:\\n' +
+	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)) + " Please exit and start up again");
 	            Ti.App.Properties.setString('sessionId', null);
+	            if (errorCallback) { errorCallback(); }
 	        }
 		});		
 	}
@@ -469,6 +414,68 @@
 		newNotification(post, "newLike", ' liked the post ' + post.content);
 	}
 
+
+	// login, logout
+	function login(username, password, callback) {
+		Cloud.Users.login({
+		    login: username,
+		    password: password
+		}, function (e) {
+		    if (e.success) {
+				var Notifications = require('ui/common/notifications');
+
+				privCurrentUser = e.users[0];
+				if (!privCurrentUser.custom_fields) {
+					privCurrentUser.custom_fields = {};
+				}
+				loggedIn = true;
+				Cloud.sessionId = e.meta.session_id;
+				// save the new session id
+				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
+				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Cloud.sessionId);
+				// once we have a logged in user, setup Notifications	
+				Notifications.initNotifications();	
+				callback(e);
+		    } else {
+		        Ti.API.info('Error: acs.login e.success ' + e.success + '\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
+		        loggedIn = false;
+		        privCurrentUser = null;
+				callback(e.message);
+		    }
+		});	
+	}
+	
+	// logout user and cancel all subscriptions so APS can stop sending notifications to this user
+	function logout(callback) {
+		var Facebook = require('/lib/facebook'),
+			doLogout = function () {
+							Cloud.Users.logout(
+								function (e) {
+									    if (e.success) {
+											Ti.API.info("Logged out of Fashionist and unsubscribed from test channel");
+									        privCurrentUser = null;
+									        loggedIn = false;
+									        // clear session id
+											Ti.App.Properties.setString('sessionId', null);
+											// invoke UI callback
+									        callback(e);
+									    }
+									    else {
+											Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
+									    }
+								}
+							);				
+					};
+		// log out of facebook to clear Ti.Facebook.loggedIn etc...	
+		if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); Ti.Facebook.setUid(null);}			
+		if (Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
+			unsubscribeNotifications("test", doLogout);
+		}
+		else {	
+			doLogout();					
+		}
+	}
+
 	
 	// Friends
 	function addFriends (friends, callback) {
@@ -545,8 +552,8 @@
 	
 			
 	// Posts
-	function addPost (pTitle, pBody, pPhoto, callback) {
-		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + callback);
+	function addPost (pTitle, pBody, pPhoto, successCallback, errorCallback) {
+		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
 		var sync_sizes = 'iphone';
 		Cloud.Posts.create({
 		    response_json_depth: 2,
@@ -554,13 +561,12 @@
 		    title: pTitle,
 		    photo: pPhoto,
 		    // since appcelerator limits photos to being square, use square aspect ratio for now
-		    'photo_sizes[preview]':'48x48#',
-			'photo_sizes[android]':'478x478#',
-			'photo_sizes[iphone]':'638x638#',
-			'photo_sync_sizes[]': 'iphone'
-//			'photo_sizes[iphone5]':'1136x640'
-// not using iPad to take photos, just to consume
-//			'photo_sizes[ipad]': '1024x768'
+		    'photo_sizes[avatar]':'50x50#',
+		    'photo_sizes[preview]': '75x75#',
+			'photo_sizes[android]':'480x480#',
+			'photo_sizes[iphone]':'640x640#',
+			'photo_sync_sizes[]': 'iphone',
+			'photo_sizes[ipad]': '768x768#'
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
@@ -569,10 +575,11 @@
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
 		            'updated_at: ' + post.updated_at);
-		        if (callback) {callback(post);}
+		        if (successCallback) {successCallback(post);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+	            if (errorCallback) {errorCallback();}
 		    }
 		});		
 	}

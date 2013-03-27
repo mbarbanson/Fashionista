@@ -16,10 +16,8 @@
 		//Contacts.testContacts();
 		//FIXME move this behind a button
 		// log into facebook and link to external account on success
-		FB.authorize();
+		FB.authorize(function (e) {FB.postPhoto(photoBlob, message);});
 		
-		// post to wall
-		FB.postPhoto(photoBlob, message);
 		// call this to login with facebook instead of having fashionist specific credentials
 		//FB.linktoFBAccount();
 	}
@@ -45,25 +43,20 @@
 
 
 	function chooseFBFriends () {
-		// log into facebook and link to external account unless we already have a valid access token
-		FB.authorize();
-		
-		// get full list of FB friends
-		FB.getAllFBFriends();
-		// call this to login with facebook instead of having fashionist specific credentials
-		//FB.linktoFBAccount();
+		FB.authorize(function (e) {FB.getAllFBFriends();});
 	}
 	
 	
 	function findFBFriends (callback) {
-		var i;
+		var Facebook = require('lib/facebook'),
+			i;
 		Cloud.SocialIntegrations.searchFacebookFriends(function (e){
 		    if (e.success) {
 		        if (e.users) {
 					Ti.API.info('Success:\\n' + 'Count: ' + e.users.length);
 		           }
 		        else {
-					Ti.API.info("Current user doesn;t have any friends using on Fashionist");
+					Ti.API.info("Current user doesn't have any friends using on Fashionist");
 		        }
 		        for (i = 0; i < e.users.length; i = i + 1) {
 		            var user = e.users[i];
@@ -73,8 +66,17 @@
 		         }
 		         callback (e.users);
 		    } else {
-		        alert('Error:\\n' +
+		        Ti.API.info('searchFacebookFriends error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				if (Facebook.hasLinkedFBAccount()) {
+					Ti.API.info("unlink facebook account and log out of Facebook to reset facebook token");			
+					Facebook.unlinkFBAccount(function () {if (Ti.Facebook.getLoggedIn()) {Facebook.logout();}});	
+				}
+				else {
+					Ti.Facebook.setloggedIn(false);
+					Ti.Facebook.setUid(null);
+					Ti.Facebook.authorize();
+				}			       
 		    }
 		});	
 	}

@@ -73,6 +73,8 @@ if (Ti.version < 2.0 ) {
 	else {
 		Ti.App.spinnerStyle = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
 	}
+	// initialize Facebook 
+	Ti.App.facebookInitialized = false;
 	
 	if(Ti.Platform.osname === 'android'){
 	  Ti.API.info('Ti.Platform.displayCaps.xdpi: ' + Ti.Platform.displayCaps.xdpi);
@@ -116,6 +118,7 @@ if (Ti.version < 2.0 ) {
 		try {		
 			sessionId = Ti.App.Properties.getString('sessionId');
 			Ti.API.info("Check whether we have a stored sessionId " + sessionId + " Cloud.sessionId " + Cloud.sessionId);
+			//Let ACS know we want to resume the saved session
 			Cloud.sessionId = sessionId;
 			if (!sessionId) {
 				Ti.API.info("no stored session " + sessionId);
@@ -125,7 +128,7 @@ if (Ti.version < 2.0 ) {
 			else {
 				Ti.API.info("found stored session " + sessionId);
 				// we have a stored user session, retrieve the current user	
-				acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI);
+				acs.getCurrentUserDetails(ApplicationTabGroup.initAppUI, showGuestWindow);
 			}		
 		}
 		catch (e)
