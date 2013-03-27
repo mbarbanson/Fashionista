@@ -15,13 +15,20 @@
 
 	function displayPostInFeed(post, insertAtTop) {
 		var PostView = require('ui/common/PostView'),
+			acs = require('lib/acs'),
+			currentUser = acs.currentUser(),
 			row = PostView.displayPostSummaryView(post),
 			tableView = privFeedWindow.table,
 			tabGroup;
 			
 		if (tableView) {
-			if (insertAtTop)	   {
-				tableView.insertRowBefore(0, row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});
+			if (insertAtTop) {
+				if (tableView.data && tableView.data.length > 0) {
+					tableView.insertRowAfter(0, row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});	
+				}
+				else { 
+					tableView.appendRow(row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});
+				}
 			}
 			else {
 				tableView.appendRow(row);				
@@ -63,8 +70,13 @@
 		Ti.API.info('Calling addFinishingUpRow');
 		var tableView = privFeedWindow.table,
 			fRow = createFinishingUpRow(postModel);
-		if (tableView && tableView.data && tableView.data.length !== 0) {			
-			tableView.insertRowBefore(0, fRow);			
+		if (tableView && tableView.data) {
+			if (tableView.data.length > 0) {			
+				tableView.insertRowBefore(0, fRow);
+			}
+			else {
+				tableView.appendRow(fRow);
+			}		
 			tableView.scrollToTop(0);
 		}
 		else {
@@ -123,8 +135,9 @@
 	
 	function afterSharePost (post) {
 
-		removeFinishingUpRow();
-		displayPostInFeed(post, true); 
+		displayPostInFeed(post, true);
+		// add short delay to make sure new post has been added before we remove the finishingUp row
+		setTimeout(function () {removeFinishingUpRow();} , 250); 
 		
 	}
 	
@@ -149,15 +162,22 @@
 			showPost,
 			friendsListCallback,
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
-			cleanupAction = function() {
-								activityIndicator.hide(); 
-								privFeedWindow.rightNavButton = null;
-							};
+			tableView = privFeedWindow.table,
+			cleanupAction;
 							
 		//clear table view
 		clearFeed();
-		if (privFeedWindow.table) {
-			privFeedWindow.table.displayComments = false;	
+		if (tableView) {
+			cleanupAction = function() {
+								if (!tableView.flipped) {
+									Ti.App.mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+									tableView.flipped = true;
+									alert("You don't have any photos yet! Use the Camera button below or pick a photo from your camera roll to get started!");									
+								}
+								activityIndicator.hide(); 
+								privFeedWindow.rightNavButton = null;
+							};
+			tableView.displayComments = false;	
 			Ti.API.info("showFriendFeed. Refreshing Feed window");
 			showPost = function (post) { 
 							displayPostInFeed(post, false);

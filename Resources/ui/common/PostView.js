@@ -110,8 +110,11 @@
 	function populatePostView (row, displayComments, photoBlob) {
 		var MoreActionDialog = require('/ui/common/moreActionDialog'),
 			CommentsView = require('ui/common/CommentsView'),
+			Facebook = require('lib/facebook'),
 			IMG_BASE = 'https://github.com/appcelerator/titanium_mobile/raw/master/demos/KitchenSink/Resources/images/',
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
+			author = row.post.user,
+			facebookUID,
 			imageAvatar,
 			labelUserName,
 			labelDetails,
@@ -173,8 +176,9 @@
 				//imgView.addEventListener('click', clickHandler);
 
 				//second row
+				facebookUID = Facebook.getLinkedFBId(author);
 				imageAvatar = Ti.UI.createImageView({
-								image: IMG_BASE + 'custom_tableview/user.png',
+								image: (author.external_accounts ? 'https://graph.facebook.com/' + facebookUID + '/picture' : IMG_BASE + 'custom_tableview/user.png'),
 								left: 5, top:5,
 								width:30, height:30
 								});
@@ -184,7 +188,7 @@
 									color:'#576996',
 									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
 									ellipsize: false,
-									text: row.post.user.username,
+									text: author.username,
 									left: 45, top: -30,
 									width:155, height: 20
 									});

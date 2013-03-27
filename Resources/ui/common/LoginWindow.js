@@ -129,35 +129,15 @@
 			lWin.add(confirm);		
 		}
 		
-		function postActionCallback() {
-			if(acs.isLoggedIn()) {
+		function postActionCallback(e) {
+			if(e.success && acs.isLoggedIn()) {
 				Ti.API.info('Congratulations, you successfully logged in.');
-
-				var photoCollectionId = acs.getPhotoCollectionId(acs.currentUser());
-				
-				if (!isLoginAction) { // create user
-					try {
-						acs.createUserPhotoCollection(acs.currentUser(), acs.currentUser().username + ' Gallery');	
-					}
-					catch (e) {
-						alert("Called createUserPhotoCollection " + e.Message);
-					}
-				}
-				else if (!photoCollectionId){ // login user
-					try {
-						acs.getUserPhotoCollection();	
-					}
-					catch (e2) {
-						alert("Called getUserPhotoCollection " + e2.Message);
-					}	
-				}
-
 				cb();
 				spinner.hide();
 				lWin.remove(spinner);
 				lWin.close();
 			} else {
-				alert('Oopsie, something went wrong.');
+				alert('login or createUser failed:' + e.message);
 			}
 		}
 		

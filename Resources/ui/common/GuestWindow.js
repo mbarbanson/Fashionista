@@ -50,6 +50,7 @@ function createGuestWindow() {
 	// hide tab Bar. We're just using a Tab Group to have a stack of windows without explicitly creating a navigation group which is an iOS only solution
 	thumbnailsWindow.setTabBarHidden(true);
 	guestTabGroup.addTab(tab1);
+	guestTabGroup.setActiveTab(0);
 	guestTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
 	//guestTabGroup.setVisible(true);
 

@@ -46,7 +46,7 @@
 																		
 		// left most tab is the feed
 		tab1 = Ti.UI.createTab({
-								icon:	Ti.UI.iPhone.SystemIcon.MOST_RECENT,
+								icon: '/icons/53-house.png',
 								height: Ti.UI.FILL,	
 								width: '20%',	
 								window: feedWindow 
@@ -72,8 +72,8 @@
 				
 		// favorites feed
 		tab2 = Ti.UI.createTab({
-			//icon: '/icons/light_star.png',
-			icon: Ti.UI.iPhone.SystemIcon.FEATURED,
+			icon: '/icons/60-signpost.png',
+			//icon: Ti.UI.iPhone.SystemIcon.FEATURED,
 			height: Ti.UI.FILL,	
 			width: '20%',				
 			window: win2
@@ -89,7 +89,7 @@
 		
 		// camera tab
 		tab3 = Ti.UI.createTab({
-			icon: '/icons/light_camera.png',
+			icon: '/icons/86-camera.png',
 			height: Ti.UI.FILL,	
 			width: '20%',				
 			window: win3
@@ -121,7 +121,7 @@
 		
 		// gallery tab
 		tab4 = Ti.UI.createTab({
-			icon: '/icons/light_pictures.png',
+			icon: '/icons/42-photos.png',
 			height: Ti.UI.FILL,	
 			width: '20%',				
 			window: win4
@@ -154,7 +154,7 @@
 		// settings tab
 		logoutWindow = LogoutWindow.createLogoutWindow();	
 		tab5 = Ti.UI.createTab({
-			icon: '/icons/light_gears.png',
+			icon: '/icons/19-gear.png',
 			height: Ti.UI.FILL,	
 			width: '20%',				
 			window: logoutWindow

@@ -32,7 +32,7 @@
 		// resize to platform optimized size before uploading, by default the original could be up to 2448x2449!
 		// actually, comment this out for now to speed up synchronous actions		
 		photoBlob = image; //image.imageAsResized(newSize[0], newSize[1]);
-		postModel = new PostModel(user, photoBlob);
+		postModel = PostModel.createPostModel(user, photoBlob);
 		goToShareWindow(postModel);
 	}
 

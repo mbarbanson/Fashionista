@@ -5,18 +5,21 @@
  */
 
 
-
-	
-//constructor
-function PostModel(user, photoBlob) {
+(function () {
 	'use strict';
-	var setCaption = function (caption) {
-		this.caption = caption;
-	};
 	
-	return {user: user, photo: photoBlob}; 
+	//constructor
+	function createPostModel (user, photoBlob) {		
+		return {user: user, photo: photoBlob}; 
+	
+	}
+	
+	function parseCaptionAndTags(postModel, captionStr)	{
+		var startTags = captionStr.indexOf('#');
+	}
 
-}
 
-module.exports = PostModel;
+	exports.createPostModel = createPostModel;
+
+} ());
 
