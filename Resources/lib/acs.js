@@ -507,7 +507,7 @@
 		        Ti.API.info('Friend(s) approved ' + friends);
 				approvedRequestNotification(userIdList);
 		    } else {
-		        Ti.API.info('Error in approveFriends:\\n' +
+		        alert('Error in approveFriends:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 		});		
@@ -522,7 +522,7 @@
 		        Ti.API.info('Friend(s) requests ' + friendRequests);
 				callback(friendRequests);
 		    } else {
-		        Ti.API.info('Error in getFriendRequests:\\n' +
+		        alert('Error in getFriendRequests:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 		});		
@@ -544,6 +544,7 @@
 					successCallback(e.users, cleanupAction);		
 				}
 		    } else {
+				if (cleanupAction) { cleanupAction(); }
 		        alert('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }

@@ -57,10 +57,15 @@ function createShareWindow(postModel, shareAction) {
 	
 	shareBtn.addEventListener('click', function(e) {
 		Ti.API.info("calling sharePhoto. photoBlob width " + photoBlob.width + " height " + photoBlob.height);
-		var captionValue = caption.getValue(),
+		var acs = require('lib/acs'),
+			captionValue = caption.getValue(),
 			senderId = acs.currentUserId(),
 			message = "Your new post has been published",
-			newPostNotify, addPostError;
+			newPostNotify, 
+			addPostError,
+			doShare,
+			hasFriends,
+			friendsSuccessCallback;
 						
 		newPostNotify = function (post) {
 				// newPostNotification
@@ -72,17 +77,36 @@ function createShareWindow(postModel, shareAction) {
 				Ti.App.fireEvent('newPost', {"user_id": senderId, "post_id": post.id, "message": message});						
 		};
 			
-		// go back to feed page
-		shareTabGroup.close();
-		// add post
-		if (captionValue === captionHintText || captionValue === "") {
-			postModel.caption = defaultCaption;			
-		} else {
-			postModel.caption = captionValue;			
-		}
+		doShare = function () {
+			// go back to feed page
+			shareTabGroup.close();
+			// add post
+			if (captionValue === captionHintText || captionValue === "") {
+				postModel.caption = defaultCaption;			
+			} else {
+				postModel.caption = captionValue;			
+			}
+	
+			FeedWindow.beforeSharePost(postModel, newPostNotify);
+			
+		};
+		
+		hasFriends = function (fList) { return fList.length > 0; };
+		
+		friendsSuccessCallback = function (fList) {
+			if (!hasFriends(fList)) {
+				alert("You don't have any friends on Fashionist yet. Would you like to find which of your facebook friends are also using Fashionist?");
+				shareToFBFriends.fireEvent('click', {});
+			}
+			else {
+				doShare();				
+			}
 
-		FeedWindow.beforeSharePost(postModel, newPostNotify);
-								
+		};
+		
+		acs.getFriendsList(friendsSuccessCallback);
+		
+		
 	});
 	
 	cancelBtn.addEventListener('click', function(e) {

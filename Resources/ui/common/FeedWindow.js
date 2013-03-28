@@ -109,7 +109,7 @@
 	}	
 	
 
-	function beforeSharePost(postModel, callback) {
+	function beforeSharePost(postModel, successCallback, errorCallback) {
 		
 		var acs = require('lib/acs'),
 			style = Ti.App.spinnerStyle,
@@ -117,12 +117,14 @@
 			imgH = image.height,
 			imgW = image.width,
 			newSize = Ti.App.photoSizes[Ti.Platform.osname],
+			numFriends = 0,
 			addPostSuccess = function (post) {
 									Ti.API.info("successfully added post " + post.content);
-									callback(post);												
+									if (successCallback) { successCallback(post);}												
 								},
-			addPostError = function () {
+			addPostError = function (post) {
 									Ti.API.info("Calling addPostError callback. Removing finishing up row");
+									if (errorCallback) { errorCallback(post);}
 								};
 		// crop the dimension that's larger than the screen if any						
 		if (imgH > newSize[1]) { imgH = newSize[1]; }
