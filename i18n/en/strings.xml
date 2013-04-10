@@ -21,7 +21,13 @@
 	<string name="shareButton">Share</string>
 	<string name="shareWindow">Share</string>
 	<string name="listWindow">Choose</string>
-	<string name="welcome_message">Welcome to Fashionist/</string>
+	<string name="welcome_message">Welcome to Fashionist, your private fashion network! Take a photo, invite friends to join and ask your fashion advisors for immediate advice any time.</string>
+	<string name="invitefriendsmessage">Would you like to find which of your facebook friends are also using Fashionist?</string>
+	<string name="invitefriendstitle">Fashionist is more fun with friends</string>
+	<string name="nophotostitle">You don't have any photos yet</string>
+	<string name="nophotosmessage">Take a photo or choose one from your camera roll. Click one of the buttons below to get started!</string>
+	<string name="firstuser">You are the first of your facebook friends to use Fashionist. Kudos! Tell your friends to download Fashionist now.</string>
+	<string name="nocaption">no caption</string>
 	<string name="user_agent_message">user agent set to</string>
 	<string name="format_test">Your name is %s</string>
 	<string name="base_ui_title">Base UI</string>
