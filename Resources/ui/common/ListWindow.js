@@ -13,19 +13,22 @@ function createListWindow(doneHandler) {
 			backgroundColor: '#ddd',
 			color: 'black',
 			barColor: '#5D3879',
-			title: L('listWindow'),
+			title: Ti.Locale.getString('listWindow'),
 			rightNavButton: done
 		});
 	
 	done.addEventListener('click', function() {
 		var tab = listWin.containingTab;
-		if (tab) {
-			tab.close(listWin);			
-		}
+
 		if (doneHandler) {
 			doneHandler();
 		}
+		
+		if (tab) {
+			tab.close(listWin);			
+		}
 	});
+	
 	return listWin;
 }
 
@@ -45,9 +48,9 @@ function populateList(listWindow, friends, fashionBuddies, clickHandler) {
 		friend,
 		actionFun,
 		isFashionBuddy;
-	actionFun = function (fid) { 
+	actionFun = function (fid, add) { 
 		Ti.API.info("calling populateList click handler");
-		clickHandler(fid);
+		clickHandler(fid, add);
 	};
 	isFashionBuddy = function (fid) {
 		var i = 0,
@@ -78,8 +81,8 @@ function populateList(listWindow, friends, fashionBuddies, clickHandler) {
 		e.rowData.hasCheck = !e.rowData.hasCheck; 
 		if (handler) {
 			//FIXME
-			// pass in e.rowData and add if hasCheck is true, remove is false would allow adding *and* removing of fashion buddies
-			handler(e.rowData.id); 
+			// pass in e.rowData and add if hasCheck is true, remove if false would allow adding *and* removing of fashion buddies
+			handler(e.rowData.id, e.rowData.hasCheck); 
 		}
 	});
 	listWindow.add(table);

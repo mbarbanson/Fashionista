@@ -5,10 +5,8 @@
 function createShareWindow(postModel, shareAction) {
 	'use strict';
 	var ApplicationTabGroup, 
-		ListWindow, 
-		social, 
-		acs,
-		FeedWindow, 
+		FeedWindow,
+		InviteView, 
 		shareBtn, 
 		cancelBtn, 
 		shareWindow, 
@@ -16,32 +14,28 @@ function createShareWindow(postModel, shareAction) {
 		thumbnail, 
 		tab, 
 		caption,
-		captionHintText = 'Add a caption or tags',
-		defaultCaption = 'How does this look?', 
+		captionHintText = 'Add a caption or tag your photo e.g.: #findexact, #findsimilar',
+		defaultCaption = Ti.Locale.getString('nocaption'), 
 		shareLabel, 
-		shareTable, 
+		inviteTable, 
 		tableData, 
-		shareToFBFriends, 
-		shareToAddressBook, 
 		inviteFBFriends, inviteContacts, selectFBFriend, addSelectedFBFriends, 
 		fashionistaFriends = [],
 		photoBlob = postModel.photo,
 		activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
 			
 	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-	ListWindow = require('ui/common/ListWindow');
-	social = require('lib/social');
-	acs = require('lib/acs');
 	FeedWindow = require('ui/common/FeedWindow');
+	InviteView = require('ui/common/InviteView');
 	
 	// right nav button is Share
 	shareBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.DONE,
-		title : L('shareButton')
+		title : Ti.Locale.getString('shareButton')
 	});
 	cancelBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.DONE,
-		title : L('cancel')
+		title : Ti.Locale.getString('cancel')
 	});
 
 	// share window
@@ -52,25 +46,28 @@ function createShareWindow(postModel, shareAction) {
 		barColor : '#5D3879',
 		tabBarHidden: 'true',
 		leftNavButton : cancelBtn,
-		title : L('shareWindow')
+		title : Ti.Locale.getString('shareWindow')
 	});
 	
+	
 	shareBtn.addEventListener('click', function(e) {
+		shareBtn.hide();
+		shareWindow.setRightNavButton(activityIndicator);	
+		activityIndicator.show();	
+				
 		Ti.API.info("calling sharePhoto. photoBlob width " + photoBlob.width + " height " + photoBlob.height);
 		var acs = require('lib/acs'),
+			social = require('lib/social'),
 			captionValue = caption.getValue(),
 			senderId = acs.currentUserId(),
 			message = "Your new post has been published",
 			newPostNotify, 
-			addPostError,
-			doShare,
-			hasFriends,
-			friendsSuccessCallback;
+			doShare;
 						
 		newPostNotify = function (post) {
 				// newPostNotification
 				Ti.API.info("Notifying friends of new post");
-				social.newPostNotification(post);
+				social.newPostNotification(post, true);
 				//update feed window with local info after caption has been updated in the cloud
 				Ti.API.info("update local feed window with new post");
 				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
@@ -87,26 +84,17 @@ function createShareWindow(postModel, shareAction) {
 				postModel.caption = captionValue;			
 			}
 	
-			FeedWindow.beforeSharePost(postModel, newPostNotify);
+			FeedWindow.beforeSharePost(postModel, newPostNotify, FeedWindow.afterSharePost);
 			
 		};
-		
-		hasFriends = function (fList) { return fList.length > 0; };
-		
-		friendsSuccessCallback = function (fList) {
-			if (!hasFriends(fList)) {
-				alert("You don't have any friends on Fashionist yet. Would you like to find which of your facebook friends are also using Fashionist?");
-				shareToFBFriends.fireEvent('click', {});
-			}
-			else {
-				doShare();				
-			}
-
-		};
-		
-		acs.getFriendsList(friendsSuccessCallback);
-		
-		
+				
+				
+		activityIndicator.hide();
+		shareWindow.setRightNavButton(shareBtn);
+		shareBtn.show();				
+				
+		InviteView.inviteFBFriendsPromptBeforeAction(inviteTable, doShare);
+			
 	});
 	
 	cancelBtn.addEventListener('click', function(e) {
@@ -163,20 +151,25 @@ function createShareWindow(postModel, shareAction) {
 			e.source.color = '#aaa';
 		}
 	});
+/*	
+	caption.addEventListener('return', function() {
+		shareBtn.fireEvent('click');
+	});
+	*/
 	
 	shareWindow.add(caption);
 	
 	// add remaining of the objects on the page
 	shareLabel = Ti.UI.createLabel({
-		text : 'Add friends to share with',
+		text : 'Find friends to share with',
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
 		wordWrap : true,
 		color : 'black',
-//		top : 120,
-		bottom: 140,
+		top : 100,
+//		bottom: 140,
 		left : '5%',
-		height : 40,
+		height : 30,
 		width : '90%',
 		paddingLeft : 2,
 		paddingRight : 2,
@@ -187,119 +180,8 @@ function createShareWindow(postModel, shareAction) {
 	});
 	shareWindow.add(shareLabel);
 
-	shareTable = Ti.UI.createTableView({
-//		top : 170,
-		bottom: 40,
-		height : Ti.UI.SIZE,
-		rowHeight : 50,
-		width : '90%',
-		left : '5%',
-		borderRadius : 5,
-		backgroundColor : 'transparent',
-		//borderColor: 'black',
-		//borderWidth: 1,
-		paddingLeft : 0,
-		paddingRight : 2
-	});
-
-	shareToFBFriends = Ti.UI.createTableViewRow({
-		className : 'shareSource',
-		title : 'from facebook',
-		color : 'black',
-		backgroundColor : '#fff',
-		height : 40,
-		left : 0,
-		//leftImage: '/images/f_logo.png',
-		hasChild : true
-	});
-
-	selectFBFriend = function(friendId) {
-		Ti.API.info("selectFBFriend id: " + friendId);
-		fashionistaFriends.push(friendId);
-	};
-
-	addSelectedFBFriends = function() {
-		var acs = require('lib/acs'),
-			notifyAddedFriends = function (userIdList) {
-		        acs.newFriendNotification(userIdList);
-			};
-		Ti.API.info("Adding selected FB Friends " + fashionistaFriends);
-		acs.addFriends(fashionistaFriends, notifyAddedFriends);
-		fashionistaFriends = [];
-	};
-
-	shareToFBFriends.addEventListener('click', function(e) {
-		var callback = function(friends, fashionBuddies) {
-							var listWin;
-							if (friends && friends.length > 0) {
-								Ti.API.info("create and populate list of friends window");
-								listWin = ListWindow.createListWindow(addSelectedFBFriends);
-								// this is where we check which FB friends are already the current user's Fashionista friends
-								ListWindow.populateList(listWin, friends, fashionBuddies, selectFBFriend);
-								listWin.containingTab = tab;
-								tab.open(listWin);
-							} else {
-								alert('You are the first of your facebook to use Fashionist. Kudos! Invite your fashion buddies to Fashionist now.');
-							}
-						},
-			fashionBuddiesFilter = function (fbFriends) {acs.getFriendsList(function (fashionBuddies) {callback(fbFriends, fashionBuddies);});},
-			//facebook integration
-			FB = require('lib/facebook'), 
-			authCB = function() {
-				Ti.API.info("facebook authorize callback");
-				social.findFBFriends(fashionBuddiesFilter);
-			};
-		FB.authorize(authCB);
-	});
-
-	shareToAddressBook = Ti.UI.createTableViewRow({
-		className : 'shareSource',
-		title : 'from your contacts',
-		color : 'black',
-		backgroundColor : '#fff',
-		top : 50,
-		height : 40,
-		left : 0,
-		//borderWidth: 1,
-		//borderColor: 'black',
-		//leftImage: '/images/contacts-medium.png',
-		hasChild : true
-	});
-
-/*
-	inviteFBFriends = Ti.UI.createTableViewRow({
-		className : 'shareSource',
-		title : 'invite via facebook',
-		color : 'black',
-		backgroundColor : '#fff',
-		top : 100,
-		height : 40,
-		left : 0,
-		//borderWidth: 1,
-		//borderColor: 'black',
-		//leftImage: '/images/f_logo.png',
-		hasChild : true
-	});
-	inviteContacts = Ti.UI.createTableViewRow({
-		className : 'shareSource',
-		title : 'invite via text',
-		color : 'black',
-		backgroundColor : '#fff',
-		top : 150,
-		height : 40,
-		left : 0,
-		//borderWidth: 1,
-		//borderColor: 'black',
-		//leftImage: '/images/contacts-medium.png',
-		hasChild : true
-	});
-	
-	*/
-	shareTable.appendRow(shareToFBFriends);
-	shareTable.appendRow(shareToAddressBook);
-//	shareTable.appendRow(inviteFBFriends);
-//	shareTable.appendRow(inviteContacts);
-	shareWindow.add(shareTable);
+	inviteTable = InviteView.createInviteView(tab, shareWindow);
+	shareWindow.add(inviteTable);
 
 	// show pic thumbnail
 	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);

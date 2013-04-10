@@ -19,7 +19,7 @@
 		    if (e.success) {
 		        var review = e.reviews[0];
 		        Ti.API.info('createComment success:\\n' +
-		            'id: ' + review.id + '\\n' +
+		            'user: ' + review.user + '\\n' +
 		            'rating: ' + review.rating + '\\n' +
 		            'content: ' + review.content + '\\n' +
 		            'updated_at: ' + review.updated_at);
@@ -50,7 +50,7 @@
 		        for (var i = 0; i < e.reviews.length; i++) {
 		            var review = e.reviews[i];
 		            Ti.API.info('id: ' + review.id + '\\n' +
-		                'id: ' + review.id + '\\n' +
+		                'user: ' + review.user + '\\n' +
 		                'rating: ' + review.rating + '\\n' +
 		                'content: ' + review.content + '\\n' +
 		                'updated_at: ' + review.updated_at);

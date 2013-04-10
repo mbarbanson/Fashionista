@@ -87,7 +87,7 @@ function createGuestWindow() {
 		color: 'white',
 		backgroundColor: 'transparent',
 		font: { fontSize: 20 },
-		text: 'Welcome! Use Fashionist to take a photo, choose your fashion buddies and ask for immediate fashion advice.',
+		text: L('welcome_message'),
 		textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
 		wordWrap : true,
 		horizontalWrap : true,		
@@ -111,7 +111,8 @@ function createGuestWindow() {
     thumbnailsWindow.add(dialog);
 
 	function loginCallback() {
-		if(acs.isLoggedIn()===true) {	
+		// if a user has successfully logged in or signed up
+		if(acs.currentUser()) {	
 			try {
 				Ti.API.info("loginCallback");
 				if (!Ti.App.mainTabGroup) {

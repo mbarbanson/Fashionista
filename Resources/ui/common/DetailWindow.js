@@ -22,6 +22,7 @@
 
 	// display list of comments for post
 	function showPostComments(tableView, post, newComment, comments) {
+		Ti.API.info("showPostComments");
 		var CommentsView = require('ui/common/CommentsView'),
 			PostView = require('ui/common/PostView'),
 			row;

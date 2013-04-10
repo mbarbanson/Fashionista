@@ -24,9 +24,9 @@
 	
 	
 	
-	function newPostNotification (post) {
+	function newPostNotification (post, notifyAllFriends) {
 		Ti.API.info('social.newPostNotification');
-		acs.newPostNotification(post);
+		acs.newPostNotification(post, notifyAllFriends);
 	}
 	
 	
@@ -47,7 +47,7 @@
 	}
 	
 	
-	function findFBFriends (callback) {
+	function findFBFriends (successCallback, errorCallback) {
 		var Facebook = require('lib/facebook'),
 			i;
 		Cloud.SocialIntegrations.searchFacebookFriends(function (e){
@@ -64,7 +64,7 @@
 		                'first name: ' + user.first_name + '\\n' +
 		                'last name: ' + user.last_name);
 		         }
-		         callback (e.users);
+		         successCallback (e.users);
 		    } else {
 		        Ti.API.info('searchFacebookFriends error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
@@ -73,8 +73,7 @@
 					Facebook.unlinkFBAccount(function () {if (Ti.Facebook.getLoggedIn()) {Facebook.logout();}});	
 				}
 				else {
-					Ti.Facebook.setloggedIn(false);
-					Ti.Facebook.setUid(null);
+					if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); }
 					Ti.Facebook.authorize();
 				}			       
 		    }

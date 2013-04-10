@@ -20,8 +20,8 @@
 			var tab = Ti.App.getFeedTab(), 
 				postId = e.post_id, message = e.message, senderId = e.user_id,
 				currentUser = acs.currentUser();
-			if (tab) {			
-				if (postId && currentUser && currentUser.id === senderId) {
+			if (tab) {		
+				if (postId && currentUser && acs.currentUserId() === senderId) {
 						Ti.API.info(message);
 						acs.showPost(postId, function (p) {
 													FeedWindow.afterSharePost(p);
@@ -37,18 +37,29 @@
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
 			var tab = Ti.App.getFeedTab(), 
-				postId = e.post_id, message = e.message, senderId = e.user_id;
+				postId = e.post_id, message = e.message, senderId = e.user_id,
+				appBadge = e.badge;
 			if (tab) {
 				Ti.API.info("new post. " +  message + " Updating feed window ");				
-				
+				// decrement the app badge
+				Ti.API.info("appBadge is " + appBadge);
+				if (appBadge > 0) {
+					Ti.UI.iPhone.setAppBadge(appBadge - 1);
+				}
+				else {
+					Ti.API.info("notification handler called when appbadge is negative " + appBadge);
+				}				
 				if (postId) {
 					if (acs.currentUser() && acs.currentUser().id === senderId) {
-						Ti.API.info("your comment " + message + " has been posted");
+						Ti.API.info("your picture " + message + " has been posted");
 					}
 					else {
+						/* race condition can cause this to display a post twice
 						acs.showPost(postId, function (p) {
 												FeedWindow.displayPostInFeed(p, true); 
-												});						
+												});
+												*/
+						FeedWindow.showFriendsFeed();													
 					}
 				}
 			}		
@@ -59,9 +70,18 @@
 		Ti.API.info("Adding newComment handler");
 		Ti.App.addEventListener('newComment', function (e) {
 			var postId = e.post_id, message = e.message, senderId = e.user_id,
-				tab = Ti.App.getFeedTab();
+				tab = Ti.App.getFeedTab(),
+				appBadge = e.badge;
 			Ti.API.info("new comment " + message + " Updating feed window postId " + postId );
 			if (tab) {
+				// decrement the app badge
+				Ti.API.info("appBadge is " + appBadge);
+				if (appBadge > 0) {
+					Ti.UI.iPhone.setAppBadge(appBadge - 1);
+				}
+				else {
+					Ti.API.info("notification handler called when appbadge is negative " + appBadge);
+				}				
 				//refresh comments count on local and friends' device
 				FeedWindow.showFriendsFeed();
 				if (postId) {
@@ -70,9 +90,7 @@
 					}
 					else {
 						Ti.API.info("display post in details window on top of tab " + tab);
-						//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
-						// this would also avoid having closures point to stale copies of post
-						acs.showPost(postId, function (p) { PostView.displayPostDetails(p);});						
+						acs.showPost(postId, function (p) { PostView.displayPostDetailsView(p, true);});						
 					}
 				}
 				else {
@@ -89,8 +107,16 @@
 		// just received a notification that a like was added
 		Ti.API.info("Adding newLike handler");
 		Ti.App.addEventListener('newLike', function (e) {
-			var postId = e.post_id, message = e.message, senderId = e.user_id;
+			var postId = e.post_id, message = e.message, senderId = e.user_id, appBadge =  e.badge;
 			Ti.API.info("new like " + message + " Updating likes count ");
+			// decrement the app badge
+			Ti.API.info("appBadge is " + appBadge);
+			if (appBadge > 0) {
+				Ti.UI.iPhone.setAppBadge(appBadge - 1);
+			}
+			else {
+				Ti.API.info("notification handler called when appbadge is not positive " + appBadge);
+			}			
 			if (postId) {
 				if (acs.currentUser() && acs.currentUser().id === senderId) {
 					Ti.API.info("your like " + message + " has been registered");
@@ -100,7 +126,7 @@
 					Ti.API.info("received a like " + message + " from user " + senderId);
 					FeedWindow.showFriendsFeed();
 					//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
-					acs.showPost(postId, function (p) { PostView.displayPostDetails(p);});
+					//acs.showPost(postId, function (p) { PostView.displayPostDetailsView(p);});
 				}
 			}
 			else {
@@ -117,10 +143,19 @@
 			Ti.API.info("executing approveFriendRequest handler");
 			var requesters = [],
 				currentUser = acs.currentUser(),
-				requesterId = e.user_id;
+				requesterId = e.user_id,
+				approveRequestCallback,
+				appBadge =  e.badge;
 			requesters.push(requesterId);
-			if (currentUser && currentUser.id !== requesterId) {
-				acs.approveFriendRequests(requesters, acs.approvedRequestNotification);				
+			// decrement the app badge
+			Ti.API.info("appBadge is " + appBadge);
+			if (appBadge > 0) {
+				Ti.UI.iPhone.setAppBadge(appBadge - 1);			}
+			else {
+				Ti.API.info("notification handler called when appbadge is not positive " + appBadge);
+			}			
+			if (currentUser && acs.currentUserId() !== requesterId) {				
+				acs.approveFriendRequests(requesters);				
 			}
 			else {
 				Ti.API.info("got a request to add self as a friend. do nothing currentUser is " + currentUser);
@@ -137,9 +172,60 @@
 	}
 	
 	
-		// should be called after we have a logged in user
+	function registerNotificationCallback (e) {
+		var acs = require('lib/acs'),
+			appBadge = Titanium.UI.iPhone.getAppBadge(),
+			customPayload = e.data.custom,
+			notificationType = customPayload.type,
+			senderId = customPayload.user_id,
+			postId = customPayload.post_id,
+			badge = e.data.badge,
+			message = e.data.alert,
+			currentUser = acs.currentUser(),
+			notificationAlert = Ti.UI.createAlertDialog({
+	            title : Ti.Locale.getString('fashionista'),
+	            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
+	        });
+									
+			Ti.API.info('PUSH NOTIFICATION: Fashionist received a push notification w/ type:' + notificationType + ' msg:' + message + ' appBadge ' + appBadge);
+
+			if (acs.currentUser() && acs.currentUser().id === senderId) {
+				Ti.API.info("PUSH Notification was sent by current user. No further action. Local side effects should not rely on push notification succeeding");
+			}	
+			else {	
+				Ti.API.info(notificationType + " \n time " + Date.now());	
+				switch (notificationType) {
+					case 'newPost':
+						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
+						Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": postId, "message": message, "badge": badge});
+					break;
+					case 'newComment':
+						Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
+						Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": postId, "message": message, "badge": badge});
+					break;		
+					case 'newLike':
+						Ti.API.info("FIRE EVENT: NEW LIKE from " + senderId);
+						Ti.App.fireEvent('newLike', {"user_id": senderId, "post_id": postId, "message": message, "badge": badge});
+					break;								
+					case 'friend_request':
+						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
+						Ti.App.fireEvent('approveFriendRequest', {"user_id": senderId, "badge": badge});
+					break;
+					case 'friend_approved':
+						Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);
+					break;
+					default:
+						alert('Unknown Notification Type: ' +  notificationType + ' from ' + senderId + " to " + currentUser);
+				}
+				// if app is in foreground this is the only way user will find out a notification was received
+		        if (Ti.App.isInForeground) { notificationAlert.show(); }
+	        }				
+	}	
+	
+	
+	
+	// should be called after we have a logged in user
 	function initNotifications () {
-		var acs = require('lib/acs');
 		initNotificationHandlers();
 		//register for push notifications every time the app launches, as prescribed by Apple's
 		// Local and Push Notifications Programming Guide
@@ -156,58 +242,13 @@
 		        alert("failed to register push notifications: " + e);
 		    },
 		    // called when app receives a push notification
-		    callback : function(e) {
-				var customPayload = e.data.custom,
-					notificationType = customPayload.type,
-					senderId = customPayload.user_id,
-					postId = customPayload.post_id,
-					message = e.data.alert,
-					currentUser = acs.currentUser();
-									
-				Ti.API.info('PUSH NOTIFICATION: Fashionist received a push notification ' + message);
-				
-				if (acs.currentUser() && acs.currentUser().id === senderId) {
-					Ti.API.info("PUSH Notification was sent by current user. No further action. Local side effects should not rely on push notification succeeding");
-				}	
-				else {	
-
-					Ti.API.info(notificationType + " \n time " + Date.now());
-					
-					switch (notificationType) {
-						case 'newPost':
-							Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-							Ti.App.fireEvent('newFriendPost', {"user_id": senderId, "post_id": postId, "message": message});
-						break;
-						case 'newComment':
-							Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
-							Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": postId, "message": message});
-						break;		
-						case 'newLike':
-							Ti.API.info("FIRE EVENT: NEW LIKE from " + senderId);
-							Ti.App.fireEvent('newLike', {"user_id": senderId, "post_id": postId, "message": message});
-						break;								
-						case 'friend_request':
-							Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
-							Ti.App.fireEvent('approveFriendRequest', {"user_id": senderId});
-						break;
-						case 'friend_approved':
-						Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);
-						break;
-						default:
-						Ti.API.info('Unknown Notification Type: ' +  notificationType + ' from ' + senderId + " to " + currentUser);
-					}
-		
-			        Ti.UI.createAlertDialog({
-			            title : "Fashionist",
-			            message : JSON.stringify(message)  //if you want to access additional custom data in the payload
-			        }).show();
-		        }				
-		    }
+		    callback : registerNotificationCallback
 		});
 	}
 
 	
 	exports.initSubscriptions = initSubscriptions;
 	exports.initNotifications = initNotifications;
+	exports.registerNotificationCallback = registerNotificationCallback;
 	
 } ());

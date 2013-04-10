@@ -7,6 +7,9 @@
 
 (function () {
 	'use strict';
+	
+	var singleLineHeight = 20,
+		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
 
 // Like a post
 	function likePost(row) {
@@ -64,14 +67,14 @@
 	/*
 	 *	createPostView
 	 */
-	//FIXME BEWARE!!!! this is the only function that should access post directly.
-	// all other functions should access post through row, ESPECIALLY if they create closures that point to a post
-	// since posts can be updated after they are liked or commented on.
+	//FIXME BEWARE!!!! Functions should avoid creating long lived closures that point to a post (ie for an event listener)
+	// since posts can be updated after they are liked or commented on. Access a post through its row instead for this
 	// at some point we should fix this by updating the local comments_count and ratings_count so we never have stale posts pointers
 	function createPostView (post) {
 		var row = Ti.UI.createTableViewRow({
 				    className:'fashionistPost', // used to improve table performance
 					color: 'black',
+					selectionStyle: Titanium.UI.iPhone.TableViewCellSelectionStyle.NONE,
 					backgroundColor: 'white',
 					selectedBackgroundColor:'white',
 				    width:Ti.UI.SIZE,
@@ -82,11 +85,11 @@
 		return row;
 	}
 
-	
+
 	/*
-	 * displayPostDetails
+	 * displayPostDetailsView. Do not use this directly in a long lived closure!!! post objects are mutable!!!!!
 	 */
-	function displayPostDetailsView (row, newComment) {
+	function displayPostDetailsView (post, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			detailWindow = DetailWindow.createDetailWindow(),
@@ -99,11 +102,20 @@
 		else {
 			Ti.API.error("displayPostDetails: currentTab is null");
 		}
-		CommentsView.createPostCommentsTable(detailWindow, row.post, newComment);
-		return detailWindow;	
+		CommentsView.createPostCommentsTable(detailWindow, post, newComment);
+		return;	
+	}
+	
+
+	/*
+	 * displayRowDetails
+	 */
+	function displayRowDetails (row, newComment) {
+		Ti.API.info('show row details');
+		displayPostDetailsView(row.post, newComment);		
 	}
 
-	
+		
 	/*
 	 * populatePostView
 	 */
@@ -119,7 +131,7 @@
 			labelUserName,
 			labelDetails,
 			imgView, photoUrls = row.post.photo.urls,
-			img,
+			img, clickHandler,
 			imgW,
 			imgH,
 			postW,
@@ -172,8 +184,10 @@
 								});
 				row.add(imgView);
 				row.photo = img;
-				//clickHandler = function (e) {row.action(post, img);};
-				//imgView.addEventListener('click', clickHandler);
+				clickHandler = function (e) {
+									likePost(row);				
+								};
+				imgView.addEventListener('click', clickHandler);
 
 				//second row
 				facebookUID = Facebook.getLinkedFBId(author);
@@ -203,6 +217,8 @@
 									});
 				row.add(likeBtn);
 				
+				row.likeButton = likeBtn;
+				
 				commentBtn = Ti.UI.createButton({
 									image: '/icons/light_comment.png',
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
@@ -230,7 +246,7 @@
 				commentBtn.addEventListener('click', 
 											function(e) {
 													if (!displayComments) {
-														displayPostDetailsView(row, true);
+														displayRowDetails(row, true);
 													}
 													else {
 														CommentsView.inputComment(row);
@@ -257,13 +273,15 @@
 								color:'#222',
 								autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: row.post.content,
+								text: (row.post.content === Ti.Locale.getString('nocaption') ? '' : row.post.content),
 								wordWrap : true,
-								horizontalWrap : true,															
+								horizontalWrap : true,
+								ellipsize: true,															
 								left:5, top: 0,
 								width:Ti.UI.FILL,
-								height: 60
+								height: 20
 								});
+			labelDetails.height = singleLineHeight * (labelDetails.text.length / maxCharsPerLine + 1);
 			row.add(labelDetails);
 
 			// number of likes
@@ -306,7 +324,7 @@
 			row.commentsCount = commentsCount;
 			
 			if (!displayComments) {
-				commentsCount.addEventListener('click', function (e) {displayPostDetailsView(row, true);});	
+				commentsCount.addEventListener('click', function (e) {displayRowDetails(row, true);});	
 			}
 	
 			return row;
@@ -365,5 +383,7 @@
 	exports.populatePostView = populatePostView;
 	exports.setPostViewEventHandlers = setPostViewEventHandlers;
 	exports.displayPostSummaryView = displayPostSummaryView;
+	exports.displayPostDetailsView = displayPostDetailsView;
+	exports.likePost = likePost;
 	
 } ());

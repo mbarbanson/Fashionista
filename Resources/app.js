@@ -38,8 +38,8 @@ if (Ti.version < 2.0 ) {
 
 	
 	// test out logging to developer console, formatting and localization
-	Ti.API.info(String.format("%s%s", L("welcome_message","default_not_set"),Titanium.version));
-	Ti.API.debug(String.format("%s %s", L("user_agent_message","default_not_set"),Titanium.userAgent));
+	Ti.API.info(String.format("%s%s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));
+	Ti.API.debug(String.format("%s %s", Ti.Locale.getString("user_agent_message","default_not_set"),Titanium.userAgent));
 	
 	Ti.API.debug(String.format("locale specific date is %s",String.formatDate(new Date()))); // default is short
 	Ti.API.debug(String.format("locale specific date (medium) is %s",String.formatDate(new Date(),"medium")));
@@ -62,16 +62,38 @@ if (Ti.version < 2.0 ) {
 	Ti.App.SCREEN_WIDTH = (width > height) ? height : width;
 	Ti.App.SCREEN_HEIGHT = (width > height) ? width : height;
 	
+	Ti.App.isInForeground = true;
+ 
+	Ti.App.addEventListener('pause', function(){
+	    Ti.App.isInForeground = false;
+	});
+	 
+	Ti.App.addEventListener('resumed', function() {
+		var appBadge = Ti.UI.iPhone.getAppBadge();
+	    Ti.App.isInForeground = true;
+	    if (appBadge > 0 ) {
+			Ti.API.info("Fashionist resumed with appBadge " + appBadge);
+			Ti.App.fireEvent('refreshFeedWindow', {});
+	    }
+	});
+	
+	Ti.App.addEventListener('close', function(){
+	    Ti.API.info('Fashionist is closing. See you again soon.');
+	});
+	
+	
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
 	Ti.App.getFeedTab = null;
 	
 	//setup spinny activity indicator
-	if (Ti.Platform.name === 'iPhone OS'){
+	if (osname === 'iphone' || osname === 'ipad'){
 		Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
+		Ti.App.darkSpinner = Ti.UI.iPhone.ActivityIndicatorStyle.DARK;
 	}
 	else {
-		Ti.App.spinnerStyle = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
+		Ti.App.spinnerStyle = Ti.UI.ActivityIndicatorStyle.BIG;
+		Ti.App.darkSpinner = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
 	}
 	// initialize Facebook 
 	Ti.App.facebookInitialized = false;
@@ -82,7 +104,7 @@ if (Ti.version < 2.0 ) {
 	  Ti.API.info('Ti.Platform.displayCaps.logicalDensityFactor: ' + Ti.Platform.displayCaps.logicalDensityFactor);
 	}
 	
-	Ti.API.info("should be hello, was = "+String.format('%s','hello'));
+	Ti.API.info("should be hello, was = " + String.format('%s','hello'));
 			
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
@@ -106,7 +128,7 @@ if (Ti.version < 2.0 ) {
 	
 	Ti.App.photoSizes ={"thumbnail": [50,50], "iphone": [640,640], "ipad": [768,768], "android": [478,478]};
 	
-	rootWindow = AppWindow.createApplicationWindow(L('Fashionist'));
+	rootWindow = AppWindow.createApplicationWindow(Ti.Locale.getString('fashionista'));
 	
 	// for now exit if device is offline
 	if (!Ti.Network.online) {

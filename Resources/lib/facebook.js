@@ -109,11 +109,6 @@
 	}
 
 
-	// FB account integration
-	function populateNameAndPicFromFB(fbData) {
-		var acs = require('lib/acs');
-		acs.updateUser({first_name: fbData.first_name, last_name: fbData.last_name});				
-	}
 	
 	function hasLinkedFBAccount() {
 		var acs = require('lib/acs'),
@@ -147,12 +142,11 @@
 					successCallback(e);
 			    }		            
             } else {
-		        Ti.API.info('Error. Failed to link to Facebook account:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		            if (errorCallback) {
-						Ti.API.info(" Calling linktoFBAccount errorCallback");
-						errorCallback();
-					}
+		        alert(((e.error && e.message) || JSON.stringify(e)));
+	            if (errorCallback) {
+					Ti.API.info(" Calling linktoFBAccount errorCallback");
+					errorCallback();
+				}
 		    }
 		});
 	}
@@ -199,12 +193,20 @@
 		});
 	}
 	
+
+
+	// FB account integration
+	function populateNameAndPicFromFB(fbData) {
+		var acs = require('lib/acs');
+		acs.updateUser({first_name: fbData.first_name, last_name: fbData.last_name});				
+	}
 	
-	function initFBIntegration(actionCB) {
+	
+	function initFBIntegration(actionCB, cleanupCB) {
 		// configure facebook options
 		Ti.Facebook.appid = '355242507898610';
 		Ti.Facebook.permissions = ['publish_stream', 'offline_access', 'xmpp_login']; // Permissions your app needs
-		// set to false use SSO on device if facebook app is present. defaults to true
+		// set to false to use SSO on device if facebook app is present. defaults to true
 		Ti.Facebook.forceDialogAuth = false;
 		
 		authAction = actionCB;
@@ -217,20 +219,19 @@
 		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.getLoggedIn() + ". fb access token " + Ti.Facebook.getAccessToken());
 				if (!hasLinkedFBAccount()) {
 					Ti.API.info("current user doesn't have a linked facebook account.");
-			        linktoFBAccount(authAction, function () {Ti.Facebook.logout(); Ti.Facebook.setUid(null);});
+			        linktoFBAccount(authAction, function () { Ti.Facebook.logout(); });
 				}
 				else {
 					if (authAction) {authAction();}
 				}
 	            // e.data: { link, id, name, first_name, last_name, gender, timezone, locale, updated_time, username}
 	            // updating user photo seems to be broken
-	            populateNameAndPicFromFB(e.data);
-	            //getFBProfilePic(function (url)	{populateNameAndPicFromFB(e.data);});		              
+	            populateNameAndPicFromFB(e.data);		              
 		    } else if (e.error) {
 		        Ti.API.info("Facebook login listener. Error result from authorize " + e.error);
 		        // log out of Facebook to reset all cached info
 		        if (hasLinkedFBAccount()) {
-					unlinkFBAccount(function () {Ti.Facebook.logout();});
+					unlinkFBAccount(function () { Ti.Facebook.logout(); });
 				}
 				else {
 					Ti.Facebook.logout();					
@@ -240,6 +241,7 @@
 		    } else if (e.cancelled) {
 		        Ti.API.info("Facebook login cancelled");
 		    }
+	        if (cleanupCB) {cleanupCB();}
 		};
 		Ti.Facebook.addEventListener('login', loginListener);
 		if (logoutListener) {
@@ -254,7 +256,7 @@
 
 	// make sure user is authorized for facebook before executing action
 	// if the current user has a linked fb account already, logging into Fashionist will have already updated Ti.Facebook.accessToken
-	function authorize(actionCB) {
+	function authorize(actionCB, cleanupCB) {
 		var acs = require('lib/acs'),
 			currentUser = acs.currentUser();
 
@@ -263,7 +265,7 @@
 			return;
 		}
 		if (!Ti.App.facebookInitialized) {
-			initFBIntegration(actionCB);
+			initFBIntegration(actionCB, cleanupCB);
 			Ti.App.facebookInitialized = true;
 		}
 		

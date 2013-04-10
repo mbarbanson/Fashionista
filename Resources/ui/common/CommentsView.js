@@ -6,7 +6,9 @@
 
 (function () {
 	'use strict';
-	var acs = require('/lib/acs');
+	var acs = require('/lib/acs'),
+		singleLineHeight = 20,
+		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
 	
 
 	function addCommentHandler (row, commentText, displayComments) {
@@ -34,8 +36,16 @@
 
 	function inputComment (row) {
 		var contentTextInput,
-			sendBtn,
-			closeBtn,
+			sendBtn = Ti.UI.createButton({
+											    style : Ti.UI.iPhone.SystemButtonStyle.DONE,
+											    title : 'Send'
+											}),
+			cancelBtn = Ti.UI.createButton({
+											    systemButton : Ti.UI.iPhone.SystemButton.CANCEL
+											}),
+			flexSpace = Ti.UI.createButton({
+												systemButton : Ti.UI.iPhone.SystemButton.FLEXIBLE_SPACE
+											}),
 			post = row.post,
 			removeInputFields = function() {
 									contentTextInput.blur();
@@ -43,9 +53,16 @@
 									row.remove(contentTextInput);
 									sendBtn.hide();
 									row.remove(sendBtn);
-									closeBtn.hide();
-									row.remove(closeBtn);
 								};
+
+/*
+var camera = Ti.UI.createButton({
+    systemButton : Ti.UI.iPhone.SystemButton.CAMERA
+});
+*/
+							
+								
+								
 							
 		if (post) {
 			Ti.API.info("Add a comment to post " + post.content);
@@ -56,13 +73,17 @@
 				color: '#aaa',
 		        top: 5, //postH + 140, 
 		        left: 5, 
-		        width: 255, height: 45,
+		        width: 310, //255, 
+		        height: 60,
 				textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-				autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,				
-		        borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
+				autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,	
+				//keyboardToolbar : [cancelBtn, flexSpace, sendBtn],
+				keyboardType: Ti.UI.KEYBOARD_EMAIL,
+				returnKeyType: Ti.UI.RETURNKEY_SEND,			
+		        //borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
 		        borderColor: 'black',
 		        borderWidth: 1,
-				borderRadius : 5,
+				borderRadius : 1,
 				font : {
 					fontWeight : 'normal',
 					fontSize : '17'
@@ -85,36 +106,15 @@
 					e.source.color = '#aaa';
 				}
 			});
-	
-
-			closeBtn = Ti.UI.createButton({
-					image: '/icons/dark_x.png',
-					style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
-					left:235, 
-					top:-35, //postH + 145,
-					borderWidth: 1,
-					borderColor: 'black',
-					backgroundColor: 'grey',
-					backgroundFocusedColor: 'blue',
-					width: 15,
-					height: 15
-					});
-			row.add(closeBtn);
-			closeBtn.addEventListener('click', removeInputFields);
-						
-			// send comment button			
-			sendBtn = Ti.UI.createButton({
-					        title: 'Send',
-					        top: -25, //postH + 140, 
-					        left: 270, 
-					        width: 45, height: 45
-				        });
-				    
-		    row.add(sendBtn);
+			
+			contentTextInput.addEventListener('return', function()
+			{
+				sendBtn.fireEvent('click');
+			});
 		    
 		    sendBtn.addEventListener('click', 
 									function (e) {
-										var commentText = contentTextInput.value || 'How does this look?';										
+										var commentText = escape(contentTextInput.value);										
 										addCommentHandler(row, commentText, true);
 										// remove comment input UI
 										removeInputFields();										
@@ -130,18 +130,25 @@
 
 	
 	function displayComment(row, comment) {
-		var	commenter = comment.user.username,
+		var	commenter = comment.user ? comment.user.username + ": " : "",
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
 			label = Ti.UI.createLabel({
-						text: commenter + ': ' + comment.content,
+						text: commenter + unescape(comment.content),
 						font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
 						textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
-						left: 5, top: 5,
-						height: 20,
+						wordWrap : true,
+						horizontalWrap : true,	
+						ellipsize: false,					
+						left: 5, top: 2,
+						height: 40,
 						width: Ti.UI.FILL,
 						color: 'black',
 						visible: true	
-					});
+					}),
+			numLines;
+			// very rough approx, quick and dirty for now
+			numLines = Math.floor(label.text.length / maxCharsPerLine) + 1;
+			label.height = singleLineHeight * numLines;
 			row.add(label);						
 	}
 	
@@ -156,6 +163,7 @@
 	
 
 	function createPostCommentsTable (win, post, newComment) {
+		Ti.API.info("createPostCommentsTable");
 		var	Comments = require('lib/comments'),
 			DetailWindow = require('ui/common/DetailWindow'),
 			tableView = Ti.UI.createTableView({

@@ -18,7 +18,7 @@ try {
 	function() { Titanium.API.info("Created user successfully"); }
 	);
 
-	if (acs.isLoggedIn) {
+	if (acs.currentUser()) {
 		Titanium.API.info(acs.currentUser.username + " is logged in" );
 	}
 	else {

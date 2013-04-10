@@ -42,7 +42,7 @@ function initLogoutWindow(logoutWin, containingTab) {
 			acs = require('lib/acs');
 			
 		// successfully logged in
-		if(acs.isLoggedIn()) {			
+		if(acs.currentUser()) {			
 		    logoutWin.fireEvent('newLoggedInUser');
 			containingTab.close(loginWin);
 		}

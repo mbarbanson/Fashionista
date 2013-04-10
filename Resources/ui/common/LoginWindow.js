@@ -26,12 +26,7 @@
 			style;
 			
 		//setup spinny activity indicator
-		if (Ti.Platform.name === 'iPhone OS'){
-			style = Ti.UI.iPhone.ActivityIndicatorStyle.DARK;
-		}
-		else {
-			style = Ti.UI.ActivityIndicatorStyle.BIG_DARK;				
-		}			
+		style = Ti.App.darkSpinner;			
 		spinner.font = {fontFamily:'Helvetica Neue', fontSize:15,fontWeight:'bold'};
 		spinner.style = style;	
 				
@@ -130,14 +125,16 @@
 		}
 		
 		function postActionCallback(e) {
-			if(e.success && acs.isLoggedIn()) {
+			if(e.success && acs.currentUser()) {
 				Ti.API.info('Congratulations, you successfully logged in.');
 				cb();
 				spinner.hide();
 				lWin.remove(spinner);
 				lWin.close();
 			} else {
-				alert('login or createUser failed:' + e.message);
+				Ti.API.info('login or createUser failed:' + e.message);
+				spinner.hide();
+				lWin.remove(spinner);
 			}
 		}
 		
