@@ -1,16 +1,17 @@
-/*
+/**
  * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
 (function () {
 	'use strict';
 	
-	function inviteFBFriendsHandler(tab, parentWin) {
+	function inviteFBFriendsHandler(parentWin) {
 		var ListWindow = require('ui/common/ListWindow'),
 			social = require('lib/social'),
 			acs = require('lib/acs'),
 			fashionistaFriends = [],
-			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.darkSpinner, top: Ti.App.SCREEN_HEIGHT/3, left: Ti.App.SCREEN_WIDTH/2}),
+			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.darkSpinner, top: '50%', left: '50%'}),
 			selectFBFriend = function(friendId, add) {
 				if (add) {
 					Ti.API.info("selectFBFriend id: " + friendId);
@@ -30,7 +31,7 @@
 				if (fashionistaFriends.length > 0) { acs.addFriends(fashionistaFriends, notifyAddedFriends); }
 			},
 			callback = function(friends, fashionBuddies) {
-							var listWin, rightButton;
+							var listWin, rightButton, tab = parentWin.containingTab;
 							if (friends && friends.length > 0) {
 								Ti.API.info("create and populate list of friends window");
 								listWin = ListWindow.createListWindow(addSelectedFBFriends);
@@ -39,12 +40,11 @@
 								
 								activityIndicator.hide();
 								parentWin.remove(activityIndicator);
-								//activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
 								listWin.setRightNavButton(activityIndicator);
 								activityIndicator.show();
 								
 								// this is where we check which FB friends are already the current user's Fashionista friends
-								ListWindow.populateList(listWin, friends, fashionBuddies, selectFBFriend);
+								ListWindow.populateFriendsInviteList(listWin, friends, fashionBuddies, selectFBFriend);
 								listWin.containingTab = tab;
 
 								activityIndicator.hide();
@@ -74,26 +74,27 @@
 		FB.authorize(authCB, errorCB);		
 	}
 	
-	function inviteFBFriendsPromptBeforeAction(inviteTable, action) {
+	function inviteFBFriendsPromptBeforeAction(window, action) {
 		var acs = require('lib/acs'),
-			inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
+			//inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
-			window = inviteTable.window,
+			//window = inviteTable.window,
 			rightButton,
 			hasFriends = function (fList) { return fList.length > 0; },
 			getFriendsSuccessCallback = function (fList) {
 				// no friends yet! prompt to select and add friends
-				if (!hasFriends(fList) && !acs.getHasRequestedFriends() && inviteFBFriendsRow) {
+				if (!hasFriends(fList) && !acs.getHasRequestedFriends()) {
 					  var dialog = Ti.UI.createAlertDialog({
 									    cancel: 0,
 									    persistent: true,
 									    buttonNames: ['Not Now', 'Yes'],
-									    message: Ti.Locale.getString('invitefriendsmessage'),
-									    title: Ti.Locale.getString('invitefriendstitle')
+									    message: Ti.Locale.getString('findFriendsMessage'),
+									    title: Ti.Locale.getString('findFriendsTitle')
 									  });
 									  dialog.addEventListener('click', function(e){
 									    if (e.index === 1){
-											inviteFBFriendsRow.fireEvent('click', {});
+											//inviteFBFriendsRow.fireEvent('click', {});
+											inviteFBFriendsHandler(window);
 									    }
 									    else {
 											Ti.API.info('The button ' + e.index + ' was clicked');
@@ -129,13 +130,13 @@
 
 
 
-	function createInviteView(tab, parentWin) {
+	function createInviteView(parentWin, offsetTop) {
 	
 		var inviteTable, inviteFBFriendsRow, inviteContactsRow;
 		
 		inviteTable = Ti.UI.createTableView({
 			//bottom: 40,
-			top: 140,
+			top: offsetTop || 140,
 			height : Ti.UI.SIZE,
 			rowHeight : 50,
 			width : '90%',
@@ -150,7 +151,7 @@
 	
 		inviteFBFriendsRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
-			title : 'from facebook',
+			title : Ti.Locale.getString('useFacebook'),
 			color : 'black',
 			backgroundColor : '#fff',
 			height : 40,
@@ -159,13 +160,13 @@
 			hasChild : true
 		});
 	
-		inviteFBFriendsRow.addEventListener('click', function (e) { inviteFBFriendsHandler (tab, parentWin); } );
+		inviteFBFriendsRow.addEventListener('click', function (e) { inviteFBFriendsHandler (parentWin); } );
 	
 		inviteContactsRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
-			title : 'from your contacts',
+			title : Ti.Locale.getString('useContacts'),
 			color : 'black',
-			backgroundColor : '#fff',
+			backgroundColor : '#AAA',
 			top : 50,
 			height : 40,
 			left : 0,

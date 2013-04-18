@@ -1,14 +1,17 @@
-/*
+/**
  * @author MONIQUE BARBANSON
- */
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ * 
+ **/
 
 function createShareWindow(postModel, shareAction) {
 	'use strict';
-	var ApplicationTabGroup, 
-		FeedWindow,
-		InviteView, 
-		shareBtn, 
-		cancelBtn, 
+	var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'), 
+		FeedWindow = require('ui/common/FeedWindow'),
+		InviteView = require('ui/common/InviteView'), 
+		shareBtn, cancelBtn,
+		findExactBtn, findSimilarBtn,
+		tagsLabel, 
 		shareWindow, 
 		shareTabGroup,
 		thumbnail, 
@@ -21,12 +24,10 @@ function createShareWindow(postModel, shareAction) {
 		tableData, 
 		inviteFBFriends, inviteContacts, selectFBFriend, addSelectedFBFriends, 
 		fashionistaFriends = [],
+		newSize = Ti.App.photoSizes[Ti.Platform.osname],
 		photoBlob = postModel.photo,
 		activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
-			
-	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
-	FeedWindow = require('ui/common/FeedWindow');
-	InviteView = require('ui/common/InviteView');
+
 	
 	// right nav button is Share
 	shareBtn = Titanium.UI.createButton({
@@ -81,7 +82,7 @@ function createShareWindow(postModel, shareAction) {
 			if (captionValue === captionHintText || captionValue === "") {
 				postModel.caption = defaultCaption;			
 			} else {
-				postModel.caption = captionValue;			
+				postModel.caption = escape(captionValue);			
 			}
 	
 			FeedWindow.beforeSharePost(postModel, newPostNotify, FeedWindow.afterSharePost);
@@ -93,7 +94,9 @@ function createShareWindow(postModel, shareAction) {
 		shareWindow.setRightNavButton(shareBtn);
 		shareBtn.show();				
 				
-		InviteView.inviteFBFriendsPromptBeforeAction(inviteTable, doShare);
+		InviteView.inviteFBFriendsPromptBeforeAction(shareWindow, doShare);
+		
+		
 			
 	});
 	
@@ -130,7 +133,7 @@ function createShareWindow(postModel, shareAction) {
 			fontSize : '17'
 		},
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-		borderRadius : 5,
+		borderRadius : 3,
 		paddingLeft : 2,
 		paddingRight : 2,
 		backgroundColor : 'white'
@@ -150,24 +153,86 @@ function createShareWindow(postModel, shareAction) {
 			e.source.value = e.source.privHintText;
 			e.source.color = '#aaa';
 		}
-	});
-/*	
-	caption.addEventListener('return', function() {
-		shareBtn.fireEvent('click');
-	});
-	*/
-	
+	});	
 	shareWindow.add(caption);
 	
-	// add remaining of the objects on the page
+	// add #find tag
+	
+	tagsLabel = Ti.UI.createLabel({
+		text : Ti.Locale.getString('findTags'),
+		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+		color : 'black',
+		top : 100,
+		left : '5%',
+		height : 20,
+		width : '90%',
+		paddingLeft : 2,
+		paddingRight : 2,
+		font : {
+			fontWeight : 'bold',
+			fontSize : '18'
+		}
+	});
+	shareWindow.add(tagsLabel);
+	
+	findExactBtn = Titanium.UI.createButton({
+		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+		title : Ti.Locale.getString('findExactHashTag'),
+		color: 'black',
+		backgroundColor: '#AAA',
+		borderRadius: 3,
+		borderWidth: 1,		
+		top: 130, left: '5%',
+		height: 20, width: '30%'
+	});
+	findSimilarBtn = Titanium.UI.createButton({
+		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+		title : Ti.Locale.getString('findSimilarHashTag'),
+		color: 'black',
+		backgroundColor: '#AAA',
+		borderRadius: 3,
+		borderWidth: 1,				
+		top: 130, left: '40%',
+		height: 20, width: '30%'
+	});
+	
+	shareWindow.add(findExactBtn);
+	shareWindow.add(findSimilarBtn);
+	
+	findExactBtn.addEventListener('click', function(e) {
+		var hashTag = Ti.Locale.getString('findExactHashTag');
+		if (caption.value === captionHintText) {
+			caption.value = hashTag;
+			caption.color = 'black';
+		}
+		else {
+			caption.value = caption.value + ' ' + hashTag;			
+		}
+		postModel.tags.push(hashTag);	
+	});
+	
+	findSimilarBtn.addEventListener('click', function(e) {
+		var hashTag = Ti.Locale.getString('findSimilarHashTag');
+		if (caption.value === captionHintText) {
+			caption.value = hashTag;
+			caption.color = 'black';
+		}
+		else {
+			caption.value = caption.value + ' ' + hashTag;			
+		}
+		postModel.tags.push(hashTag);
+	});
+	
+/*	
+	// Find friends who are already using Fashionist and invite friends to start using it
 	shareLabel = Ti.UI.createLabel({
-		text : 'Find friends to share with',
+		text : Ti.Locale.getString('findFriendsOnFashionist'),
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
 		wordWrap : true,
 		color : 'black',
-		top : 100,
-//		bottom: 140,
+		top : 180,
 		left : '5%',
 		height : 30,
 		width : '90%',
@@ -175,14 +240,14 @@ function createShareWindow(postModel, shareAction) {
 		paddingRight : 2,
 		font : {
 			fontWeight : 'bold',
-			fontSize : '20'
+			fontSize : '18'
 		}
 	});
 	shareWindow.add(shareLabel);
 
-	inviteTable = InviteView.createInviteView(tab, shareWindow);
+	inviteTable = InviteView.createInviteView(shareWindow, 220);
 	shareWindow.add(inviteTable);
-
+*/
 	// show pic thumbnail
 	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
 	thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_75, top: 10, left: '5%'});	
@@ -191,6 +256,8 @@ function createShareWindow(postModel, shareAction) {
 	activityIndicator.hide();
 	shareWindow.setRightNavButton(shareBtn);
 	Ti.API.info("Stop spinner, show share button");
+	
+	postModel.photo = FeedWindow.resizeToPlatform(photoBlob);
 	return shareWindow;
 }
 

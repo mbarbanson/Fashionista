@@ -1,4 +1,4 @@
-/*
+/**
  * copyright 2012 by Monique Barbanson. All rights reserved.
  * @author MONIQUE BARBANSON
  * Detail window for photos
@@ -89,13 +89,16 @@
 	/*
 	 * displayPostDetailsView. Do not use this directly in a long lived closure!!! post objects are mutable!!!!!
 	 */
-	function displayPostDetailsView (post, newComment) {
+
+
+
+	function displayPostDetailsFeedView (fWin, post, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			detailWindow = DetailWindow.createDetailWindow(),
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			CommentsView = require('ui/common/CommentsView'),
-			tab = Ti.App.getFeedTab(); 
+			tab = Ti.App.mainTabGroup.getActiveTab();  //fWin.containingTab; 
 		if (tab) {
 			tab.open(detailWindow);
 		}
@@ -106,6 +109,13 @@
 		return;	
 	}
 	
+	
+	
+	function displayPostDetailsView (post, newComment) {
+		Ti.API.info('show post details');
+		var FeedWindow = require('ui/common/FeedWindow');
+		displayPostDetailsFeedView(FeedWindow.currentFeedWindow(), post, newComment);	
+	}	
 
 	/*
 	 * displayRowDetails
@@ -273,7 +283,7 @@
 								color:'#222',
 								autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (row.post.content === Ti.Locale.getString('nocaption') ? '' : row.post.content),
+								text: (row.post.content === Ti.Locale.getString('nocaption') ? '' : unescape(row.post.content)),
 								wordWrap : true,
 								horizontalWrap : true,
 								ellipsize: true,															
@@ -366,11 +376,9 @@
 	 * displayPostSummaryView
 	 */
 	function displayPostSummaryView (post) {
-		var row = createPostView(post),
-			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
-			tabGroup;
+		var row = createPostView(post);
 		
-		Ti.API.info('display post summary: adding a row to the feedWindow ');
+		Ti.API.info('display post summary: create and populate a row from current post ');
 		populatePostView(row, false);
 		setPostViewEventHandlers (row);
 		
@@ -384,6 +392,7 @@
 	exports.setPostViewEventHandlers = setPostViewEventHandlers;
 	exports.displayPostSummaryView = displayPostSummaryView;
 	exports.displayPostDetailsView = displayPostDetailsView;
+	exports.displayPostDetailsFeedView = displayPostDetailsFeedView;
 	exports.likePost = likePost;
 	
 } ());

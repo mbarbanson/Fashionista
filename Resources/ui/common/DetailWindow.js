@@ -1,4 +1,4 @@
-/*
+/**
  * copyright 2012 by Monique Barbanson. All rights reserved.
  * @author MONIQUE BARBANSON
  * Detail window for photos
@@ -16,6 +16,7 @@
 							barColor: '#5D3879',
 							tabBarHidden: true	
 						});
+
 		return detailWindow;		
 	}
 	

@@ -1,6 +1,7 @@
-/*
-	Library to wrap app-specific functionality around the Social Integration APIs
-*/
+/**
+ * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ */
 
 (function () {
 	'use strict';
@@ -25,9 +26,9 @@
 	
 		
 	function postToWall(photoUrl, message) {
-		var name, 
+		var name = Ti.Locale.getString('Fashionist for iPhone'), 
 			data;
-		name = L("Fashionist for iPhone");
+
 		data = {
 			    link : "http://signup.3pmrevolution.com",
 			    name : name,

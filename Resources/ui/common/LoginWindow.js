@@ -1,6 +1,8 @@
-/*
-	UI component: Login / Create user dialog
-*/
+/**
+ * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ */
+
 
 
 (function () {
@@ -17,9 +19,9 @@
 			lWin, 
 			done, 
 			winTitle, 
-			flexSpace, 
 			lwDialog, 
-			username, 
+			username,
+			email, 
 			password, 
 			confirm,
 			spinner = Ti.UI.createActivityIndicator({top:'50%', left: '50%'}),
@@ -40,7 +42,7 @@
 			backgroundColor: 'white',
 			barColor: '#5D3879',
 			rightNavButton: done,
-			title: L(action),
+			title: Ti.Locale.getString(action),
 			tabBarHidden: true
 		});
 		
@@ -49,38 +51,37 @@
 			color: 'white',	
 			focusable: false,
 			enabled: true,
-			title: L(action),
+			title: Ti.Locale.getString(action),
 			font: {fontFamily: 'Thonburi', fontsize: 14},
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 		});
-		//FIXME not used. remove 	    
-	    flexSpace = Titanium.UI.createButton({
-	        systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
-	    });
 	
+		
+		if (!isLoginAction)	{
+			email = Ti.UI.createTextField({
+				hintText: Ti.Locale.getString('email'),
+				autocorrect: false,
+				autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
+				top:25,
+				width: '90%',
+				height: 40,
+				font: {
+					fontWeight: 'normal',
+					fontSize: '17'
+				},
+				textAlign: 'center',
+				color: '#333',
+				backgroundColor: '#ddd',
+				borderRadius: 3,
+				paddingLeft: 2, paddingRight: 2
+			});
+			
+			lWin.add(email);			
+		}	
+
+
 		username = Ti.UI.createTextField({
-			hintText:L('username'),
-			autocorrect: false,
-			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
-			top:25,
-			width: '90%',
-			height: 40,
-			font: {
-				fontWeight: 'normal',
-				fontSize: '17'
-			},
-			textAlign: 'center',
-			color: '#333',
-			backgroundColor: '#ddd',
-			borderRadius: 3,
-			paddingLeft: 2, paddingRight: 2
-		});
-		
-		lWin.add(username);
-		
-		password = Ti.UI.createTextField({
-			hintText:L('password'),
-			passwordMask: true,
+			hintText: Ti.Locale.getString('username'),
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			top:70,
@@ -97,14 +98,16 @@
 			paddingLeft: 2, paddingRight: 2
 		});
 		
-		lWin.add(password);
+		lWin.add(username);
+
 		
-		//FIXME: currently not visible.
-		confirm = Ti.UI.createTextField({
-			hintText:L('confirm'),
+		password = Ti.UI.createTextField({
+			hintText: Ti.Locale.getString('password'),
 			passwordMask: true,
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
+			keyboardType: Ti.UI.KEYBOARD_EMAIL,
+			returnKeyType: Ti.UI.RETURNKEY_DONE,
 			top:115,
 			width: '90%',
 			height: 40,
@@ -116,12 +119,22 @@
 			color: '#333',
 			backgroundColor: '#ddd',
 			borderRadius: 3,
-			paddingLeft: 2, paddingRight: 2,
-			visible: false
+			paddingLeft: 2, paddingRight: 2
 		});
 		
-		if (!isLoginAction) {
-			lWin.add(confirm);		
+		password.addEventListener('return', function()
+		{
+			done.fireEvent('click');
+		});
+		
+		lWin.add(password);
+
+
+		function validateEmail(email) {
+			/*jslint regexp: true */
+			var re = /^(([^<>()\[\]\\.,;:\s@\"]+(\.[^<>()\[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;			
+			//var re = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}/;
+		    return re.test(email);
 		}
 		
 		function postActionCallback(e) {
@@ -140,14 +153,18 @@
 		
 		// event listeners
 		done.addEventListener('click', function() {
-			// activityIndicator must be added to the window
-			lWin.add(spinner);
-			spinner.show();
 			if(isLoginAction) {
 				acs.login(username.value, password.value, postActionCallback);
 			} else {
-				acs.createUser(username.value, password.value, postActionCallback);
+				var emailAddy = email.value;
+				if (!validateEmail(emailAddy)) {
+					alert(Ti.Locale.getString('malformedEmail'));
+					return;
+				}				
+				acs.createUser(username.value, email.value, password.value, postActionCallback);
 			}
+			lWin.add(spinner);
+			spinner.show();			
 		});
 		
 		return lWin;

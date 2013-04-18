@@ -1,4 +1,8 @@
-// Not creating an actual GuestWindow anymore. Just creating a ThumbnailsWindow containing a navGroup
+/**
+ * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
+ */
+
 var acs = require('lib/acs');
 
 
@@ -7,7 +11,7 @@ function createGuestWindow() {
 	var ThumbnailsWindow,
 		ApplicationTabGroup,
 		LoginWindow,
-		title, 
+//		title, 
 		flexSpace, 
 		navGroup, 
 		signup, 
@@ -22,20 +26,18 @@ function createGuestWindow() {
 	
 	ApplicationTabGroup = require('ui/common/ApplicationTabGroup');
 	LoginWindow = require('ui/common/LoginWindow');
-	
+/*	
 	title = Titanium.UI.createButton({
 		color: 'white',	
 		focusable: false,
 		enabled: true,
-		title: L('fashionista'),
+		title: Ti.Locale.getString('fashionista'),
 		font: {fontFamily: 'Thonburi', fontsize: 30},
 		style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 	});
 	    
-    flexSpace = Titanium.UI.createButton({
-        systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
-    });
 
+*/
 	ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
 	thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow();
 	ThumbnailsWindow.refreshThumbnails();
@@ -52,30 +54,35 @@ function createGuestWindow() {
 	guestTabGroup.addTab(tab1);
 	guestTabGroup.setActiveTab(0);
 	guestTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
-	//guestTabGroup.setVisible(true);
 
 	// create fixed toolbar at bottom
+    flexSpace = Titanium.UI.createButton({
+        systemButton:Titanium.UI.iPhone.SystemButton.FLEXIBLE_SPACE
+    });
+
     signup = Ti.UI.createButton({
-        title: L('Sign Up'),
-        style: Ti.UI.iPhone.SystemButtonStyle.DONE
+        title: Ti.Locale.getString('Sign Up'),
+        style: Ti.UI.iPhone.SystemButtonStyle.DONE,
+        backgroundColor: '#5D3879'
     });
     
     login = Ti.UI.createButton({
-        title: L('Login'),
-        style: Ti.UI.iPhone.SystemButtonStyle.DONE
+        title: Ti.Locale.getString('Login'),
+        style: Ti.UI.iPhone.SystemButtonStyle.DONE,
+        backgroundColor: '#5D3879'
     });
     
     toolbar = Titanium.UI.iOS.createToolbar({
         items:[flexSpace, login, flexSpace, signup, flexSpace],
         bottom:0,
         borderTop:true,
-        barColor: 'black',
+        barColor: '#5D3879',
         borderBottom:false
     }); 
     thumbnailsWindow.add(toolbar);
     
     ok = Titanium.UI.createButton({
-		title: L('ok'),
+		title: Ti.Locale.getString('ok'),
 		style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
 		borderColor: 'white',
 		width: 40,
@@ -87,7 +94,7 @@ function createGuestWindow() {
 		color: 'white',
 		backgroundColor: 'transparent',
 		font: { fontSize: 20 },
-		text: L('welcome_message'),
+		text: Ti.Locale.getString('welcome_message'),
 		textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
 		wordWrap : true,
 		horizontalWrap : true,		
@@ -112,7 +119,7 @@ function createGuestWindow() {
 
 	function loginCallback() {
 		// if a user has successfully logged in or signed up
-		if(acs.currentUser()) {	
+		if (acs.currentUser()) {	
 			try {
 				Ti.API.info("loginCallback");
 				if (!Ti.App.mainTabGroup) {

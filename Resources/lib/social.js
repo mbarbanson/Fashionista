@@ -1,5 +1,6 @@
-/*
+/**
  * @author MONIQUE BARBANSON
+ * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
 (function () {
@@ -56,7 +57,7 @@
 					Ti.API.info('Success:\\n' + 'Count: ' + e.users.length);
 		           }
 		        else {
-					Ti.API.info("Current user doesn't have any friends using on Fashionist");
+					Ti.API.info("Current user doesn't have any friends using Fashionist");
 		        }
 		        for (i = 0; i < e.users.length; i = i + 1) {
 		            var user = e.users[i];

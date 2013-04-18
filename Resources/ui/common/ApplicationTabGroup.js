@@ -1,4 +1,4 @@
-/*
+/**
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -8,7 +8,7 @@
 	
 	var acs = require('lib/acs'),
 		CameraView = require('/ui/common/CameraView'),
-		LogoutWindow = require('/ui/common/LogoutWindow'),
+		SettingsWindow = require('/ui/common/SettingsWindow'),
 		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
 		FeedWindow = require('ui/common/FeedWindow');
 
@@ -33,11 +33,12 @@
 	
 	function addFashionistTabs(tabGroup) {
 		//create app tabs
-		var	feedWindow = FeedWindow.createFeedWindow(),
-			win2 = Ti.UI.createWindow(),
+		Ti.API.info("populating tabs");
+		var	friendFeedWindow = FeedWindow.createFeedWindow('friendFeed'),
+			findFeedWindow = FeedWindow.createFeedWindow('findFeed'),
 			win3 = Ti.UI.createWindow(),
 			win4 = Ti.UI.createWindow(),
-			logoutWindow,
+			settingsWindow,
 			tab1, tab2, tab3, tab4, tab5, 
 			cameraBtn, galleryBtn;
 	
@@ -45,15 +46,16 @@
 		Ti.App.mainTabGroup = tabGroup;		
 																		
 		// left most tab is the feed
+		FeedWindow.setCurrentFriendFeedWindow(friendFeedWindow);
 		tab1 = Ti.UI.createTab({
 								icon: '/icons/53-house.png',
 								height: Ti.UI.FILL,	
 								width: '20%',	
-								window: feedWindow 
+								window: friendFeedWindow 
 							});
 		tab1.tabGroup = tabGroup;
 		tabGroup.addTab(tab1);
-		feedWindow.containingTab = tab1;
+		friendFeedWindow.containingTab = tab1;
 		Ti.App.getFeedTab = function () { return tab1;};
 		
 		// this tab requires a logged in user
@@ -70,21 +72,23 @@
 		FeedWindow.showFriendsFeed();
 
 				
-		// favorites feed
+		// find feed
+		FeedWindow.setCurrentFindFeedWindow(findFeedWindow);
 		tab2 = Ti.UI.createTab({
 			icon: '/icons/60-signpost.png',
 			//icon: Ti.UI.iPhone.SystemIcon.FEATURED,
 			height: Ti.UI.FILL,	
 			width: '20%',				
-			window: win2
+			window: findFeedWindow
 		});
 		tab2.tabGroup = tabGroup;
-		win2.containingTab = tab2;
+		findFeedWindow.containingTab = tab2;
 		tabGroup.addTab(tab2);
 		
 		tab2.addEventListener('focus', function(e){
-			Ti.API.info("Featured page. ");
-			tabGroup.setActiveTab(0); // go back to feed for now
+			Ti.API.info("Find Feed page. ");
+			FeedWindow.showFindFeed(findFeedWindow, FeedWindow.findFeedPostQuery);
+			tabGroup.setActiveTab(1); 
 		});
 		
 		// camera tab
@@ -152,16 +156,15 @@
 		});
 
 		// settings tab
-		logoutWindow = LogoutWindow.createLogoutWindow();	
+		settingsWindow = SettingsWindow.createSettingsWindow();	
 		tab5 = Ti.UI.createTab({
 			icon: '/icons/19-gear.png',
 			height: Ti.UI.FILL,	
 			width: '20%',				
-			window: logoutWindow
+			window: settingsWindow
 		});
-		logoutWindow.containingTab = tab5;
+		settingsWindow.containingTab = tab5;
 		tab5.tabGroup = tabGroup;
-		LogoutWindow.initLogoutWindow(logoutWindow, tab5);
 		
 		tabGroup.addTab(tab5);
 		tab5.addEventListener('focus', function (e) {
@@ -174,6 +177,7 @@
 	
 	// Called once we've established a logged in user
 	function initAppUI () {
+		Ti.API.info("init application UI");
 		var tabGroup = createApplicationTabGroup();
 		addFashionistTabs(tabGroup);	
 	}

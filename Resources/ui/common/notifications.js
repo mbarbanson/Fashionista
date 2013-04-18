@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  * @author MONIQUE BARBANSON
  */

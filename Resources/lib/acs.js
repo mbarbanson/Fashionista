@@ -1,4 +1,4 @@
-/*
+/**
  * Library to wrap app-specific functionality around the ACS APIs
  * Copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  * @author: Monique Barbanson
@@ -72,10 +72,9 @@
 		}
 	}
 	
+		
 	
-	
-	
-	function createUser (username, password, callback) {
+	function createUser (username, email, password, callback) { 
 		// ACS API requires password & confirm, but we do the checking elsewhere so use the same for both here
 		Cloud.Users.create({
 			username: username,
@@ -617,12 +616,13 @@
 	// Posts
 	function addPost (postModel, pPhoto, successCallback, errorCallback) {
 
-		var sync_sizes = 'iphone', pBody = postModel.caption;
+		var sync_sizes = 'iphone', pBody = postModel.caption, tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
 		Cloud.Posts.create({
 		    response_json_depth: 2,
 		    content: pBody,
 		    photo: pPhoto,
+		    tags: tags_list,
 		    // since appcelerator limits photos to being square, use square aspect ratio for now
 		    'photo_sizes[avatar]':'50x50#',
 		    'photo_sizes[preview]': '75x75#',
@@ -637,6 +637,7 @@
 		            'id: ' + post.id + '\\n' +
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
+		            'tags: ' + post.tags + '\\n' +
 		            'updated_at: ' + post.updated_at);
 		        if (successCallback) {successCallback(post);}
 		    } else {
@@ -738,6 +739,42 @@
 		});	
 	}
 	
+	
+	// query on tags
+	function getFindExactPosts (postAction, cleanupAction) {
+		Ti.API.info('acs.getFindExactPosts');
+
+		Cloud.Posts.query({
+		    page: 1,
+		    per_page: 20,
+		    order: '-created_at',
+		    response_json_depth: 2,
+		    where: {
+		        "$or": [{"tags_array": Ti.Locale.getString('findExactHashTag')}, {"tags_array": Ti.Locale.getString('findSimilarHashTag')} ]
+		    }
+		}, function (e) {
+			var i,
+				post,
+				numPosts;
+		    if (e.success) {
+				numPosts = e.posts.length;
+		        Ti.API.info('Success:\\n' +
+		            'Count: ' + numPosts);
+		         if (numPosts > 0) {
+					for (i = 0; i < numPosts ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+				   }
+		         }  
+		    } else {
+		        Ti.API.info('Error: getFindExactPosts\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+	            checkInternetConnection(e);
+		    }
+			if (cleanupAction) { cleanupAction(); }
+		});	
+	}
+	
 
 
 
@@ -772,6 +809,7 @@
 	exports.showPost = showPost;	
 	exports.updatePost = updatePost;
 	exports.getFriendsPosts = getFriendsPosts;
+	exports.getFindExactPosts = getFindExactPosts;
 
 
 } ());

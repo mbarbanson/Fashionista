@@ -1,4 +1,4 @@
-/*
+/**
  * Define model objects for Posts
  * Copyright 2013 by Monique Barbanson
  * @author MONIQUE BARBANSON
@@ -10,7 +10,7 @@
 	
 	//constructor
 	function createPostModel (user, photoBlob) {		
-		return {user: user, photo: photoBlob}; 
+		return {user: user, photo: photoBlob, tags:[]}; 
 	
 	}
 	

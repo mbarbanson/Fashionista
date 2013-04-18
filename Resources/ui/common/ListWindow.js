@@ -4,6 +4,9 @@
  */
 
 
+
+
+
 function createListWindow(doneHandler) {
 	'use strict';
 	var done = Titanium.UI.createButton({
@@ -23,7 +26,7 @@ function createListWindow(doneHandler) {
 		if (doneHandler) {
 			doneHandler();
 		}
-		
+
 		if (tab) {
 			tab.close(listWin);			
 		}
@@ -32,6 +35,7 @@ function createListWindow(doneHandler) {
 	return listWin;
 }
 
+
 function createListTable(tableData) {
 	'use strict';
 	return Ti.UI.createTableView({
@@ -39,37 +43,28 @@ function createListTable(tableData) {
 	});
 }
 
-function populateList(listWindow, friends, fashionBuddies, clickHandler) {
+
+
+
+
+function populateList(listWindow, friends, check, clickHandler) {
 	'use strict';
 	var table,
 		numFriends = friends.length,
 		tableData = [],
 		i,
 		friend,
-		actionFun,
-		isFashionBuddy;
+		actionFun;
 	actionFun = function (fid, add) { 
 		Ti.API.info("calling populateList click handler");
 		clickHandler(fid, add);
-	};
-	isFashionBuddy = function (fid) {
-		var i = 0,
-			numBuddies = fashionBuddies.length,
-			found = false;
-		for (i = 0; i < numBuddies; i = i + 1) {
-			if (fashionBuddies[i].id === fid) {
-				found = true;
-				break;
-			}						
-		}
-		return found;
 	};
 	for (i = 0; i < numFriends; i = i + 1) {
 		friend = friends[i];
 		tableData.push({
 			title: friend.first_name + " " + friend.last_name, 
 			id: friend.id, 
-			hasCheck: isFashionBuddy(friend.id),
+			hasCheck: check(friend.id),
 			action: actionFun
 		});				
 	}
@@ -90,5 +85,24 @@ function populateList(listWindow, friends, fashionBuddies, clickHandler) {
 	return listWindow;	
 }
 
+
+function populateFriendsInviteList(listWindow, friends, fashionBuddies, clickHandler)	{
+	'use strict';
+	var isFashionBuddy = function (fid) {
+		var i = 0,
+			numBuddies = fashionBuddies.length,
+			found = false;
+		for (i = 0; i < numBuddies; i = i + 1) {
+			if (fashionBuddies[i].id === fid) {
+				found = true;
+				break;
+			}						
+		}
+		return found;
+	};
+	populateList(listWindow, friends, isFashionBuddy, clickHandler);
+}
+
 exports.createListWindow = createListWindow;
 exports.populateList = populateList;
+exports.populateFriendsInviteList = populateFriendsInviteList;

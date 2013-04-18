@@ -29,7 +29,6 @@ if (Ti.version < 2.0 ) {
 		height = Ti.Platform.displayCaps.platformHeight,
 		width = Ti.Platform.displayCaps.platformWidth,
 		isTablet = false,
-		rootWindow = null,
 		sessionId,
 		accessToken,
 		GuestWindow = require('ui/common/GuestWindow'),
@@ -85,6 +84,7 @@ if (Ti.version < 2.0 ) {
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
 	Ti.App.getFeedTab = null;
+	Ti.App.rootWindow = null;
 	
 	//setup spinny activity indicator
 	if (osname === 'iphone' || osname === 'ipad'){
@@ -108,8 +108,7 @@ if (Ti.version < 2.0 ) {
 			
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
-		GuestWindow.createGuestWindow(rootWindow);
-		//rootWindow.open();
+		GuestWindow.createGuestWindow(Ti.App.rootWindow);
 	};
 	//considering tablet to have one dimension over 900px - this is imperfect, so you should feel free to decide
 	//yourself what you consider a tablet form factor for android		
@@ -128,12 +127,12 @@ if (Ti.version < 2.0 ) {
 	
 	Ti.App.photoSizes ={"thumbnail": [50,50], "iphone": [640,640], "ipad": [768,768], "android": [478,478]};
 	
-	rootWindow = AppWindow.createApplicationWindow(Ti.Locale.getString('fashionista'));
+	Ti.App.rootWindow = AppWindow.createApplicationWindow(Ti.Locale.getString('fashionista'));
 	
 	// for now exit if device is offline
 	if (!Ti.Network.online) {
 		alert("Sorry - Fashionist requires an internet connection. Your device is offline. Please make sure you are connected to the internet, then exit and restart.");
-		rootWindow.close();
+		Ti.App.rootWindow.close();
 	}
 	else {
 	    // Check here whether there is a logged in user

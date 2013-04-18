@@ -1,4 +1,4 @@
-/*
+/**
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -6,20 +6,34 @@
 (function () {
 	'use strict';
 	
-	var privFeedWindow = null;
+	var privFeedWindow = null,
+		privFindFeedWindow = null;
 	
 		
 	function currentFeedWindow() {
 		return privFeedWindow;
+	}
+	
+	function currentFindFeedWindow() {
+		return privFindFeedWindow;
+	}
+	
+	
+	function setCurrentFriendFeedWindow(fWin) {
+		privFeedWindow = fWin;
+	}
+	
+	function setCurrentFindFeedWindow(fWin) {
+		privFindFeedWindow = fWin;
 	}	
 
 
-	function displayPostInFeed(post, insertAtTop) {
+	function displayPostInFeedWin(fWin, post, insertAtTop) {
 		var PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser(),
 			row = PostView.displayPostSummaryView(post),
-			tableView = privFeedWindow.table,
+			tableView = fWin.table,
 			tabGroup;
 			
 		if (tableView) {
@@ -46,14 +60,30 @@
 			}
 		}
 	}
+	
+	
+	
+	function displayPostInFeed(post, insertAtTop) {
+		displayPostInFeedWin(privFeedWindow, post, insertAtTop);
+	}
+	
+	
+	function displayPostInFindFeed(post, insertAtTop) {
+		displayPostInFeedWin(privFindFeedWindow, post, insertAtTop);
+	}
+
+
+	function clearFeedWin(fWin) {
+		Ti.API.info('Calling clear feed');
+		
+		if (fWin.table) {
+			fWin.table.setData([]);
+		}	
+	}
 
 
 	function clearFeed() {
-		Ti.API.info('Calling clear feed');
-		
-		if (privFeedWindow.table) {
-			privFeedWindow.table.setData([]);
-		}	
+		clearFeedWin(privFeedWindow);	
 	}
 	
 	
@@ -62,8 +92,25 @@
 	/*
 	 * showFriendsFeed
 	 */
-	function showFriendsFeed() {
-		Ti.API.info('Calling show feed');
+	
+	
+	function friendFeedPostQuery(showPost, cleanupAction) {
+		var acs = require('lib/acs'),
+			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
+		
+		return acs.getFriendsList(friendsListCallback, cleanupAction);		
+	}
+	
+	
+	function findFeedPostQuery(showPost, cleanupAction) {
+		var acs = require('lib/acs');
+		
+		return acs.getFindExactPosts(showPost, cleanupAction);		
+	}
+	
+	
+	function showFeedWin(fWin, postQuery) {
+		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
@@ -71,12 +118,12 @@
 			showPost,
 			friendsListCallback,
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
-			tableView = privFeedWindow ? privFeedWindow.table : null,
+			tableView = fWin ? fWin.table : null,
 			cleanupAction;
 							
 		if (tableView) {
 			//clear table view
-			clearFeed();			
+			clearFeedWin(fWin);			
 			cleanupAction = function() {
 								var dialog;
 								if (!tableView.flipped) {
@@ -88,27 +135,36 @@
 									dialog.show();																		
 								}
 								activityIndicator.hide(); 
-								privFeedWindow.rightNavButton = null;
+								fWin.rightNavButton = fWin.savedRightNavButton;
 							};
 			tableView.displayComments = false;	
-			Ti.API.info("showFriendFeed. Refreshing Feed window");
+			Ti.API.info("showFeedWin. Refreshing Feed window");
 			showPost = function (post) { 
-							displayPostInFeed(post, false);
+							displayPostInFeedWin(fWin, post, false);
 						};
-			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
-			
-			privFeedWindow.rightNavButton = activityIndicator;
+			fWin.savedRightNavButton = fWin.rightNavButton;
+			fWin.rightNavButton = activityIndicator;
 			activityIndicator.show(); 
 
-			acs.getFriendsList(friendsListCallback, cleanupAction);
-	
+			postQuery(showPost, cleanupAction);
 		}
 		else {
 			Ti.API.info("FeedWindow doesn't have a tableView");
 		}
 	}
 	
+	function showFriendsFeed(selectedPostId) {
+		showFeedWin(privFeedWindow, friendFeedPostQuery);
+	}
+	
+	function showFindFeed(selectedPostId) {
+		showFeedWin(privFindFeedWindow, findFeedPostQuery);
+	}
+	
+	
 	Ti.App.addEventListener('refreshFeedWindow', function (e) { showFriendsFeed(); Ti.UI.iPhone.setAppBadge(0);});
+	
+	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { showFeedWin(privFindFeedWindow);});
 	
 	
 	function createFinishingUpRow(postModel) {
@@ -131,9 +187,10 @@
 	}
 	
 	
-	function addFinishingUpRow(postModel) {
+	
+	function addFinishingUpRowFeedWin(fWin, postModel) {
 		Ti.API.info('Calling addFinishingUpRow');
-		var tableView = privFeedWindow.table,
+		var tableView = fWin.table,
 			fRow = createFinishingUpRow(postModel);
 		if (tableView && tableView.data) {		
 			if (tableView.data.length > 0) {
@@ -152,6 +209,12 @@
 		}				
 	}
 	
+	
+	function addFinishingUpRow(postModel) {
+		addFinishingUpRowFeedWin(privFeedWindow, postModel);
+	}
+	
+	
 	function findRowIndex(row, tableView) {
 		var section, rows, numRows, i;
 		section = tableView.data[0];
@@ -166,12 +229,12 @@
 	}
 	
 	
-	function removeFinishingUpRow(doDisplayPost, post) {
+	function removeFinishingUpRowFeedWin(fWin, doDisplayPost, post) {
 		Ti.API.info('Calling removeFinishingUpRow');
-		var tableView = privFeedWindow.table,
+		var tableView = fWin.table,
 			section, rows, 
 			fRow, numRows, i;
-		if (tableView && tableView.data) {
+		if (tableView && tableView.data && tableView.data.length >= 0) {
 			section = tableView.data[0];
 			rows = section.getRows();
 			numRows = rows.length;
@@ -183,13 +246,12 @@
 					if (doDisplayPost && post) {	
 						if (numRows === 1) {
 							Ti.API.info('First post in feed!');
-							displayPostInFeed(post, false); // post is appended and will be row index 1
+							displayPostInFeedWin(fWin, post, false); // post is appended and will be row index 1
 						}
 						else if (numRows > 1){
 							Ti.API.info('At least one post besides the finishing up row. Insert new post at top');
-							displayPostInFeed(post, true); // post is inserted at top with index 0
+							displayPostInFeedWin(fWin, post, true); // post is inserted at top with index 0
 						}
-						//showFriendsFeed(); // refresh whole feed to avoid race conditions for now					
 					}
 					return;					
 				}
@@ -202,10 +264,32 @@
 		//something went wrong, refresh the window to clear it up
 		showFriendsFeed();
 						
-	}	
+	}
 	
+	
+	function removeFinishingUpRow(doDisplayPost, post) {
+		removeFinishingUpRowFeedWin(privFeedWindow, doDisplayPost, post);
+	}
+	
+	
+	function resizeToPlatform(image) {
+		var imgH = image.height,
+			imgW = image.width,
+			newSize = Ti.App.photoSizes[Ti.Platform.osname];
 
-	function beforeSharePost(postModel, successCallback, errorCallback) {
+			if (imgH > imgW) { 
+				image = image.imageAsResized((imgW*newSize[0])/imgH, newSize[1]);	
+			}
+			else if (imgH < imgW) {
+				image = image.imageAsResized(newSize[0], (imgH*newSize[1])/imgW);	
+			}
+			else {
+				image = image.imageAsResized(newSize[0], newSize[1]);
+			}			
+			return image;	
+	}
+
+	function beforeSharePostFeedWin(fWin, postModel, successCallback, errorCallback) {
 		
 		var acs = require('lib/acs'),
 			style = Ti.App.spinnerStyle,
@@ -222,17 +306,25 @@
 									Ti.API.info("Calling addPostError callback. Removing finishing up row");
 									if (errorCallback) { errorCallback(post);}
 								};
-		// crop the dimension that's larger than the screen if any						
-		if (imgH > newSize[1]) { imgH = newSize[1]; }
-		if (imgW > newSize[0]) { imgW = newSize[0]; }					
-		image = image.imageAsResized(imgW, imgH);
-		addFinishingUpRow(postModel);
+		//resize and fit to screen
+		postModel.photo = image;  //resizeToPlatform(image);											
+		addFinishingUpRowFeedWin(fWin, postModel);
 		acs.addPost(postModel, image, addPostSuccess, addPostError);		
 	}
 	
 	
+	function beforeSharePost(postModel, successCallback, errorCallback) {
+		beforeSharePostFeedWin(privFeedWindow, postModel, successCallback, errorCallback);
+	}
+	
+
+	function afterSharePostFeedWin (fWin, post) {
+		removeFinishingUpRowFeedWin(fWin, true, post);		
+	}
+
+	
 	function afterSharePost (post) {
-		removeFinishingUpRow(true, post);		
+		removeFinishingUpRowFeedWin(privFeedWindow,true, post);		
 	}
 	
 	
@@ -240,31 +332,53 @@
 	/*
 	 * createFeedWindow
 	 */
-	function createFeedWindow() {
-		privFeedWindow = Ti.UI.createWindow({
-				title: "Fashionist",
-		        barColor: '#5D3879'				
-		});
-		
-		var tableView =  Ti.UI.createTableView ({
+	function createFeedWindow(type) {
+		var refreshBtn = Titanium.UI.createButton({
+			systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
+			style: Titanium.UI.iPhone.SystemButtonStyle.BAR
+		}),
+		fWin = Ti.UI.createWindow({
+				title: Ti.Locale.getString('fashionista'),
+		        barColor: '#5D3879',
+		        navBarHidden: false				
+		}),
+		tableView =  Ti.UI.createTableView ({
 				objname: 'PostSummary'
 		});
+		if (type === 'friendFeed') {
+			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });		
+		}
+		else {
+			refreshBtn.addEventListener('click', function(e) { showFindFeed(); });				
+		}
 		tableView.flipped = false;
-		privFeedWindow.add(tableView);
-		privFeedWindow.table = tableView;
-														
-		return privFeedWindow;
+		fWin.add(tableView);
+		fWin.table = tableView;
+		fWin.setRightNavButton(refreshBtn);												
+		return fWin;
 	}
 		
 	
 	
 	exports.createFeedWindow = createFeedWindow;
 	exports.currentFeedWindow = currentFeedWindow;
+	exports.currentFindFeedWindow = currentFindFeedWindow;
+	exports.setCurrentFriendFeedWindow = setCurrentFriendFeedWindow;	
+	exports.setCurrentFindFeedWindow = setCurrentFindFeedWindow;
+	exports.clearFeedWin = clearFeedWin;		
 	exports.clearFeed = clearFeed;
+	exports.showFindFeed = showFindFeed;	
 	exports.showFriendsFeed = showFriendsFeed;
+	exports.beforeSharePostFeedWin = beforeSharePostFeedWin;
+	exports.afterSharePostFeedWin = afterSharePostFeedWin;
+	exports.displayPostInFeedWin = displayPostInFeedWin;
+	exports.removeFinishingUpRowFeedWin = removeFinishingUpRowFeedWin;
 	exports.beforeSharePost = beforeSharePost;
 	exports.afterSharePost = afterSharePost;
 	exports.displayPostInFeed = displayPostInFeed;
 	exports.removeFinishingUpRow = removeFinishingUpRow;
+	exports.friendFeedPostQuery = friendFeedPostQuery;
+	exports.findFeedPostQuery = findFeedPostQuery;
+	exports.resizeToPlatform = resizeToPlatform;
 
 } ());

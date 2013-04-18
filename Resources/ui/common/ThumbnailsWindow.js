@@ -48,11 +48,10 @@
 	function showDetail (image) {
 		//alert("showing Image detail" + image);
 		var detailWindow = showPreview(image),
-			navGroup = thumbnailsWindow().containingTab;
-		if (navGroup) {
-			navGroup.open(detailWindow);
+			tab = thumbnailsWindow().containingTab;
+		if (tab) {
+			tab.open(detailWindow);
 		}
-	
 	}
 	
 	function showPhotoDetailCallback(e) {
@@ -72,7 +71,7 @@
 		if (numPhotos === 0) {
 			
 		    ok = Titanium.UI.createButton({
-				title: L('ok'),
+				title: Ti.Locale.getString('ok'),
 				style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
 				borderColor: 'white',
 				width: 40,
@@ -251,6 +250,7 @@
 			refreshBtn = null;
 		
 		if (acs.currentUser()) {
+			// this code is never currently called
 			if (!privThumbnailsWindow) {
 				privThumbnailsWindow = Ti.UI.createWindow({
 								        backgroundColor: 'transparent',
@@ -281,19 +281,20 @@
 				clearThumbnails();
 			}
 		}
-		else {
+		else { // no current user 
 			if (!guestThumbnailsWindow) {
-				guestThumbnailsWindow = Ti.UI.createWindow({
-								        backgroundColor: 'transparent',
-								        barColor: '#5D3879'
-										});
+					guestThumbnailsWindow = Ti.UI.createWindow({
+											title: Ti.Locale.getString('fashionista'),
+									        backgroundColor: 'transparent',
+									        barColor: '#5D3879'
+											});
 			 
 					tableView = Ti.UI.createTableView ({
 						objname: 'ThumbnailView',
-					backgroudColor: 'transparent',
-					//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
-					visible: false
-				});
+						backgroudColor: 'transparent',
+						//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
+						visible: false
+					});
 				guestThumbnailsWindow.tableView = tableView;
 			
 				guestThumbnailsWindow.add(tableView);
@@ -321,7 +322,6 @@
 	exports.clearThumbnails = clearThumbnails;
 	exports.createThumbnailsWindow = createThumbnailsWindow;
 	exports.refreshThumbnails = refreshThumbnails;
-	exports.thumbnailsWindow = thumbnailsWindow;
 	exports.showPreview = showPreview;	
 
 } ());

@@ -1,4 +1,4 @@
-/*
+/**
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -11,7 +11,7 @@
 		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
 	
 
-	function addCommentHandler (row, commentText, displayComments) {
+	function addCommentHandler (row, commentText, displayComments, cleanup) {
 		var CommentsView = require('ui/common/CommentsView'),
 			Comments = require('lib/comments'),
 			social = require('lib/social'),
@@ -29,7 +29,13 @@
 				Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
 				Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": post.id, "message": commentText});
 			};
-		Comments.createComment(post.id, commentText, addCommentHandlerCallback);
+		if (commentText === "") {
+			alert(Ti.Locale.getString('emptyComment'));
+		}
+		else {
+			Comments.createComment(post.id, commentText, addCommentHandlerCallback);
+			cleanup();					
+		}
 	}
 	
 	
@@ -51,18 +57,7 @@
 									contentTextInput.blur();
 									contentTextInput.hide();
 									row.remove(contentTextInput);
-									sendBtn.hide();
-									row.remove(sendBtn);
 								};
-
-/*
-var camera = Ti.UI.createButton({
-    systemButton : Ti.UI.iPhone.SystemButton.CAMERA
-});
-*/
-							
-								
-								
 							
 		if (post) {
 			Ti.API.info("Add a comment to post " + post.content);
@@ -89,11 +84,11 @@ var camera = Ti.UI.createButton({
 					fontSize : '17'
 				}
 			});
+			contentTextInput.privHintText = contentTextInput.value;
+						
 			row.add(contentTextInput);
 			row.textArea = contentTextInput;
-			
-			contentTextInput.privHintText = contentTextInput.value;
-		
+					
 			contentTextInput.addEventListener('focus', function(e) {
 				if (e.source.value === e.source.privHintText) {
 					e.source.value = "";
@@ -115,9 +110,7 @@ var camera = Ti.UI.createButton({
 		    sendBtn.addEventListener('click', 
 									function (e) {
 										var commentText = escape(contentTextInput.value);										
-										addCommentHandler(row, commentText, true);
-										// remove comment input UI
-										removeInputFields();										
+										addCommentHandler(row, commentText, true, removeInputFields);										
 									});	
 			//contentTextInput.focus();
 			setTimeout(function(){ contentTextInput.focus();}, 250);						
