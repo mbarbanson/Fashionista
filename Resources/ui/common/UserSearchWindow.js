@@ -16,11 +16,12 @@
 	}
 						
 	function createUserSearchWindow(successCallback, errorCallback) {
-		var win, 
+		var win, scrollView,
 			searchBtn, 
 			username,
 			email, 
 			firstName, lastName,
+			searchByUsernameLabel, searchByNameLabel, searchByEmailLabel,
 			minInfoLabel, 
 			spinner = Ti.UI.createActivityIndicator({top:'50%', left: '50%'}),
 			style,
@@ -30,12 +31,20 @@
 				spinner.hide();
 				win.remove(spinner);						
 			},
-			wrappedSuccessCallback = function (e) {
-				if (successCallback) { successCallback(e); }
+			wrappedSuccessCallback = function (users, query) {
 				Ti.API.info('User search success');
 				spinner.hide();
 				win.remove(spinner);
-				win.close();				
+				// if matches where found, close the search window and create the results window
+				if (users && users.length > 0) {
+					win.close();
+					if (successCallback) { 
+						successCallback(users, query); 
+					}					
+				}
+				else {
+					alert(Ti.Locale.getString('noMatchFound'));
+				}			
 			};
 			
 		//setup spinny activity indicator
@@ -56,15 +65,43 @@
 			tabBarHidden: true
 		});
 		
-			
+		scrollView = Ti.UI.createScrollView({
+		  contentWidth: Ti.UI.SIZE,
+		  contentHeight: Ti.UI.SIZE,
+		  showVerticalScrollIndicator: true,
+		  showHorizontalScrollIndicator: false,
+		  top: 0,
+		  height: '70%',
+		  width: '100%'
+		});
+		
+		searchByUsernameLabel = Ti.UI.createLabel({
+			text : Ti.Locale.getString('searchByUsername'),
+			textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+			verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+			wordWrap : true,
+			color : 'black',
+			top : 25,
+			left : '5%',
+			height : 20,
+			width : '90%',
+			paddingLeft : 2,
+			paddingRight : 2,
+			font : {
+				fontWeight : 'bold',
+				fontSize : '17'
+			}
+		});
+		scrollView.add(searchByUsernameLabel);
+					
 		username = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('username'),
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_SEARCH,			
-			top:25, //70,
-			left: '2%',
+			top:50, //70,
+			left: '5%',
 			width: '90%',
 			height: 40,
 			font: {
@@ -78,7 +115,7 @@
 			paddingLeft: 2, paddingRight: 2
 		});
 		
-		win.add(username);
+		scrollView.add(username);
 		
 		username.addEventListener('return', function()
 		{
@@ -86,6 +123,25 @@
 				searchBtn.fireEvent('click');				
 			}		
 		});
+		
+		searchByNameLabel = Ti.UI.createLabel({
+			text : Ti.Locale.getString('searchByName'),
+			textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+			verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+			wordWrap : true,
+			color : 'black',
+			top : 110,
+			left : '5%',
+			height : 20,
+			width : '90%',
+			paddingLeft : 2,
+			paddingRight : 2,
+			font : {
+				fontWeight : 'bold',
+				fontSize : '17'
+			}
+		});
+		scrollView.add(searchByNameLabel);
 
 		firstName = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('firstName'),
@@ -93,8 +149,8 @@
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
-			top:70, //115,
-			left: '2%',
+			top:135, //115,
+			left: '5%',
 			width: '43%',
 			height: 40,
 			font: {
@@ -115,7 +171,7 @@
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_SEARCH,
-			top:70, //115,
+			top:135, //115,
 			left: '50%', 
 			width: '45%',
 			height: 40,
@@ -129,8 +185,8 @@
 			borderRadius: 3,
 			paddingLeft: 2, paddingRight: 2
 		});
-		win.add(firstName);
-		win.add(lastName);
+		scrollView.add(firstName);
+		scrollView.add(lastName);
 		
 		lastName.addEventListener('return', function()
 		{
@@ -145,6 +201,25 @@
 			}		
 		});
 		
+
+		searchByEmailLabel = Ti.UI.createLabel({
+			text : Ti.Locale.getString('searchByEmail'),
+			textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+			verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+			wordWrap : true,
+			color : 'black',
+			top : 195,
+			left : '5%',
+			height : 20,
+			width : '90%',
+			paddingLeft : 2,
+			paddingRight : 2,
+			font : {
+				fontWeight : 'bold',
+				fontSize : '17'
+			}
+		});
+		scrollView.add(searchByEmailLabel);
 				
 		email = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('email'),
@@ -152,8 +227,8 @@
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_SEARCH,			
-			top:115, //25,
-			left: '2%',
+			top: 220,
+			left: '5%',
 			width: '90%',
 			height: 40,
 			font: {
@@ -167,7 +242,7 @@
 			paddingLeft: 2, paddingRight: 2
 		});
 		
-		win.add(email);
+		scrollView.add(email);
 		
 		email.addEventListener('return', function()
 		{
@@ -186,14 +261,14 @@
 			verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
 			wordWrap : true,
 			color : 'black',
-			bottom : '40%',
-			left : '2%',
+			bottom : '10%',
+			left : '5%',
 			height : 100,
 			width : '90%',
 			paddingLeft : 2,
 			paddingRight : 2,
 			font : {
-				fontWeight : 'bold',
+				fontWeight : 'normal',
 				fontSize : '14'
 			}
 		});
@@ -213,8 +288,13 @@
 				whereClause.push({"username": usernameVal});	
 			}
 			// search by email address
-			else if (emailAddy && !validateEmail(emailAddy)) {
-				alert(Ti.Locale.getString('malformedEmail'));
+			else if (emailAddy) {
+				if (!validateEmail(emailAddy)) {
+					alert(Ti.Locale.getString('malformedEmail'));
+				}
+				else {
+					whereClause.push({"email": emailAddy});
+				}
 			}
 			// search by first name and last name 
 			else if (!firstNameVal)	{
@@ -229,16 +309,19 @@
 				whereClause.push({"first_name": firstNameVal});
 				whereClause.push({"last_name": lastNameVal});
 			}
-			if (whereClause.length === 1) {			
-				acs.queryUsers(whereClause[0], wrappedSuccessCallback, errorCallback, 1);
-			}
-			else if (whereClause.length > 1) {
-				acs.queryUser({"$or": whereClause}, wrappedSuccessCallback, errorCallback, 1);
+			if (whereClause.length > 0) {
+				if (whereClause.length === 1) {			
+					acs.queryUsers(whereClause[0], wrappedSuccessCallback, wrappedErrorCallback, 1);
+				}
+				else if (whereClause.length > 1) {
+					acs.queryUsers({"$or": whereClause}, wrappedSuccessCallback, wrappedErrorCallback, 1);
+				}		
+				win.add(spinner);
+				spinner.show();					
 			}		
-			win.add(spinner);
-			spinner.show();			
 		});
 		
+		win.add(scrollView);
 		return win;
 	}
 	exports.createUserSearchWindow = createUserSearchWindow;	
