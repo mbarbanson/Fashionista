@@ -1,5 +1,5 @@
 /**
- * copyright 2012 by Monique Barbanson. All rights reserved.
+ * copyright 2012-2013 by Monique Barbanson. All rights reserved.
  * @author MONIQUE BARBANSON
  * Detail window for photos
  * 
@@ -53,7 +53,9 @@
 			count =  (updatedPost.reviews_count || 0) - (updatedPost.ratings_count || 0);
 		row.post = updatedPost;
 		// Update comment count
-		commentsCount.text = count + ' comments';	
+		commentsCount.text = count + ' comments';
+		// force the proxy to update the underlying native object
+		row.commentsCount = commentsCount;	
 	}
 	
 	

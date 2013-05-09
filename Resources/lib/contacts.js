@@ -1,131 +1,90 @@
+/**
+ * copyright 2012-2013 by Monique Barbanson. All rights reserved.
+ * @author MONIQUE BARBANSON
+ * Contacts
+ * 
+ */
 
 
-function contacts(args) {
+function requestContactsAccess(successCallback, errorCallback) {
 	"use strict";
-	
-	var self = Ti.UI.createWindow();
-	// create table view data object
-	/*
-	Ti.include("/etc/version.js");
 
-	var needsAuth = false;
+	var needsAuth = false,
+		addressBookDisallowed, 
+		performAddressBookFunction,
+		win = null;
 	
-	var supportsAuthAPI = (Ti.version >= '2.1.3');
-	
-	if (Titanium.Platform.name == 'iPhone OS')
+	if (Titanium.Platform.name === 'iPhone OS')
 	{
-		needsAuth = isiOS6Plus();
+		needsAuth = true;
 	}
-	
-	var infoLabel = Ti.UI.createLabel({top:10});
-	var b1 = Ti.UI.createButton({
-			bottom:10,
-			title:'Request Authorization'
-	})
-	
-	b1.addEventListener('click',function(e){
-		Ti.Contacts.requestAuthorization(requestPermission);
-	})
-	
-	self.add(infoLabel);
-	self.add(b1);
-
-	var requestPermission = function(e) {
-		var privs = Ti.Contacts.contactsAuthorization;
-		if (privs===Ti.Contacts.AUTHORIZATION_AUTHORIZED){
-			performAddressBookFunction();
-		}
-		else {
-			if (privs===Ti.Contacts.AUTHORIZATION_RESTRICTED){
-				b1.visible = false;
-				b1.enabled = false;
-				infoLabel.visible = true;
-				infoLabel.text ='Contact authorization restricted. User can not grant permission. '
-			}
-			else if (privs===Ti.Contacts.AUTHORIZATION_DENIED){
-				b1.visible = false;
-				b1.enabled = false;
-				infoLabel.visible = true;
-				infoLabel.text ='Contact authorization denied. User has disallowed contacts use.'
-			}
-			else if (privs===Ti.Contacts.AUTHORIZATION_UNKNOWN){
-				infoLabel.text ='Contact authorization unknown. Request permission from user.'
-				infoLabel.visible = true;
-				b1.visible = true;
-				b1.enabled = true;
-			}
-			else {
-				infoLabel.text = 'Got unknown value for Ti.Contacts.contactsAuthorization';
-				infoLabel.visible = true;
-				b1.visible = false;
-				b1.enabled = false;
-			}
-		}
 		
-	}
-	var performUnsupported = function() {
-		infoLabel.text = 'The Contacts API requires user permission to run successfully. This version of the Titanium SDK does not support contact authorization. Please update to SDK 2.1.3 or later.'
-		infoLabel.visible = true;
-		b1.visible = false;
-		b1.enabled = false;
-	}
-	var performAddressBookFunction = function() {
-		infoLabel.visible = false;
-		b1.visible = false;
-		b1.enabled = false;
-
-		// create table view data object
-		var data = [
-			{title:'Contacts picker', hasChild:true, test:'ui/common/phone/contacts_picker'},
-			{title:'Display people', hasChild:true, test:'ui/common/phone/contacts_db'},
-			{title:'Search By ID', hasChild:true, test:'ui/common/phone/contacts_searchById'}
-		];
-		if (Ti.Platform.osname !== 'android') {
-			data.push({title:'Add contact',hasChild:true, test:'ui/common/phone/contacts_add'});
-			data.push({title:'Remove contact',hasChild:true, test:'ui/common/phone/contacts_remove'});
-		}
-			data.push({title:'Contact images',hasChild:true, test:'ui/common/phone/contacts_image'});
-		if (Ti.Platform.osname !== 'android') {
-			data.push({title:'Groups',hasChild:true, test:'ui/common/phone/contacts_groups'});
-		}
+	Ti.API.info("Contacts Authorization is " + Ti.Contacts.contactsAuthorization);
 		
-		// create table view
-		var tableview = Titanium.UI.createTableView({
-			data:data
-		});
-		
-		// create table view event listener
-		tableview.addEventListener('click', function(e)
-		{
-			if (e.rowData.test)
-			{
-				var ExampleWindow = require(e.rowData.test);
-				_args.title = e.rowData.title;
-				win = new ExampleWindow(_args);
-				_args.containingTab.open(win,{animated:true});
-			}
-		});
-		
-		// add table view to the window
-		self.add(tableview);
-	};
-	
-	if (needsAuth)
-	{
-		self.add(infoLabel);
-		if (supportsAuthAPI) {
-			requestPermission();
-		}
-		else {
-			performUnsupported();
-		}
+	if (Ti.Contacts.contactsAuthorization === Ti.Contacts.AUTHORIZATION_AUTHORIZED){
+		Ti.API.info("Contacts Authorization is AUTHORIZATION_AUTHORIZED. Calling successCallback directly");
+	    successCallback();
+	} else if (Ti.Contacts.contactsAuthorization === Ti.Contacts.AUTHORIZATION_UNKNOWN ||
+				Ti.Contacts.contactsAuthorization === Ti.Contacts.AUTHORIZATION_DENIED ||
+				Ti.Contacts.contactsAuthorization === Ti.Contacts.AUTHORIZATION_RESTRICTED){
+		Ti.API.info("Contacts Authorization is AUTHORIZATION_UNKNOWN, AUTHORIZATION_DENIED or AUTHORIZATION_RESTRICTED. Calling requestAuthorization");
+	    Ti.Contacts.requestAuthorization(function(e){
+	        if (e.success) {
+	            successCallback();
+	        } else {
+	            errorCallback();
+	        }
+	    });
+	} else {
+		Ti.API.info("Unknown Contacts Authorization value: " + Ti.Contacts.contactsAuthorization);
+	    errorCallback();
 	}
-	else {
-		performAddressBookFunction();
-	}
-
-*/	
-	return self;
+	return win;
 }
 
-module.exports = contacts;
+
+/*
+ * Once we're authorized to access the user's contact, get their list of contacts, generate a query to find which contacts match an existing user and 
+ * make a call to the cloud to get the list of contacts who are fashionist users
+ * 
+ */
+function findContactsOnFashionist(successCallback, errorCallback) {
+	'use strict';
+	var acs = require('lib/acs'),
+		contacts = Ti.Contacts.getAllPeople(100),
+		currentUser = acs.currentUser(),
+		currentUserHasExtAccount = currentUser.external_accounts.length !== 0,
+		whereClause = [],
+		numContacts = Math.min(100, contacts.length), 
+		usernames = [], emails = [],
+		i, contact, contactQuery;
+	Ti.API.info("Retrieved " + contacts.length + " contacts. NumContacts is " + numContacts);
+	for (i = 0; i < numContacts; i = i + 1) {
+		contact = contacts[i];
+		contactQuery = [];
+		// choose match names or emails to reduce the size of the where clause since ACS doesn't seem to be able to deal with long clauses
+		// if current user has linked with facebook, use full name otherwise use email
+		if (currentUserHasExtAccount && contact.firstName !== '' && contact.lastName !== '') {
+			contactQuery.push({"first_name": contact.firstName, "last_name": contact.lastName});
+		}
+		// current user is not facebook linked, their friends are likely not either, so match on emails
+		else if (!currentUserHasExtAccount && contact.email && contact.email.home) {
+			contactQuery.push({"email": contact.email.home[0]});
+		}
+		//Ti.API.info('\ncontactQuery: ' + contactQuery);
+		if (contactQuery.length === 2) {
+			whereClause.push({"$or": contactQuery});
+			//Ti.API.info('\nwhereClause: ' + '{ "$or": ' + contactQuery + '}');
+		}
+		else if (contactQuery.length === 1) {
+			whereClause.push(contactQuery[0]);
+			//Ti.API.info('\nwhereClause: ' + contactQuery[0]);
+		}	
+	}
+	
+	acs.queryUsers({"$or": whereClause}, successCallback, errorCallback, 1);	
+}
+
+
+exports.requestContactsAccess = requestContactsAccess;
+exports.findContactsOnFashionist = findContactsOnFashionist;

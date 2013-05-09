@@ -72,7 +72,7 @@ function createShareWindow(postModel, shareAction) {
 				//update feed window with local info after caption has been updated in the cloud
 				Ti.API.info("update local feed window with new post");
 				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-				Ti.App.fireEvent('newPost', {"user_id": senderId, "post_id": post.id, "message": message});						
+				Ti.App.fireEvent('newPost', {"uid": senderId, "pid": post.id, "message": message});						
 		};
 			
 		doShare = function () {

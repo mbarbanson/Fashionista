@@ -74,12 +74,11 @@
 	
 		
 	
-	function createUser (username, email, password, callback) { 
+	function createUser (username, email, password, successCallback, errorCallback) { 
 		// ACS API requires password & confirm, but we do the checking elsewhere so use the same for both here
 		Cloud.Users.create({
 			username: username,
-			first_name: username,
-		    last_name: "",
+			email: email,
 			password: password,
 			password_confirmation: password
 			//custom_fields: {photos: null, photoCollection: null}
@@ -97,13 +96,13 @@
 				// once we have a logged in user, setup Notifications	
 				Notifications.initNotifications();	
 				
-		        callback(e);
+		        successCallback(e);
 		    } else {
 				Ti.API.info('Error create User failed' + e.message);
 				alert(e.message);
 	            checkInternetConnection(e);
 				privCurrentUser = null;
-				callback(e);
+				errorCallback(e);
 		    }
 		});
 	}
@@ -117,8 +116,8 @@
 					Notifications = require("ui/common/notifications");
 	            Ti.API.info('Retrieved current user:\\n' +
 	                'id: ' + user.id + '\\n' +
-	                'first name: ' + user.first_name + '\\n' +
-	                'last name: ' + user.last_name + '\\n');
+	                'username: ' + user.username + '\\n' +
+	                'email: ' + user.email + '\\n');
 	            setCurrentUser(user);
 				setHasRequestedFriends(false);
 				Notifications.initNotifications();					
@@ -132,6 +131,27 @@
 	        }
 		});		
 	}
+	
+	
+	function queryUsers (query, successCallback, errorCallback, pageNum) {
+		var i, user;
+		Cloud.Users.query({
+		    page: pageNum,
+		    per_page: 20,
+		    where: query
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('queryUsers Success:\n' +
+		            'Count: ' + e.users.length);
+                successCallback(e.users, query);
+		    } else {
+		        Ti.API.info('Error:\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+	            errorCallback(e);
+		    }
+		});		
+	}
+	
 	
 	
 	// may want to pass in a callback from caller later on
@@ -349,8 +369,8 @@
 		var msg = "Your friend request to " + currentUser().username + " has been approved. You are mutual friends!",
 			badge = 1,   //Ti.UI.iPhone.getAppBadge() + 1,
 			customPayload = {
-								"custom": {
-											"user_id": currentUser().id, 
+								"f": {
+											"uid": currentUser().id, 
 											"type": 'friend_approved'
 										},
 								"badge": badge,
@@ -358,7 +378,7 @@
 								"alert": msg
 							};
 		Ti.API.info(msg + " to " + userIds);
-		notifyUsers('test', msg, userIds, customPayload);		
+		notifyUsers('fashionist', msg, userIds, customPayload);		
 	}
 	
 	
@@ -366,19 +386,19 @@
 		var msg = "You have a new friend request from " + privCurrentUser.username + " !",
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
 			customPayload = {
-								"custom": {
-											"user_id": currentUserId(), 
+								"f": {
+											"uid": currentUserId(), 
 											"type": 'friend_request'
 										},
 								"badge": badge,
 								"sound": "default",
 								"alert": msg
 							};
-		notifyUsers('test', msg, userIds, customPayload);		
+		notifyUsers('fashionist', msg, userIds, customPayload);		
 	}
 	
 	
-	function newNotification (post, notificationType, notificationContent, notifyAllFriends) {
+	function newNotification (post, notificationType, notificationContent, notifyAllFriends, user_ids) {
 		// if device is not registered for push notifications
 		// or running on simulator, bail
 		Ti.API.info("sending push notification " + notificationContent + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
@@ -391,40 +411,40 @@
 		if (notifyAllFriends) {
 			paramDict = {
 			response_json_depth: 2,
-		    channel: 'test',
+		    channel: 'fashionist',
 		    friends: true,
 		    payload: {
-			    "custom": {
-						"post_id": post.id, 
-						"user_id": currentUserId(), //post.user.id, 
+			    "f": {
+						"pid": post.id, 
+						"uid": currentUserId(), //post.user.id, 
 						"type": notificationType
 						},
 				"badge": badge,
 				"sound": "default",							
-			    "alert" : message
+			    "alert" : message.substr(0, 119)
 			}};			
 		}
 		else {
 			paramDict = {
 			response_json_depth: 2,
-		    channel: 'test',
-		    to_ids: post.user.id,    
+		    channel: 'fashionist',
+		    to_ids: user_ids || post.user.id,    
 		    payload: {
-			    "custom": {
-						"post_id": post.id, 
-						"user_id": currentUserId(), //post.user.id, 
+			    "f": {
+						"pid": post.id, 
+						"uid": currentUserId(), //post.user.id, 
 						"type": notificationType
 						},
 				"badge": badge,
 				"sound": "default",							
-			    "alert" : message
+			    "alert" : message.substr(0,119)
 			}};			
 		}
 				
 		Cloud.PushNotifications.notify(
 			paramDict, function (e) {
 		    if (e.success) {
-		        Ti.API.info('Successfully notified friends remoteUUID ' + Ti.Network.remoteDeviceUUID);
+		        Ti.API.info('Successfully notified friends ' + user_ids || post.user.id + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
 		        Ti.UI.iPhone.setAppBadge(badge);
 		    } else {
 		        Ti.API.info('Error:\\n' +
@@ -441,21 +461,37 @@
 			caption = "";
 		}
 		else {
-			caption = post.content;
+			caption = unescape(post.content);
 		}
 		newNotification(post, "newPost", ' posted a new picture ' + caption, true);
 	}
 
 
 	function newCommentNotification (post, commentText) {
-		var caption = "";
-		if (post.content === Ti.Locale.getString('nocaption')) {
-			caption = "";
+		var caption = "",
+			atMentions,
+			stripLeadingAt = function(s) {return s.replace(/^@/, "");},
+			userNameQuery = function(uname) { return {"username": uname}; },
+			getUserId = function (user) { return user.id;},
+			mentionnedUsers,
+			whereClause,
+			successCallback = function (users) {
+				var userIdList = (users && users.length > 0) ? users.map(getUserId) : null,
+					userIds = userIdList ? userIdList.join() : null;
+				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);			
+			};
+		if (post.content !== Ti.Locale.getString('nocaption')) {
+			caption = unescape(post.content);
+		}
+		atMentions = commentText.match(/[\b@][\w]*/gm);
+		mentionnedUsers = atMentions ? atMentions.map(stripLeadingAt) : null;
+		whereClause = mentionnedUsers? mentionnedUsers.map(userNameQuery) : null;
+		if (whereClause && mentionnedUsers && mentionnedUsers.length > 0) {
+			queryUsers({"$or": whereClause}, successCallback, successCallback, 1);
 		}
 		else {
-			caption = post.content;
-		}		
-		newNotification(post, "newComment", ' replied ' + commentText + ' to your post ' + caption + ' \nPro tip: reply to comments to get even more viewer interaction with your posts.', false);
+			newNotification(post, "comment", ' commented: ' + unescape(commentText), false);		
+		}				
 	}
 	
 	
@@ -465,7 +501,7 @@
 			caption = "";
 		}
 		else {
-			caption = post.content;
+			caption = unescape(post.content);
 		}
 		newNotification(post, "newLike", ' liked your post ' + caption, false);
 	}
@@ -509,7 +545,7 @@
 							Cloud.Users.logout(
 								function (e) {
 									    if (e.success) {
-											Ti.API.info("Logged out of Fashionist and unsubscribed from test channel");
+											Ti.API.info("Logged out of Fashionist and unsubscribed from fashionist channel");
 									        privCurrentUser = null;
 									        // clear session id
 											Ti.App.Properties.setString('sessionId', null);
@@ -526,7 +562,7 @@
 		// log out of facebook to clear Ti.Facebook.loggedIn etc...	
 		if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); Ti.Facebook.setUid(null);}			
 		if (true) {  //Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
-			unsubscribeNotifications("test", doLogout);
+			unsubscribeNotifications("fashionist", doLogout);
 		}
 		else {	
 			doLogout();					
@@ -554,7 +590,7 @@
 	}
 	
 	// friends: list of user ids to approve as friends
-	function approveFriendRequests (friends) {
+	function approveFriendRequests (friends, successCallback, errorCallback) {
 		Ti.API.info('acs.approveFriendRequests ' + friends.toString());
 		var userIdList = friends.join();
 		Cloud.Friends.approve({
@@ -565,9 +601,11 @@
 		        Ti.API.info('Friend(s) approved ' + userIdList);
 				approvedRequestNotification(userIdList);
 				Ti.API.info('callback called ' + approvedRequestNotification.toString());
+				if (successCallback) { successCallback(e); }
 		    } else {
 		        Ti.API.info('Error in approveFriends: ' + e.message);
 	            checkInternetConnection(e);
+	            if (errorCallback) { errorCallback(e); }
 		    }
 		});		
 	}
@@ -785,6 +823,7 @@
 	exports.uploadPhoto = uploadPhoto;
 	exports.updateUser = updateUser;
 	exports.createUser = createUser;
+	exports.queryUsers = queryUsers;
 	exports.getCurrentUserDetails = getCurrentUserDetails;
 	exports.createUserPhotoCollection = createUserPhotoCollection;
 	exports.getUserCollectionIdPhotos = getUserCollectionIdPhotos;

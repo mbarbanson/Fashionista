@@ -7,7 +7,8 @@
 	'use strict';
 	
 	var privFeedWindow = null,
-		privFindFeedWindow = null;
+		privFindFeedWindow = null,
+		inShowFeedWindow = false;
 	
 		
 	function currentFeedWindow() {
@@ -109,7 +110,7 @@
 	}
 	
 	
-	function showFeedWin(fWin, postQuery) {
+	function showFeedWin(fWin, postQuery, noPhotoTitleId, noPhotoMsgId) {
 		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
@@ -119,8 +120,12 @@
 			friendsListCallback,
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
 			tableView = fWin ? fWin.table : null,
-			cleanupAction;
-							
+			cleanupAction,
+			inShowFeedWindow;
+			
+		// if we're already in the middle of refreshing the feed window, bail	
+		if (inShowFeedWindow) { return; }	
+		inShowFeedWindow = true;					
 		if (tableView) {
 			//clear table view
 			clearFeedWin(fWin);			
@@ -131,11 +136,12 @@
 									tableView.flipped = true;
 								}
 								if (!tableView.data || tableView.data.length === 0) {
-									dialog = Ti.UI.createAlertDialog({cancel: -1, title: Ti.Locale.getString('nophotostitle'), message: Ti.Locale.getString('nophotosmessage')});
+									dialog = Ti.UI.createAlertDialog({cancel: -1, title: Ti.Locale.getString(noPhotoTitleId), message: Ti.Locale.getString(noPhotoMsgId)});
 									dialog.show();																		
 								}
 								activityIndicator.hide(); 
 								fWin.rightNavButton = fWin.savedRightNavButton;
+								inShowFeedWindow = false;
 							};
 			tableView.displayComments = false;	
 			Ti.API.info("showFeedWin. Refreshing Feed window");
@@ -154,11 +160,11 @@
 	}
 	
 	function showFriendsFeed(selectedPostId) {
-		showFeedWin(privFeedWindow, friendFeedPostQuery);
+		showFeedWin(privFeedWindow, friendFeedPostQuery, 'noPhotosTitle', 'noPhotosMsg');
 	}
 	
 	function showFindFeed(selectedPostId) {
-		showFeedWin(privFindFeedWindow, findFeedPostQuery);
+		showFeedWin(privFindFeedWindow, findFeedPostQuery, 'noFindPostTitle', 'noFindPostMsg');
 	}
 	
 	

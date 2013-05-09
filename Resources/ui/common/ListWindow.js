@@ -54,6 +54,7 @@ function populateList(listWindow, friends, check, clickHandler) {
 		tableData = [],
 		i,
 		friend,
+		title,
 		actionFun;
 	actionFun = function (fid, add) { 
 		Ti.API.info("calling populateList click handler");
@@ -61,9 +62,20 @@ function populateList(listWindow, friends, check, clickHandler) {
 	};
 	for (i = 0; i < numFriends; i = i + 1) {
 		friend = friends[i];
+		if (!friend.first_name || !friend.last_name) {
+			title = friend.username;
+		}
+		else {
+			title = friend.first_name + ' ' + friend.last_name;	
+		}
+		if (friend.email) {
+			title = friend.email;
+		}			
+		
 		tableData.push({
 			title: friend.first_name + " " + friend.last_name, 
 			id: friend.id, 
+			leftimage: friend.photo,
 			hasCheck: check(friend.id),
 			action: actionFun
 		});				

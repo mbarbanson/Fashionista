@@ -6,6 +6,126 @@
 (function () {
 	'use strict';
 	
+	function getQueryType(query) {
+		var type = null, keys = Object.keys(query);
+		if (keys.length !== 0) {
+			switch (keys[0]) {
+				case '$or':
+					type = 'name';
+					break;
+				case 'username':
+					type = 'username';
+					break;
+				case 'email':
+					type = 'email';
+					break;
+			}			
+		}
+		return type;		
+	}
+	
+	function goToUserSearch(parentWin) {
+		var UserSearchResults = require('ui/common/UserSearchResults'),
+			UserSearchWindow = require('ui/common/UserSearchWindow'),
+			successCallback = function (users, query) {
+									if (users.length > 0) {
+										UserSearchResults.createSearchResultsWindow(users, parentWin, getQueryType(query));  
+									}// go to list of search results to let user pick the right match in case there is more than one
+								},
+			errorCallback,	// sorry we could not find any results to this search. Please add some information and try again.  
+			userSearchWin = UserSearchWindow.createUserSearchWindow(successCallback, errorCallback),
+			rightButton = userSearchWin.getRightNavButton(),
+			tab = parentWin.containingTab;
+		userSearchWin.containingTab = tab;
+		tab.open(userSearchWin);	
+	}
+	
+	function inviteContactsClickHandler (parentWin) {
+		var Contacts = require('lib/contacts'),
+			ContactsWindow = require('ui/common/ContactsWindow'),
+			social = require('lib/social'),
+			acs = require('lib/acs'),
+			contactsList = [], 
+			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.darkSpinner, top: '50%', left: '50%'}),
+			selectContact = function (contact, add) {
+				if (add) {
+					Ti.API.info("selectContact: " + contact.first_name + ' ' + contact.last_name);
+					contactsList.push(contact.id);	
+				}
+				else {
+					// if contact is in the list remove
+					var index = contactsList.indexOf(contact.id);
+					if (index > -1) {contactsList.splice(index, 1);}
+				}
+			},
+			addSelectedContacts = function () {
+				var acs = require('lib/acs'),
+					notifyAddedFriends = function (userIdList) {
+				        acs.newFriendNotification(userIdList);
+					};
+				Ti.API.info("Adding selected Contacts " + contactsList);
+				if (contactsList.length > 0) { 
+					acs.addFriends(contactsList, notifyAddedFriends);
+					alert(Ti.Locale.getString('friendRequestSent')); 
+				}
+			},
+			displayContactsOnFashionist = function(contacts, fashionBuddies) {
+				var contactsWin, 
+					rightButton, 
+					tab = parentWin.containingTab,
+					i, numContacts = contacts.length;
+				if (contacts && numContacts > 0) {
+					Ti.API.info("create and populate list of contacts window");
+					contactsWin = ContactsWindow.createContactsWindow(addSelectedContacts);
+					contactsWin.containingTab = tab;
+					rightButton = contactsWin.getRightNavButton();
+					tab.open(contactsWin);
+					
+					activityIndicator.hide();
+					parentWin.remove(activityIndicator);
+					contactsWin.setRightNavButton(activityIndicator);
+					activityIndicator.show();
+					
+					// this is where we check which contact are already the current user's Fashionista friends
+					ContactsWindow.populateContactsInviteList(contactsWin, contacts, fashionBuddies, selectContact);
+
+					activityIndicator.hide();
+					contactsWin.setRightNavButton(rightButton);								
+				} else { // this shouldn't happen here anymore, we bail out in fashionBuddiesFilter now
+					alert(Ti.Locale.getString('firstuser'));
+					activityIndicator.hide();
+					parentWin.remove(activityIndicator);								
+				}
+			},
+			fashionBuddiesFilter = function (contacts) {
+					// no user found in list of contacts
+				if (!Array.isArray(contacts) ||  contacts.length === 0 ||
+					// the only user we found is the current user 
+					(contacts.length === 1 && contacts.indexOf(acs.currentUser()) >= 0 )) {
+					alert(Ti.Locale.getString('firstContact'));
+					activityIndicator.hide();
+					parentWin.remove(activityIndicator);
+					goToUserSearch(parentWin);					
+				}
+				else {
+					acs.getFriendsList(function (fashionBuddies) { displayContactsOnFashionist (contacts, fashionBuddies); });					
+				}
+			},
+			errorCallback = function () {
+				alert (Ti.Locale.getString("contactsDisallowed"));
+				activityIndicator.hide();
+				parentWin.remove(activityIndicator);				
+			},			
+			performAddressBookFunction = function() {
+				Ti.API.info("contacts access success callback");
+				Contacts.findContactsOnFashionist(fashionBuddiesFilter, errorCallback);
+			};
+			
+		parentWin.add(activityIndicator);
+		activityIndicator.show();	
+		Contacts.requestContactsAccess(performAddressBookFunction, errorCallback);					
+	}
+	
 	function inviteFBFriendsHandler(parentWin) {
 		var ListWindow = require('ui/common/ListWindow'),
 			social = require('lib/social'),
@@ -18,6 +138,7 @@
 					fashionistaFriends.push(friendId);	
 				}
 				else {
+					// if friendId is already in the list, remove it
 					var index = fashionistaFriends.indexOf(friendId);
 					if (index > -1) {fashionistaFriends.splice(index, 1);}
 				}
@@ -28,7 +149,10 @@
 				        acs.newFriendNotification(userIdList);
 					};
 				Ti.API.info("Adding selected FB Friends " + fashionistaFriends);
-				if (fashionistaFriends.length > 0) { acs.addFriends(fashionistaFriends, notifyAddedFriends); }
+				if (fashionistaFriends.length > 0) { 
+					acs.addFriends(fashionistaFriends, notifyAddedFriends);
+					alert(Ti.Locale.getString('friendRequestSent'));
+				}
 			},
 			callback = function(friends, fashionBuddies) {
 							var listWin, rightButton, tab = parentWin.containingTab;
@@ -57,14 +181,14 @@
 						},
 			fashionBuddiesFilter = function (fbFriends) {acs.getFriendsList(function (fashionBuddies) {callback(fbFriends, fashionBuddies);});},
 			//facebook integration
-			FB = require('lib/facebook'), 
-			authCB = function() {
-				Ti.API.info("facebook authorize callback");
-				social.findFBFriends(fashionBuddiesFilter);
-			},
+			FB = require('lib/facebook'),
 			errorCB = function () {
 				activityIndicator.hide();
 				parentWin.remove(activityIndicator);				
+			},			 
+			authCB = function() {
+				Ti.API.info("facebook authorize callback");
+				social.findFBFriends(fashionBuddiesFilter, errorCB);
 			};
 			
 		parentWin.add(activityIndicator);
@@ -132,7 +256,7 @@
 
 	function createInviteView(parentWin, offsetTop) {
 	
-		var inviteTable, inviteFBFriendsRow, inviteContactsRow;
+		var inviteTable, inviteFBFriendsRow, inviteContactsRow, userSearchRow;
 		
 		inviteTable = Ti.UI.createTableView({
 			//bottom: 40,
@@ -166,7 +290,7 @@
 			className : 'shareSource',
 			title : Ti.Locale.getString('useContacts'),
 			color : 'black',
-			backgroundColor : '#AAA',
+			backgroundColor : '#FFF',
 			top : 50,
 			height : 40,
 			left : 0,
@@ -175,12 +299,34 @@
 			//leftImage: '/images/contacts-medium.png',
 			hasChild : true
 		});
+		
+		inviteContactsRow.addEventListener('click', function(e) { inviteContactsClickHandler (parentWin); });
+		
+			
+		userSearchRow = Ti.UI.createTableViewRow({
+			className : 'shareSource',
+			title : Ti.Locale.getString('userSearch'),
+			color : 'black',
+			backgroundColor : '#FFF',
+			top : 50,
+			height : 40,
+			left : 0,
+			//borderWidth: 1,
+			//borderColor: 'black',
+			//leftImage: '/images/contacts-medium.png',
+			hasChild : true
+		});
+		
+		userSearchRow.addEventListener('click', function(e) { goToUserSearch (parentWin); });
 	
 		inviteTable.appendRow(inviteFBFriendsRow);
 		inviteTable.fbFriendsRow = inviteFBFriendsRow;
 		inviteTable.appendRow(inviteContactsRow);
 		inviteTable.contactsRow = inviteContactsRow;
-	
+		inviteTable.appendRow(userSearchRow);
+		inviteTable.userSearchRow = userSearchRow;
+		
+			
 		return inviteTable;
 	}
 

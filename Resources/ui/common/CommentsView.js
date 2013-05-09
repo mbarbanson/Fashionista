@@ -15,6 +15,7 @@
 		var CommentsView = require('ui/common/CommentsView'),
 			Comments = require('lib/comments'),
 			social = require('lib/social'),
+			notifications = require('/ui/common/notifications'),
 			post = row.post,
 			senderId = acs.currentUser().id,
 			addCommentHandlerCallback = function (comment) {
@@ -26,8 +27,9 @@
 				}
 				row.addEventListener('update_commentsCount', row.updateCommentsCountHandler);
 				row.fireEvent('update_commentsCount');
-				Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
-				Ti.App.fireEvent('newComment', {"user_id": senderId, "post_id": post.id, "message": commentText});
+				notifications.newCommentHandler(post.id, senderId, commentText);
+				//Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
+				//Ti.App.fireEvent('newComment', {"uid": senderId, "pid": post.id, "message": commentText});
 			};
 		if (commentText === "") {
 			alert(Ti.Locale.getString('emptyComment'));

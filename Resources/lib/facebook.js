@@ -136,6 +136,7 @@
 		        var user = e.users[0];
 		        Ti.API.info('Success. Linked current user to facebook account:\\n' +
 		            'id: ' + user.id + '\\n' +
+		            'email: ' + user.email +
 		            'first name: ' + user.first_name + '\\n' +
 		            'last name: ' + user.last_name);
 			    if (successCallback) {
@@ -198,15 +199,22 @@
 
 	// FB account integration
 	function populateNameAndPicFromFB(fbData) {
-		var acs = require('lib/acs');
-		acs.updateUser({first_name: fbData.first_name, last_name: fbData.last_name});				
+		var acs = require('lib/acs'),
+			currentUser = acs.currentUser();
+			// if first name or last name is missing, get them from facebook
+		if (!currentUser.first_name || !currentUser.last_name || !currentUser.email) {
+			acs.updateUser({first_name: currentUser.first_name||fbData.first_name, 
+							last_name: currentUser.last_name||fbData.last_name,
+							email: currentUser.email||fbData.email,
+							photo: 'https://graph.facebook.com/' + Ti.Facebook.uid + '/picture'});			
+		}				
 	}
 	
 	
 	function initFBIntegration(actionCB, cleanupCB) {
 		// configure facebook options
 		Ti.Facebook.appid = '355242507898610';
-		Ti.Facebook.permissions = ['publish_stream', 'offline_access', 'xmpp_login']; // Permissions your app needs
+		Ti.Facebook.permissions = ['email'];   //'publish_stream', 'offline_access', 'xmpp_login']; // Permissions your app needs
 		// set to false to use SSO on device if facebook app is present. defaults to true
 		Ti.Facebook.forceDialogAuth = false;
 		

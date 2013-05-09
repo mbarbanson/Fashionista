@@ -55,36 +55,12 @@
 			font: {fontFamily: 'Thonburi', fontsize: 14},
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 		});
-	
-		
-		if (!isLoginAction)	{
-			email = Ti.UI.createTextField({
-				hintText: Ti.Locale.getString('email'),
-				autocorrect: false,
-				autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
-				top:25,
-				width: '90%',
-				height: 40,
-				font: {
-					fontWeight: 'normal',
-					fontSize: '17'
-				},
-				textAlign: 'center',
-				color: '#333',
-				backgroundColor: '#ddd',
-				borderRadius: 3,
-				paddingLeft: 2, paddingRight: 2
-			});
 			
-			lWin.add(email);			
-		}	
-
-
 		username = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('username'),
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
-			top:70,
+			top:25, //70,
 			width: '90%',
 			height: 40,
 			font: {
@@ -108,7 +84,7 @@
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
-			top:115,
+			top:70, //115,
 			width: '90%',
 			height: 40,
 			font: {
@@ -121,6 +97,30 @@
 			borderRadius: 3,
 			paddingLeft: 2, paddingRight: 2
 		});
+		
+		if (!isLoginAction)	{
+			email = Ti.UI.createTextField({
+				hintText: Ti.Locale.getString('email'),
+				autocorrect: false,
+				autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
+				top:115, //25,
+				width: '90%',
+				height: 40,
+				font: {
+					fontWeight: 'normal',
+					fontSize: '17'
+				},
+				textAlign: 'center',
+				color: '#333',
+				backgroundColor: '#ddd',
+				borderRadius: 3,
+				paddingLeft: 2, paddingRight: 2
+			});
+			
+			lWin.add(email);			
+		}
+		
+		
 		
 		password.addEventListener('return', function()
 		{
@@ -151,6 +151,12 @@
 			}
 		}
 		
+		function errorCallback(e) {
+			Ti.API.info('login or createUser failed:' + e.message);
+			spinner.hide();
+			lWin.remove(spinner);			
+		}
+		
 		// event listeners
 		done.addEventListener('click', function() {
 			if(isLoginAction) {
@@ -161,7 +167,7 @@
 					alert(Ti.Locale.getString('malformedEmail'));
 					return;
 				}				
-				acs.createUser(username.value, email.value, password.value, postActionCallback);
+				acs.createUser(username.value, email.value, password.value, postActionCallback, errorCallback);
 			}
 			lWin.add(spinner);
 			spinner.show();			

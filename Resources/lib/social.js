@@ -14,7 +14,7 @@
 
 		//var message = "Checkout this cool iPhone app that makes shopping more fun";
 		//FIXME move this behind a button
-		//Contacts.testContacts();
+		//Contacts.fashionistContacts();
 		//FIXME move this behind a button
 		// log into facebook and link to external account on success
 		FB.authorize(function (e) {FB.postPhoto(photoBlob, message);});

@@ -3,7 +3,17 @@
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
-
+function logoutCallback () {
+	'use strict';
+	var acs = require('lib/acs'),
+		GuestWindow = require('ui/common/GuestWindow');
+		
+	Ti.API.info('Congratulations, you successfully logged out');
+	Ti.App.mainTabGroup.close();
+	Ti.App.mainTabGroup = null;
+	GuestWindow.createGuestWindow(Ti.App.rootWindow);
+}
+	
 function displayNews () {
 	'use strict';
 	Ti.API.info("displaying all friends requests");
@@ -29,17 +39,9 @@ function displayMe (win) {
 			textAlign: 'center',
 			backgroundColor: 'white'
 	    }),
-	    findFriendsLabel, inviteTable;
-    
-	function logoutCallback () {
-		var acs = require('lib/acs'),
-			GuestWindow = require('ui/common/GuestWindow');
-			
-		Ti.API.info('Congratulations, you successfully logged out');
-		Ti.App.mainTabGroup.close();
-		Ti.App.mainTabGroup = null;
-		GuestWindow.createGuestWindow(Ti.App.rootWindow);
-	}
+	    findFriendsLabel, 
+	    inviteTable,
+	    privacyLabel;
     
 	// event listeners
 	logoutBtn.addEventListener('click', function() {
@@ -73,7 +75,24 @@ function displayMe (win) {
 	inviteTable = InviteView.createInviteView(win, '15%');
 	win.add(inviteTable);
 
-	
+	privacyLabel = Ti.UI.createLabel({
+		text : Ti.Locale.getString('noPostWithoutApproval'),
+		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
+		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
+		wordWrap : true,
+		color : 'black',
+		bottom : '15%',
+		left : '5%',
+		height : 100,
+		width : '90%',
+		paddingLeft : 2,
+		paddingRight : 2,
+		font : {
+			fontWeight : 'normal',
+			fontSize : '12'
+		}
+	});
+	win.add(privacyLabel);
 }
 
 function createSettingsWindow() {
