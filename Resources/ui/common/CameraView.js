@@ -28,11 +28,12 @@
 			curWin = FeedWindow.currentFeedWindow(),
 			photoBlob,
 			postModel;
-		
+		Titanium.API.info('PHOTO SUCCESS cropRect.x ' + cropRect.x + ' cropRect.y ' + cropRect.y  + ' cropRect.height ' + cropRect.height + ' cropRect.width ' + cropRect.width);
+
 		Ti.Media.hideCamera();	
 		// crop to rect chosen by user
-		photoBlob = image.imageAsCropped({x: cropRect.x, y: cropRect.y, width: cropRect.width, height: cropRect.height}); 
-		postModel = PostModel.createPostModel(user, photoBlob);
+		//photoBlob = image.imageAsCropped({x: cropRect.x, y: cropRect.y, width: cropRect.width, height: cropRect.height}); 
+		postModel = PostModel.createPostModel(user, image);
 		goToShareWindow(postModel);
 	}
 

@@ -57,7 +57,12 @@ if (Ti.version < 2.0 ) {
 	Ti.API.info('Ti.Platform.displayCaps.dpi: ' + Ti.Platform.displayCaps.dpi);
 	Ti.API.info('Ti.Platform.displayCaps.platformHeight: ' + Ti.Platform.displayCaps.platformHeight);
 	Ti.API.info('Ti.Platform.displayCaps.platformWidth: ' + Ti.Platform.displayCaps.platformWidth);
-	
+	if (Ti.Platform.displayCaps.density === 'high') {
+		Ti.App.pixelScaling = 2;
+	}
+	else {
+		Ti.App.pixelScaling = 1;
+	}
 	Ti.App.SCREEN_WIDTH = (width > height) ? height : width;
 	Ti.App.SCREEN_HEIGHT = (width > height) ? width : height;
 	

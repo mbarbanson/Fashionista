@@ -159,18 +159,19 @@
 		
 		// event listeners
 		done.addEventListener('click', function() {
-			if(isLoginAction) {
+			if(isLoginAction) {				
 				acs.login(username.value, password.value, postActionCallback);
 			} else {
 				var emailAddy = email.value;
 				if (!validateEmail(emailAddy)) {
 					alert(Ti.Locale.getString('malformedEmail'));
 					return;
-				}				
+				}
+				done.setEnabled(false); // avoid reclick on done 						
 				acs.createUser(username.value, email.value, password.value, postActionCallback, errorCallback);
 			}
 			lWin.add(spinner);
-			spinner.show();			
+			spinner.show();						
 		});
 		
 		return lWin;

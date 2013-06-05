@@ -146,8 +146,7 @@
 			img, clickHandler,
 			imgW,
 			imgH,
-			postW,
-			postH,
+			postW, postH, postL, postT,
 			labelDate,
 			createdAtDate,
 			likeBtn,
@@ -181,8 +180,10 @@
 					imgH = photoBlob.height;
 				}
 				
-				postW = Math.min(Ti.App.SCREEN_WIDTH, imgW);
-				postH = Math.min(Ti.App.SCREEN_WIDTH, imgH);
+				postW = imgW / Ti.App.pixelScaling; //Math.min(Ti.App.SCREEN_WIDTH, imgW);
+				postH = imgH / Ti.App.pixelScaling; //Math.min(Ti.App.SCREEN_HEIGHT, imgH);
+				postL = 0;
+				postT = 0;
 	
 				// images are square. make them fit
 				// first row
@@ -190,12 +191,13 @@
 								image: img,
 								borderColor: '#5D3879',
 								borderWidth: 1,							
-								left:0, top: 0,
-								width:postW, 
-								height: postH
+								width:Ti.UI.SIZE, 
+								height:Ti.UI.SIZE
 								});
 				row.add(imgView);
 				row.photo = img;
+				//imgView.setLeft((Ti.App.SCREEN_WIDTH - imgView.width) / 2);
+				//imgView.setTop((Ti.App.SCREEN_HEIGHT - imgView.height) / 2);
 				clickHandler = function (e) {
 									likePost(row);				
 								};

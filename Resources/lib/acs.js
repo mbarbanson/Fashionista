@@ -654,20 +654,21 @@
 	// Posts
 	function addPost (postModel, pPhoto, successCallback, errorCallback) {
 
-		var sync_sizes = 'iphone', pBody = postModel.caption, tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
+		var sync_sizes = 'iphone', 
+		    pBody = postModel.caption,
+		    tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
 		Cloud.Posts.create({
 		    response_json_depth: 2,
 		    content: pBody,
 		    photo: pPhoto,
 		    tags: tags_list,
-		    // since appcelerator limits photos to being square, use square aspect ratio for now
 		    'photo_sizes[avatar]':'50x50#',
 		    'photo_sizes[preview]': '75x75#',
-			'photo_sizes[android]':'480x480#',
-			'photo_sizes[iphone]':'640x640#',
+			'photo_sizes[android]': ((pPhoto.width*480)/640).toString() + 'x' + ((pPhoto.height*480)/640).toString(),  //'480x480#',
+			'photo_sizes[iphone]':pPhoto.width.toString() + 'x' + pPhoto.height.toString(), //'640x640#',
 			'photo_sync_sizes[]': 'iphone',
-			'photo_sizes[ipad]': '768x768#'
+			'photo_sizes[ipad]': ((pPhoto.width*768)/640).toString() + 'x' + ((pPhoto.height*768)/640).toString()  //'768x768#'
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
@@ -779,8 +780,8 @@
 	
 	
 	// query on tags
-	function getFindExactPosts (postAction, cleanupAction) {
-		Ti.API.info('acs.getFindExactPosts');
+	function getPublicPosts (postAction, cleanupAction) {
+		Ti.API.info('acs.getPublicPosts');
 
 		Cloud.Posts.query({
 		    page: 1,
@@ -788,7 +789,9 @@
 		    order: '-created_at',
 		    response_json_depth: 2,
 		    where: {
-		        "$or": [{"tags_array": Ti.Locale.getString('findExactHashTag')}, {"tags_array": Ti.Locale.getString('findSimilarHashTag')} ]
+		        "$or": [{"tags_array": Ti.Locale.getString('findExactHashTag')}, 
+		                {"tags_array": Ti.Locale.getString('findSimilarHashTag')},
+		                {"tags_array": Ti.Locale.getString('publicHashTag')} ]
 		    }
 		}, function (e) {
 			var i,
@@ -805,7 +808,7 @@
 				   }
 		         }  
 		    } else {
-		        Ti.API.info('Error: getFindExactPosts\\n' +
+		        Ti.API.info('Error: getPublicPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 	            checkInternetConnection(e);
 		    }
@@ -848,7 +851,7 @@
 	exports.showPost = showPost;	
 	exports.updatePost = updatePost;
 	exports.getFriendsPosts = getFriendsPosts;
-	exports.getFindExactPosts = getFindExactPosts;
+	exports.getPublicPosts = getPublicPosts;
 
 
 } ());
