@@ -51,7 +51,7 @@
 	function findFBFriends (successCallback, errorCallback) {
 		var Facebook = require('lib/facebook'),
 			i;
-		Cloud.SocialIntegrations.searchFacebookFriends(function (e){
+		Cloud.SocialIntegrations.searchFacebookFriends(function (e) {
 		    if (e.success) {
 		        if (e.users) {
 					Ti.API.info('Success:\\n' + 'Count: ' + e.users.length);

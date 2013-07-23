@@ -60,74 +60,39 @@
 	
 	function displayThumbnails (tableView, photos) {
 		Ti.API.info("displayThumbnailsView");
-		var numPhotos = 0, 
+		var numPhotos = 0,
+		    isValidPhoto = function (imagePath) { 
+								imagePath = Ti.Filesystem.getFile(curatedPhotosPath + imagePath); 
+								return imagePath.exists(); 
+							}, 
 			imgView, row, col, i, 
 			tableData = [],
-			ok, label, dialog, numRows,
+			numRows,
 			image, thumb;
 	
+		photos = photos.filter(isValidPhoto, photos);	
 		numPhotos = photos !== "" ? photos.length : 0;
-		
-		if (numPhotos === 0) {
-			
-		    ok = Titanium.UI.createButton({
-				title: Ti.Locale.getString('ok'),
-				style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
-				borderColor: 'white',
-				width: 40,
-				height: 40,
-				bottom: 5	
-		    });
-	   
-		    label = Ti.UI.createLabel({
-				color: 'white',
-				backgroundColor: 'black',
-				font: { fontSize: 14 },
-				text: "You're signed up, now let's get started. Take a picture by clicking on the purple camera button below!",
-				textAlign: Ti.UI.TEXT_ALIGNMENT_CENTER,
-				top: 5,
-				height: 150,
-				width: 280
-		    });
-		    
-			dialog = Ti.UI.createView({
-				color: 'white',
-				backgroundColor: 'black',
-				borderRadius: 6,
-				top: 55,
-				height: 200,
-				width: 300
-		    });
-	
-		    dialog.add(label);
-		    dialog.add(ok);
-		    thumbnailsWindow().add(dialog);
-		
-		    ok.addEventListener('click', function(e){
-											dialog.hide();  // should we just go ahead and remove()?
-		    });
-		    
-		}
-	
+	    if (numPhotos === 0) { return; }
+	    
 		numRows = Math.max(numPhotos / 3, 4);
 		for (i = 0; i < numRows; i = i + 1) {
 			
 			row = Ti.UI.createTableViewRow({
 		        className:'row', // used to improve table performance
 		        rowIndex:i, // custom property, useful for determining the row during events
-		        height:105,
+		        height: '25%',
 		        width: Ti.UI.SIZE,
-		        top: 105*i,
+		        top: (25*i).toString() + '%',
 		        left: 5
 		      });
 	    
 		    for (col = 0; col < 3; col = col + 1) {
-				image = (numPhotos > 0 ? photos[numPhotos - 1] : 'IMG_0001.jpg');
+				image = (numPhotos > 0 ? photos[numPhotos - 1] : 'pic12.jpg');
 				thumb = null;
 				imgView = Ti.UI.createImageView({
 				    top: 0,
-					width:100,
-					left: 5 + 105 * col
+					width: '33%', //100,
+					left: (33*col).toString() +'%'            //5 + 105 * col
 				});
 				
 				// use thumb for grid view but keep a pointer to other sizes for detail view etc...

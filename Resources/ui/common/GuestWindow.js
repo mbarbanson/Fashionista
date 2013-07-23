@@ -3,12 +3,13 @@
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
-var acs = require('lib/acs');
 
 
 function createGuestWindow() {
 	'use strict';
-	var ThumbnailsWindow,
+	var acs = require('lib/acs'),
+		Flurry = require('ti.flurry'),
+		ThumbnailsWindow,
 		ApplicationTabGroup,
 		LoginWindow,
 //		title, 
@@ -80,7 +81,7 @@ function createGuestWindow() {
         borderBottom:false
     }); 
     thumbnailsWindow.add(toolbar);
-    
+/*    
     ok = Titanium.UI.createButton({
 		title: Ti.Locale.getString('ok'),
 		style: Ti.UI.iPhone.SystemButtonStyle.PLAIN, 
@@ -115,13 +116,20 @@ function createGuestWindow() {
     });
     dialog.add(label);
     dialog.add(ok);
-    thumbnailsWindow.add(dialog);
+    
 
+    ok.addEventListener('click', function(e){
+		dialog.hide();  // should we just go ahead and remove()?
+		thumbnailsWindow.remove(dialog);
+    });    
+    thumbnailsWindow.add(dialog);
+*/
 	function loginCallback() {
 		// if a user has successfully logged in or signed up
 		if (acs.currentUser()) {	
 			try {
 				Ti.API.info("loginCallback");
+				Flurry.logEvent('SucessfulSignupOrLogin');				
 				if (!Ti.App.mainTabGroup) {
 					ApplicationTabGroup.initAppUI();					
 				}
@@ -137,17 +145,15 @@ function createGuestWindow() {
 		}
 	}
 
-    ok.addEventListener('click', function(e){
-		dialog.hide();  // should we just go ahead and remove()?
-		thumbnailsWindow.remove(dialog);
-    });
     
     signup.addEventListener('click', function(e){
         tab1.open(LoginWindow.createLoginWindow('signup', loginCallback));
+		Flurry.logEvent('SignupClick', { 'button': "signupButton" });        
     });
 	 
     login.addEventListener('click', function(e){
         tab1.open(LoginWindow.createLoginWindow('login', loginCallback));
+		Flurry.logEvent('LoginClick', { 'button': "loginButton" });        
     });
 	   
 	//FIXME do we need to return this?

@@ -8,7 +8,8 @@
 function createContactsWindow(doneHandler) {
 	'use strict';
 	var done = Titanium.UI.createButton({
-				systemButton: Titanium.UI.iPhone.SystemButton.DONE
+				style: Titanium.UI.iPhone.SystemButtonStyle.DONE,
+				title: 'Add All'
 		}),
 		win = Ti.UI.createWindow({
 			backgroundColor: '#ddd',
@@ -31,89 +32,85 @@ function createContactsWindow(doneHandler) {
 	});
 	return win;
 }		
+
+
+function isCurrentUser (contact) {
+	'use strict';
+	var acs = require('lib/acs'),
+		currentUser = acs.currentUser(),
+		result = false;
+		
+	if (currentUser && contact && contact.id === currentUser.id) {
+		result = true;		
+	}
+
+	return result;
+}		
 		
 		
-		
-function populateContactsInviteList (contactsWin, contacts, fashionBuddies, contactAction) {
+function populateContactsInviteList (contactsWin, contacts, fashionBuddies, contactAction, friendIndex) {
 	'use strict';		
 	var acs = require('/lib/acs'),
+		isFriend = function (contact, buddies) {
+						return friendIndex(contact, buddies) !== buddies.length;
+					},	
 		currentUser = acs.currentUser(),
-		isCurrentUser,
 		android = (Ti.Platform.osname === 'android'),
 		// getting all from Android is very slow...
 		activityIndicator,
-		makeTable, isFriend, tableview;
+		makeTable, tableview;
 	if (android) {
 		activityIndicator = Ti.UI.createActivityIndicator({
 			message: 'Loading all contacts, please wait...'
 		});
 		activityIndicator.show();
-	}
-	
-	isCurrentUser = function(contact) {
-		var fName = contact.first_name,
-			lName = contact.last_name, 
-			email = contact.email,
-			result = false;
-		if (currentUser && currentUser.email && email && currentUser.email === email)	 {
-			result = true;		
-		}
-		else if (currentUser && currentUser.first_name && currentUser.last_name && fName && lName && 
-					(currentUser.first_name === fName && currentUser.last_name === lName)) {
-			result = true;
-		}
-		return result;
-	};	
-
-	isFriend = function (contact) {
-		var fName = contact.first_name,
-			lName = contact.last_name, 
-			email = contact.email, 
-			i, numBuddies = fashionBuddies.length, 
-			found = false, 
-			buddy;
-		for (i = 0; i < numBuddies; i = i + 1) {
-			buddy = fashionBuddies[i];
-			if ((email && email === buddy.email)	||
-				(fName && lName && fName === buddy.first_name && lName === buddy.last_name)) {
-					found = true;
-					break;
-				}		
-		}
-		return found;				
-	};
+	}	
 	
 	makeTable = function() {
-		var rows = [], i, title, actionFun,
+		var rows = [], i, title, actionFun, row,
+			avatar, contact, avatarView,
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14);
-		actionFun = function (contact, add) { 
+		actionFun = function (contact) {
+			var index = friendIndex(contact, fashionBuddies); 
 			Ti.API.info("calling populateList click handler");
-			if (!isFriend(contact)) { contactAction(contact, add); }
+			if (fashionBuddies.length === 0 || index >= fashionBuddies.length) {
+				//add contact as friend 
+				contactAction(contact, true);
+			}
+			else {
+				contactAction(contact, false);
+			}
 		};			
 		for (i = 0; i < contacts.length; i = i + 1) {
-			if (!isCurrentUser(contacts[i])) {
-				Ti.API.info("People object is: "+ contacts[i].first_name + " " + contacts[i].last_name + " " + contacts[i].email);
-				
-				if (!contacts[i].first_name || !contacts[i].last_name) {
-					if (contacts[i].email) {
-						title = contacts[i].email;
+			contact = contacts[i];
+			if (!isCurrentUser(contact)) {
+				//Ti.API.info("People object is: "+ contact.first_name + " " + contact.last_name + " " + contact.email);
+				if (!contact.first_name || !contact.last_name) {
+					if (contact.email) {
+						title = contact.email;
 					}
 					else {
-						title = contacts[i].username;
+						title = contact.username;
 					}
 				}
 				else {
-					title = contacts[i].first_name + ' ' + contacts[i].last_name;	
-				}			
-				rows[i] = Ti.UI.createTableViewRow({
+					title = contact.first_name + ' ' + contact.last_name;	
+				}
+				avatar = acs.getUserAvatar(contact);
+				avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 30, width: 30});
+				
+				row = Ti.UI.createTableViewRow({
+					className: 'friendRow',
 					title: title,
-					leftImage: contacts[i].photo,
-					person: contacts[i],
-					hasCheck: isFriend(contacts[i], fashionBuddies),   // we need to check whether person is currently a friend
+					indentionLevel: 3,				
+					person: contact,
+					hasCheck: isFriend(contact, fashionBuddies),   // we need to check whether person is currently a friend
 					action: actionFun,
 					height: Ti.UI.SIZE,
-					font: {fontSize:defaultFontSize, fontWeight:'bold'}
+					font: {fontSize: defaultFontSize + 2, fontWeight:'bold'}
 				});
+				row.add(avatarView);
+				rows[i] = row;
 			}
 		}
 		return rows;

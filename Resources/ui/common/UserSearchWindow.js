@@ -26,12 +26,19 @@
 			spinner = Ti.UI.createActivityIndicator({top:'50%', left: '50%'}),
 			style,
 			wrappedErrorCallback = function (e) {
+				var dialog;
 				if (errorCallback) { errorCallback(e); }
 				Ti.API.info('user search failed:' + e.message);
 				spinner.hide();
-				win.remove(spinner);						
+				win.remove(spinner);
+				dialog = Ti.UI.createAlertDialog({
+					title: Ti.Locale.getString('fashionista'),
+					message: Ti.Locale.getString('userSearchError')
+				});
+				dialog.show();						
 			},
 			wrappedSuccessCallback = function (users, query) {
+				var dialog;
 				Ti.API.info('User search success');
 				spinner.hide();
 				win.remove(spinner);
@@ -43,7 +50,11 @@
 					}					
 				}
 				else {
-					alert(Ti.Locale.getString('noMatchFound'));
+					dialog = Ti.UI.createAlertDialog({
+						title: Ti.Locale.getString('fashionista'),
+						message: Ti.Locale.getString('noMatchFound')
+					});
+					dialog.show();					
 				}			
 			};
 			

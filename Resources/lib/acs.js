@@ -9,7 +9,8 @@
 	// a couple local variables to save state
 	//FIXME define a userModel with additional properties like hasRequestedFriends etc...
 	var privCurrentUser = null,
-		Cloud = require('ti.cloud');
+		Cloud = require('ti.cloud'),
+		Flurry = require('ti.flurry');
 
 	function checkInternetConnection (e) {
 		if (e.message.indexOf("'null' is not an object (evaluating 'n.trim')") > -1) {
@@ -49,15 +50,15 @@
 		Cloud.Users.update(dict, 
 				function (e) {
 			    if (e.success) {
-			        var user = e.users[0],
-						hasRequestedFriends = getHasRequestedFriends();
+			        var user = e.users[0];
 			        // update our current user
 			        privCurrentUser = user;
-					setHasRequestedFriends(hasRequestedFriends);
 			        Ti.API.info('Success: updated current user \\n' + dict);
+					Flurry.logEvent('updateUser', {'username': user.username, 'email': user.email, 'result': 'success'});
 			    } else {
 			        alert('Error:\\n' +
 			            ((e.error && e.message) || JSON.stringify(e)));
+					Flurry.logEvent('updateUser', {'errorMessage': e.message, 'error': e.error});			            
 			    }
 			});
 	}
@@ -80,15 +81,16 @@
 			username: username,
 			email: email,
 			password: password,
-			password_confirmation: password
-			//custom_fields: {photos: null, photoCollection: null}
+			password_confirmation: password,
+			custom_fields: {likes: null, comments: null}
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('user = ' + JSON.stringify(e.users[0]));
 				var Notifications = require('ui/common/notifications');
 				//FIXME call createUserModel to initialize all properties including hasRequestedFriends etc...
 		        privCurrentUser = e.users[0];
-		        setHasRequestedFriends (false);
+				Flurry.logEvent('createUser', {'username': privCurrentUser.username, 'email': privCurrentUser.email, 'result': 'success'});
+
 		        // Cloud.sessionId is associated with currentUser. Save it and retrieve current user info from it
 				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
 				Ti.API.info("Logged in " + privCurrentUser.username + " saved sessionId " + Ti.App.Properties.getString('sessionId'));
@@ -102,6 +104,8 @@
 				alert(e.message);
 	            checkInternetConnection(e);
 				privCurrentUser = null;
+				Flurry.logEvent('createUser', {'errorMessage': e.message, 'error': e.error});			            
+				
 				errorCallback(e);
 		    }
 		});
@@ -121,12 +125,17 @@
 	            setCurrentUser(user);
 				setHasRequestedFriends(false);
 				Notifications.initNotifications();					
-				if (successCallback) { successCallback(); }
+				if (successCallback) { successCallback();}
+				Flurry.logEvent('Cloud.Users.showMe', {'username': user.username, 'email': user.email, 'result': 'success'});
+				
 	        } else {
 	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)) + " Please exit and start up again");
+				Flurry.logEvent('showUser', {'errorMessage': e.message, 'error': e.error});			            
+	                
 	            checkInternetConnection(e);
 	            Ti.App.Properties.setString('sessionId', null);
+	    
 	            if (errorCallback) { errorCallback(); }
 	        }
 		});		
@@ -144,9 +153,13 @@
 		        Ti.API.info('queryUsers Success:\n' +
 		            'Count: ' + e.users.length);
                 successCallback(e.users, query);
+				Flurry.logEvent('Cloud.Users.query', {'result': 'success'});
+                
 		    } else {
 		        Ti.API.info('Error:\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('queryUser', {'message': e.message, 'error': e.error});			            
+		            
 	            errorCallback(e);
 		    }
 		});		
@@ -168,9 +181,13 @@
 	                'name: ' + collection.name + '\\n' +
 	                'count: ' + collection.counts.total_photos + '\\n' +
 	                'updated_at: ' + collection.updated_at);
+				Flurry.logEvent('Cloud.PhotoCollections.create', {'username': user.username, 'email': user.email, 'result': 'success'});
+	                
 	        } else {
 	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('createUserPhotoCollection', {'message': e.message, 'error': e.error});			            
+	                
 	            checkInternetConnection(e);
 	        }
 	    });
@@ -193,6 +210,8 @@
 	        } else {
 	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('getUserPhotoCollection', {'message': e.message, 'error': e.error});			            
+	                
 	            checkInternetConnection(e);
 	        }
 	    });
@@ -229,6 +248,8 @@
 		        } else {
 		            Ti.API.info('Error:\\n' +
 		                ((e.error && e.message) || JSON.stringify(e)));
+					Flurry.logEvent('getUserCollectionIdPhotos', {'message': e.message, 'error': e.error});			            
+		                
 		            checkInternetConnection(e);
 		        }
 		    });
@@ -248,6 +269,7 @@
 	    }, function (e) {
 	        if (e.success) {
 	            var photo = e.photos[0];
+				Flurry.logEvent('Cloud.Photos.create', {'result': 'success'});
 	            
 	            Ti.API.info ('Success:\\n' +
 	                'id: ' + photo.id + '\\n' +
@@ -261,6 +283,8 @@
 	        } else {
 	            Ti.API.info('Error:\\n' +
 	                ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('uploadPhoto', {'message': e.message, 'error': e.error});			            
+	                
 	            checkInternetConnection(e);
 	        }
 	    });
@@ -300,13 +324,6 @@
 	}
 	
 	function subscribeNotifications (channelName) {
-		// if not device is not registered for oush notifications
-		// or running on simulator, bail
-		/*
-		if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) {
-			return;
-		}
-		*/
 		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
 		Cloud.PushNotifications.subscribe({
 		    channel: channelName,
@@ -315,9 +332,12 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Successfully subscribed current user to push notifications for channel ' + channelName);
+				Flurry.logEvent('Cloud.PushNotifications.subscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
+		        
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('subscribeNotifications', {'message': e.message, 'error': e.error});			            
 	            checkInternetConnection(e);
 		    }
 		});
@@ -333,9 +353,13 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('unsusbcribe Notifications Success');
+				Flurry.logEvent('Cloud.PushNotifications.unsubscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
+		        
 		    } else {
 		        Ti.API.info('Error:  unsubscribeNotifications \\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('unsubscribeNotifications', {'message': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 		    }
 		    // always execute callback, whether or not we successfully unregistered
@@ -344,7 +368,7 @@
 	}
 	
 
-	function notifyUsers (channel, message, userIds, customPayload) {
+	function notifyUsers (channel, message, userIds, customPayload, successCallback) {
 		// if not device is not registered for push notifications
 		// or running on simulator, bail
 		Ti.API.info("sending push notification " + message + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
@@ -355,9 +379,15 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Successfully notified friends ' + userIds + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+				Flurry.logEvent('Cloud.PushNotifications.notify', {'message': message, 'to': userIds, 'result': 'success'});
+				if (successCallback) {
+					successCallback(userIds);
+				}
+		        
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.PushNotifications.notify', {'errorMessage': e.message, 'error': e.error});			              
 				checkInternetConnection(e);
 		    }
 		});
@@ -382,19 +412,22 @@
 	}
 	
 	
-	function newFriendNotification(userIds) {
+	function newFriendNotification(userIds, successCallback) {
 		var msg = "You have a new friend request from " + privCurrentUser.username + " !",
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
+			userId = currentUserId(),
 			customPayload = {
 								"f": {
-											"uid": currentUserId(), 
+											"uid": userId, 
 											"type": 'friend_request'
 										},
 								"badge": badge,
 								"sound": "default",
 								"alert": msg
 							};
-		notifyUsers('fashionist', msg, userIds, customPayload);		
+		notifyUsers('fashionist', msg, userIds, customPayload, successCallback);
+		Flurry.logEvent('newNotification', {'message': msg, 'to': userId, 'type': 'friend_request', 'result': 'success'});
+		
 	}
 	
 	
@@ -405,6 +438,7 @@
 		//always send notification from current user
 		var username = '@' + privCurrentUser.username, //post.user.username,
 			message = username + notificationContent,
+			userId = currentUserId(),
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
 			paramDict;
 			
@@ -416,7 +450,7 @@
 		    payload: {
 			    "f": {
 						"pid": post.id, 
-						"uid": currentUserId(), //post.user.id, 
+						"uid": userId, //post.user.id, 
 						"type": notificationType
 						},
 				"badge": badge,
@@ -432,7 +466,7 @@
 		    payload: {
 			    "f": {
 						"pid": post.id, 
-						"uid": currentUserId(), //post.user.id, 
+						"uid": userId, //post.user.id, 
 						"type": notificationType
 						},
 				"badge": badge,
@@ -446,10 +480,20 @@
 		    if (e.success) {
 		        Ti.API.info('Successfully notified friends ' + user_ids || post.user.id + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
 		        Ti.UI.iPhone.setAppBadge(badge);
+				Flurry.logEvent('newNotification', 
+									{
+										'message': paramDict.payload['alert'],
+										'to': userId, 
+										'type': paramDict.payload['f']['type'],
+										'result': 'success'
+									});
+		        
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
-					checkInternetConnection(e);
+				Flurry.logEvent('newNotifications', {'errorMessage': e.message, 'error': e.error});			            
+		            
+				checkInternetConnection(e);
 		    }
 		});
 	}
@@ -487,9 +531,11 @@
 		mentionnedUsers = atMentions ? atMentions.map(stripLeadingAt) : null;
 		whereClause = mentionnedUsers? mentionnedUsers.map(userNameQuery) : null;
 		if (whereClause && mentionnedUsers && mentionnedUsers.length > 0) {
+			//Flurry.logEvent('notifyMentionnedInComment', {'message': commentText, 'to': atMentions, 'type': 'comment'});
 			queryUsers({"$or": whereClause}, successCallback, successCallback, 1);
 		}
 		else {
+			//.logEvent('newCommentNotification', {'message': commentText, 'type': 'comment'});			
 			newNotification(post, "comment", ' commented: ' + unescape(commentText), false);		
 		}				
 	}
@@ -507,8 +553,9 @@
 	}
 
 
+
 	// login, logout
-	function login(username, password, callback) {
+	function login(username, password, successCallback, errorCallback) {
 		Cloud.Users.login({
 		    login: username,
 		    password: password
@@ -527,13 +574,18 @@
 				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Cloud.sessionId);
 				// once we have a logged in user, setup Notifications	
 				Notifications.initNotifications();	
-				callback(e);
+				successCallback(e);
+				
+				Flurry.logEvent('login', {'username': username, 'result': 'success'});			            
+				
 		    } else {
 		        Ti.API.info('Error: acs.login e.success ' + e.success + '\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
 		        alert(e.message);
+				Flurry.logEvent('login', {'errorMessage': e.message, 'error': e.error});			            
+		        
 	            checkInternetConnection(e);
 		        privCurrentUser = null;
-				callback(e.message);
+				errorCallback(e.message);
 		    }
 		});	
 	}
@@ -551,9 +603,14 @@
 											Ti.App.Properties.setString('sessionId', null);
 											// invoke UI callback
 									        callback(e);
+									        
+											Flurry.logEvent('logout', {'result': 'success'});			            
+									        
 									    }
 									    else {
 											Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
+											Flurry.logEvent('logout', {'errorMessage': e.message, 'error': e.error});			            
+											
 								            checkInternetConnection(e);
 									    }
 								}
@@ -561,16 +618,32 @@
 					};
 		// log out of facebook to clear Ti.Facebook.loggedIn etc...	
 		if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); Ti.Facebook.setUid(null);}			
-		if (true) {  //Ti.Network.remoteNotificationsEnabled && Ti.Network.remoteDeviceUUID) {
-			unsubscribeNotifications("fashionist", doLogout);
-		}
-		else {	
-			doLogout();					
-		}
+		unsubscribeNotifications("fashionist", doLogout);
 	}
 
 	
 	// Friends
+	function removeFriends (friends, callback) {
+		Ti.API.info('acs.removeFriends');
+		var userIdList = friends.join();
+		Cloud.Friends.remove({
+		    user_ids: userIdList,
+		    response_json_depth: 2
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('Friend(s) removed ' + userIdList);
+				Flurry.logEvent('Cloud.Friends.remove', {'friends': userIdList, 'result': 'success'});			            
+		        
+				callback(userIdList);
+		    } else {
+		        Ti.API.info('Error in removeFriends:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('removeFriends', {'errorMessage': e.message, 'error': e.error});  
+	            checkInternetConnection(e);
+		    }
+		});		
+	}	
+	
 	function addFriends (friends, callback) {
 		Ti.API.info('acs.addFriends');
 		var userIdList = friends.join();
@@ -580,10 +653,14 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Friend(s) added ' + friends);
+				Flurry.logEvent('Cloud.Friends.add', {'friends': userIdList, 'result': 'success'});			            
+		        
 				callback(userIdList);
 		    } else {
-		        Ti.API.info('Error:\\n' +
+		        Ti.API.info('Error in addFriends:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('addFriends', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 		    }
 		});		
@@ -599,11 +676,14 @@
 		}, function (e) {
 		    if (e.success) {
 		        Ti.API.info('Friend(s) approved ' + userIdList);
+				Flurry.logEvent('Cloud.Friends.approve', {'friends': userIdList, 'result': 'success'});			                 
 				approvedRequestNotification(userIdList);
 				Ti.API.info('callback called ' + approvedRequestNotification.toString());
 				if (successCallback) { successCallback(e); }
 		    } else {
 		        Ti.API.info('Error in approveFriends: ' + e.message);
+				Flurry.logEvent('approveFriendRequest', {'errorMessage': e.message, 'error': e.error});			            
+		        
 	            checkInternetConnection(e);
 	            if (errorCallback) { errorCallback(e); }
 		    }
@@ -621,6 +701,8 @@
 		    } else {
 		        Ti.API.info('Error in getFriendRequests:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('getFriendRequests', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 		    }
 		});		
@@ -628,23 +710,25 @@
 
 
 	function getFriendsList (successCallback, cleanupAction) {
+		var userId = currentUserId();
 		Cloud.Friends.search({
-		    user_id: currentUserId(),
+		    user_id: userId,
 		    response_json_depth: 2
 		}, function (e) {
-			var i,
-				user;
 		    if (e.success) {
 		        Ti.API.info('Success:\\n' +
 		            'Count: ' + e.users.length);
+				Flurry.logEvent('Cloud.Friends.search', {'userId': userId, 'result': 'success'});			            
 
 		       if (successCallback) {
-					successCallback(e.users, cleanupAction);		
+					successCallback(e.users, cleanupAction);
+					//privCurrentUser.savedFriends = e.users;		
 				}
 		    } else {
 				if (cleanupAction) { cleanupAction(); }
-		        Ti.API.info('Error:\\n' +
+		        Ti.API.info('getFriendsList Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Friends.search', {'errorMessage': e.message, 'error': e.error});			            
 	            checkInternetConnection(e);
 		    }
 		});
@@ -672,6 +756,8 @@
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
+				Flurry.logEvent('Cloud.Posts.create', {'content': pBody, 'result': 'success'});			            
+		        
 		        Ti.API.info('Success:\\n' +
 		            'id: ' + post.id + '\\n' +
 		            'title: ' + post.title + '\\n' +
@@ -682,6 +768,8 @@
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.create', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 	            if (errorCallback) {errorCallback();}
 		    }
@@ -697,15 +785,20 @@
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
+				Flurry.logEvent('Cloud.Posts.show', {'postId': savedPostId, 'result': 'success'});			            
+		        /*
 		        Ti.API.info('showPost success:\\n' +
 		            'id: ' + post.id + '\\n' +
 		            'title: ' + post.title + '\\n' +
 		            'content: ' + post.content + '\\n' +
 		            'updated_at: ' + post.updated_at);
+		            */
 				if (successCallback) {successCallback(post);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.show', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 	            if (errorCallback) {
 					errorCallback();
@@ -733,13 +826,29 @@
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.update', {'errorMessage': e.message, 'error': e.error});			            
 	            checkInternetConnection(e);
 		    }
 		});		
 	}
 	
 	
-
+	function removePost(savedPostId, successCallback, errorCallback) {
+		Cloud.Posts.remove({
+		    post_id: savedPostId
+		}, function (e) {
+		    if (e.success) {
+				Flurry.logEvent('Cloud.Friends.remove', {'postId': savedPostId, 'result': 'success'});			            
+		        if (successCallback) { successCallback(e); }
+		    } else {
+		        alert('Error:\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.remove', {'errorMessage': e.message, 'error': e.error});			            
+		            
+		        if (errorCallback) { errorCallback(e); }
+		    }
+		});		
+	}
 	
 	
 	function getFriendsPosts (friendsList, postAction, cleanupAction) {
@@ -749,7 +858,7 @@
 		usersList.splice(usersList.length, 0, privCurrentUser);
 		Cloud.Posts.query({
 		    page: 1,
-		    per_page: 20,
+		    per_page: Ti.App.maxNumPosts,
 		    order: '-created_at',
 		    response_json_depth: 2,
 		    where: {
@@ -761,6 +870,8 @@
 				numPosts;
 		    if (e.success) {
 				numPosts = e.posts.length;
+				Flurry.logEvent('Cloud.Posts.query', {'usersList': friendsList, 'type': 'friends'});			            
+				
 		        Ti.API.info('Success:\\n' +
 		            'Count: ' + numPosts);
 		         if (numPosts > 0) {
@@ -772,6 +883,8 @@
 		    } else {
 		        Ti.API.info('Error: getFriendsPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.query', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 		    }
 			if (cleanupAction) { cleanupAction(); }
@@ -785,7 +898,7 @@
 
 		Cloud.Posts.query({
 		    page: 1,
-		    per_page: 20,
+		    per_page: Ti.App.maxNumPosts,
 		    order: '-created_at',
 		    response_json_depth: 2,
 		    where: {
@@ -806,17 +919,33 @@
 					    post = e.posts[i];
 					    if (postAction) { postAction(post); }
 				   }
-		         }  
+		         }
+				Flurry.logEvent('Cloud.Posts.query', {'type': 'public'});			            
+		           
 		    } else {
 		        Ti.API.info('Error: getPublicPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('Cloud.Posts.query', {'errorMessage': e.message, 'error': e.error});			            
+		            
 	            checkInternetConnection(e);
 		    }
 			if (cleanupAction) { cleanupAction(); }
 		});	
 	}
 	
-
+	
+	function getUserAvatar(user) {
+		var avatar = null, facebookUID,
+			FB = require('lib/facebook');
+		if (user.photo && user.photo.processed) {
+			avatar = user.photo.urls.small_240;
+		}
+		if (!avatar && user.external_accounts && user.external_accounts.length > 0) {
+			facebookUID = FB.getLinkedFBId(user);
+			avatar = 'https://graph.facebook.com/' + facebookUID + '/picture' ;
+		}
+		return avatar;
+	}
 
 
 	exports.getPhotoCollectionId = getPhotoCollectionId;
@@ -844,14 +973,18 @@
 	exports.newLikeNotification = newLikeNotification;		
 	exports.newFriendNotification = newFriendNotification;
 	exports.addFriends = addFriends;
+	exports.removeFriends = removeFriends;
 	exports.approveFriendRequests = approveFriendRequests;
 	exports.getFriendRequests = getFriendRequests;
 	exports.getFriendsList = getFriendsList;
 	exports.addPost = addPost;
 	exports.showPost = showPost;	
 	exports.updatePost = updatePost;
+	exports.removePost = removePost;
 	exports.getFriendsPosts = getFriendsPosts;
 	exports.getPublicPosts = getPublicPosts;
+	exports.getUserAvatar = getUserAvatar;
+
 
 
 } ());

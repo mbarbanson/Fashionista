@@ -27,55 +27,109 @@
 	function goToUserSearch(parentWin) {
 		var UserSearchResults = require('ui/common/UserSearchResults'),
 			UserSearchWindow = require('ui/common/UserSearchWindow'),
+			ProfileView = require('ui/common/ProfileView'),
+			tab = parentWin.containingTab,			
 			successCallback = function (users, query) {
 									if (users.length > 0) {
-										UserSearchResults.createSearchResultsWindow(users, parentWin, getQueryType(query));  
-									}// go to list of search results to let user pick the right match in case there is more than one
+										//UserSearchResults.createSearchResultsWindow(users, parentWin, getQueryType(query));
+										ProfileView.displayUserProfile(tab, users[0]);  
+									}
 								},
-			errorCallback,	// sorry we could not find any results to this search. Please add some information and try again.  
+			errorCallback,	  
 			userSearchWin = UserSearchWindow.createUserSearchWindow(successCallback, errorCallback),
-			rightButton = userSearchWin.getRightNavButton(),
-			tab = parentWin.containingTab;
+			rightButton = userSearchWin.getRightNavButton();
+
 		userSearchWin.containingTab = tab;
 		tab.open(userSearchWin);	
 	}
+	
 	
 	function inviteContactsClickHandler (parentWin) {
 		var Contacts = require('lib/contacts'),
 			ContactsWindow = require('ui/common/ContactsWindow'),
 			social = require('lib/social'),
 			acs = require('lib/acs'),
-			contactsList = [], 
+			friendsToAdd = [], 
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.darkSpinner, top: '50%', left: '50%'}),
-			selectContact = function (contact, add) {
-				if (add) {
-					Ti.API.info("selectContact: " + contact.first_name + ' ' + contact.last_name);
-					contactsList.push(contact.id);	
-				}
-				else {
-					// if contact is in the list remove
-					var index = contactsList.indexOf(contact.id);
-					if (index > -1) {contactsList.splice(index, 1);}
-				}
+			notificationSuccess = function (e) {
+				var dialog = Ti.UI.createAlertDialog({
+						title: Ti.Locale.getString('fashionista'), 
+						message: Ti.Locale.getString('friendRequestSent') 
+					});
+				dialog.show();				
 			},
-			addSelectedContacts = function () {
-				var acs = require('lib/acs'),
-					notifyAddedFriends = function (userIdList) {
-				        acs.newFriendNotification(userIdList);
-					};
-				Ti.API.info("Adding selected Contacts " + contactsList);
-				if (contactsList.length > 0) { 
-					acs.addFriends(contactsList, notifyAddedFriends);
-					alert(Ti.Locale.getString('friendRequestSent')); 
-				}
-			},
+			notifyRemovedFriends = function (e){
+										var dialog = Ti.UI.createAlertDialog({title: Ti.Locale.getString('fashionista'), message: 'Removed a friend successfully'});
+										dialog.show();
+									},
+			notifyAddedFriends = function (userIdList) {
+							        acs.newFriendNotification(userIdList, notificationSuccess);
+								},			
+
+
 			displayContactsOnFashionist = function(contacts, fashionBuddies) {
 				var contactsWin, 
 					rightButton, 
 					tab = parentWin.containingTab,
-					i, numContacts = contacts.length;
+					i, numContacts = contacts.length,
+					friendIndex = function (contact, buddies) {
+									var fName = contact.first_name,
+										lName = contact.last_name, 
+										email = contact.email, 
+										i, numBuddies = buddies.length, 
+										//found = false, 
+										buddy;
+									for (i = 0; i < numBuddies; i = i + 1) {
+										buddy = buddies[i];
+										if ((email && email === buddy.email)	||
+											(fName && lName && fName === buddy.first_name && lName === buddy.last_name)) {
+												//found = true;
+												break;
+											}		
+									}
+									return i;				
+								},
+					isFriend = function (contact, buddies) {
+									return friendIndex(contact, buddies) !== buddies.length;
+								},
+					selectContact = function (contact, add) {
+						var contactsToAdd = [contact.id];						
+						if (add) {
+							Ti.API.info("add contact as friend: " + contact.first_name + ' ' + contact.last_name);
+							//contactsList.push(contact.id);
+							acs.addFriends(contactsToAdd, function (e) {
+															fashionBuddies.push (contact); 
+															notifyAddedFriends (contactsToAdd);
+															});	
+						}
+						else {
+							// if contact is in the list remove
+							Ti.API.info("remove contact as friend: " + contact.first_name + ' ' + contact.last_name);
+							acs.removeFriends(contactsToAdd, function (e) {
+																var index = friendIndex(contact, fashionBuddies);
+																if (index > -1 && index < fashionBuddies.length) {
+																	fashionBuddies.splice(index, 1);
+																}
+																notifyRemovedFriends (contactsToAdd);
+															});	
+						}
+					},								
+					addSelectedContacts = function () {
+						var acs = require('lib/acs'),
+							friendsToAdd, 
+							friendFilter = function (u) {
+									return !isFriend(u, fashionBuddies);
+								};
+						friendsToAdd = contacts.filter(friendFilter);
+						friendsToAdd = friendsToAdd.map(function (u) {return u.id;});				 
+						Ti.API.info("Adding selected Contacts " + friendsToAdd);
+						if (friendsToAdd.length > 0) { 
+							acs.addFriends(friendsToAdd, notifyAddedFriends);
+						}
+					};
 				if (contacts && numContacts > 0) {
 					Ti.API.info("create and populate list of contacts window");
+
 					contactsWin = ContactsWindow.createContactsWindow(addSelectedContacts);
 					contactsWin.containingTab = tab;
 					rightButton = contactsWin.getRightNavButton();
@@ -87,7 +141,7 @@
 					activityIndicator.show();
 					
 					// this is where we check which contact are already the current user's Fashionista friends
-					ContactsWindow.populateContactsInviteList(contactsWin, contacts, fashionBuddies, selectContact);
+					ContactsWindow.populateContactsInviteList(contactsWin, contacts, fashionBuddies, selectContact, friendIndex);
 
 					activityIndicator.hide();
 					contactsWin.setRightNavButton(rightButton);								
@@ -132,6 +186,13 @@
 			acs = require('lib/acs'),
 			fashionistaFriends = [],
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.darkSpinner, top: '50%', left: '50%'}),
+			notificationSuccess = function (e) {
+				var dialog = Ti.UI.createAlertDialog({
+						title: Ti.Locale.getString('fashionista'), 
+						message: Ti.Locale.getString('friendRequestSent') 
+					});
+				dialog.show();				
+			},			
 			selectFBFriend = function(friendId, add) {
 				if (add) {
 					Ti.API.info("selectFBFriend id: " + friendId);
@@ -146,12 +207,11 @@
 			addSelectedFBFriends = function() {
 				var acs = require('lib/acs'),
 					notifyAddedFriends = function (userIdList) {
-				        acs.newFriendNotification(userIdList);
+				        acs.newFriendNotification(userIdList, notificationSuccess);
 					};
 				Ti.API.info("Adding selected FB Friends " + fashionistaFriends);
 				if (fashionistaFriends.length > 0) { 
 					acs.addFriends(fashionistaFriends, notifyAddedFriends);
-					alert(Ti.Locale.getString('friendRequestSent'));
 				}
 			},
 			callback = function(friends, fashionBuddies) {
@@ -262,13 +322,16 @@
 			//bottom: 40,
 			top: offsetTop || 140,
 			height : Ti.UI.SIZE,
-			rowHeight : 50,
+			rowHeight : 40,
 			width : '90%',
 			left : '5%',
 			borderRadius : 5,
-			backgroundColor : 'transparent',
+			//borderColor: 'black',
+			//borderWidth: 1,
+			backgroundColor: 'transparent',
 			paddingLeft : 0,
-			paddingRight : 2
+			paddingRight : 2,
+			paddingTop: 10
 		});
 		
 		inviteTable.window = parentWin;
@@ -278,8 +341,10 @@
 			title : Ti.Locale.getString('useFacebook'),
 			color : 'black',
 			backgroundColor : '#fff',
-			height : 40,
+			top: 10,
+			height : 30,
 			left : 0,
+			font: {fontSize: 16, fontWeight: 'bold'},
 			//leftImage: '/images/f_logo.png',
 			hasChild : true
 		});
@@ -291,9 +356,10 @@
 			title : Ti.Locale.getString('useContacts'),
 			color : 'black',
 			backgroundColor : '#FFF',
-			top : 50,
-			height : 40,
+			top : 10,
+			height : 30,
 			left : 0,
+			font: {fontSize: 16, fontWeight: 'bold'},			
 			//borderWidth: 1,
 			//borderColor: 'black',
 			//leftImage: '/images/contacts-medium.png',
@@ -308,11 +374,10 @@
 			title : Ti.Locale.getString('userSearch'),
 			color : 'black',
 			backgroundColor : '#FFF',
-			top : 50,
-			height : 40,
+			top : 10,
+			height : 30,
 			left : 0,
-			//borderWidth: 1,
-			//borderColor: 'black',
+			font: {fontSize: 16, fontWeight: 'bold'},			
 			//leftImage: '/images/contacts-medium.png',
 			hasChild : true
 		});

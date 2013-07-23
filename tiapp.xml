@@ -56,5 +56,6 @@
     <modules>
         <module platform="commonjs" version="2.3.0">ti.cloud</module>
         <module platform="android" version="2.0.7">ti.cloudpush</module>
+        <module platform="iphone">ti.flurry</module>
     </modules>
 </ti:app>

@@ -8,9 +8,11 @@
 (function () {
 	'use strict';
 	var acs,
-		Notifications;
+		Notifications,
+		Flurry;
 	acs = require('lib/acs');
 	Notifications = require('ui/common/notifications');
+	Flurry = require('ti.flurry');
 		
 						
 	function createLoginWindow(action, cb) {
@@ -39,7 +41,7 @@
 		});
 		
 		lWin = Ti.UI.createWindow({
-			backgroundColor: 'white',
+			backgroundColor: '#DDD',
 			barColor: '#5D3879',
 			rightNavButton: done,
 			title: Ti.Locale.getString(action),
@@ -69,7 +71,7 @@
 			},
 			textAlign: 'center',
 			color: '#333',
-			backgroundColor: '#ddd',
+			backgroundColor: '#FFF',
 			borderRadius: 3,
 			paddingLeft: 2, paddingRight: 2
 		});
@@ -82,7 +84,7 @@
 			passwordMask: true,
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
-			keyboardType: Ti.UI.KEYBOARD_EMAIL,
+//			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
 			top:70, //115,
 			width: '90%',
@@ -93,7 +95,7 @@
 			},
 			textAlign: 'center',
 			color: '#333',
-			backgroundColor: '#ddd',
+			backgroundColor: '#FFF',
 			borderRadius: 3,
 			paddingLeft: 2, paddingRight: 2
 		});
@@ -103,6 +105,7 @@
 				hintText: Ti.Locale.getString('email'),
 				autocorrect: false,
 				autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
+				returnKeyType: Ti.UI.RETURNKEY_DONE,				
 				top:115, //25,
 				width: '90%',
 				height: 40,
@@ -112,10 +115,14 @@
 				},
 				textAlign: 'center',
 				color: '#333',
-				backgroundColor: '#ddd',
+				backgroundColor: '#FFF',
 				borderRadius: 3,
 				paddingLeft: 2, paddingRight: 2
 			});
+			email.addEventListener('return', function()
+			{
+				done.fireEvent('click');
+			});			
 			
 			lWin.add(email);			
 		}
@@ -138,36 +145,37 @@
 		}
 		
 		function postActionCallback(e) {
-			if(e.success && acs.currentUser()) {
+			var currentUser = acs.currentUser();
+			if(currentUser) {
 				Ti.API.info('Congratulations, you successfully logged in.');
+				Flurry.logEvent('signupOrloginSuccess', { 'username': currentUser.username});						
 				cb();
 				spinner.hide();
 				lWin.remove(spinner);
 				lWin.close();
-			} else {
-				Ti.API.info('login or createUser failed:' + e.message);
-				spinner.hide();
-				lWin.remove(spinner);
 			}
 		}
 		
 		function errorCallback(e) {
 			Ti.API.info('login or createUser failed:' + e.message);
 			spinner.hide();
-			lWin.remove(spinner);			
+			lWin.remove(spinner);
+			done.setEnabled(true);
+			Flurry.logEvent('signupOrloginError', { 'username': username.text });						
 		}
 		
 		// event listeners
 		done.addEventListener('click', function() {
 			if(isLoginAction) {				
-				acs.login(username.value, password.value, postActionCallback);
+				acs.login(username.value, password.value, postActionCallback, errorCallback);
 			} else {
 				var emailAddy = email.value;
 				if (!validateEmail(emailAddy)) {
 					alert(Ti.Locale.getString('malformedEmail'));
 					return;
 				}
-				done.setEnabled(false); // avoid reclick on done 						
+				// avoid repeat click on done
+				done.setEnabled(false);
 				acs.createUser(username.value, email.value, password.value, postActionCallback, errorCallback);
 			}
 			lWin.add(spinner);

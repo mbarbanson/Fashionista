@@ -151,6 +151,7 @@ function createShareWindow(postModel, shareAction) {
 	
 	// create share window elements
 	caption = Ti.UI.createTextArea({
+		autolink: Ti.UI.AUTOLINK_URLS,
         value: captionHintText,
         color: '#aaa',
 		autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
@@ -163,7 +164,7 @@ function createShareWindow(postModel, shareAction) {
 			fontSize : '17'
 		},
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-		borderRadius : 3,
+		borderRadius : 1,
 		paddingLeft : 2,
 		paddingRight : 2,
 		backgroundColor : 'white'
@@ -171,6 +172,7 @@ function createShareWindow(postModel, shareAction) {
 		//borderWidth: 1
 	});
 	caption.privHintText = caption.value;
+
 	// define eveng listeners before events are fired the first time
 	caption.addEventListener('focus', function(e) {
 		if (e.source.value === e.source.privHintText) {

@@ -8,7 +8,8 @@
 	
 	var privFeedWindow = null,
 		privFindFeedWindow = null,
-		inShowFeedWindow = false;
+		inShowFeedWindow = false,
+		needsUpdate = false;
 	
 		
 	function currentFeedWindow() {
@@ -17,6 +18,14 @@
 	
 	function currentFindFeedWindow() {
 		return privFindFeedWindow;
+	}
+	
+	function setNeedsUpdate(value) {
+		needsUpdate = value;
+	}
+	
+	function getNeedsUpdate() {
+		return needsUpdate;
 	}
 	
 	
@@ -97,7 +106,9 @@
 	
 	function friendFeedPostQuery(showPost, cleanupAction) {
 		var acs = require('lib/acs'),
-			friendsListCallback = function (friends, cleanupAction) { acs.getFriendsPosts(friends, showPost, cleanupAction);};
+			friendsListCallback = function (friends, cleanupAction) {
+											acs.getFriendsPosts(friends, showPost, cleanupAction);
+										};
 		
 		return acs.getFriendsList(friendsListCallback, cleanupAction);		
 	}
@@ -106,7 +117,7 @@
 	function findFeedPostQuery(showPost, cleanupAction) {
 		var acs = require('lib/acs');
 		
-		return acs.getFindExactPosts(showPost, cleanupAction);		
+		return acs.getPublicPosts(showPost, cleanupAction);		
 	}
 	
 	
@@ -155,7 +166,7 @@
 			postQuery(showPost, cleanupAction);
 		}
 		else {
-			Ti.API.info("FeedWindow doesn't have a tableView");
+			alert("FeedWindow doesn't have a tableView");
 		}
 	}
 	
@@ -313,7 +324,7 @@
 									if (errorCallback) { errorCallback(post);}
 								};
 		//resize and fit to screen
-		postModel.photo = image;  //resizeToPlatform(image);											
+		postModel.photo = image; //resizeToPlatform(image);	image has already been scaled down to 640 * 480										
 		addFinishingUpRowFeedWin(fWin, postModel);
 		acs.addPost(postModel, image, addPostSuccess, addPostError);		
 	}
@@ -352,10 +363,12 @@
 				objname: 'PostSummary'
 		});
 		if (type === 'friendFeed') {
-			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });		
+			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });
+			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(); });		
 		}
 		else {
 			refreshBtn.addEventListener('click', function(e) { showFindFeed(); });				
+			fWin.addEventListener('refreshFeedWindow', function(e) {showFindFeed(); });		
 		}
 		tableView.flipped = false;
 		fWin.add(tableView);
@@ -386,5 +399,7 @@
 	exports.friendFeedPostQuery = friendFeedPostQuery;
 	exports.findFeedPostQuery = findFeedPostQuery;
 	exports.resizeToPlatform = resizeToPlatform;
+	exports.getNeedsUpdate = getNeedsUpdate;
+	exports.setNeedsUpdate = setNeedsUpdate;
 
 } ());

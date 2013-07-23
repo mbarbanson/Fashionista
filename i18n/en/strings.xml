@@ -24,7 +24,7 @@
 	<string name="shareWindow">Share</string>
 	<string name="listWindow">Select Friends</string>
 	<string name="contactsWindow">Select Contacts</string>
-	<string name="welcome_message">Welcome to Fashionist, your private fashion network! Take a photo, invite friends to join and ask your fashion advisors for immediate advice any time.</string>
+	<string name="welcome_message">Welcome to Fashionist, your private fashion network!</string>
 	<string name="findFriendsMessage">Would you like to find which of your facebook friends are also using Fashionist? We will not share your information with anyone.</string>
 	<string name="findFriendsTitle">Fashionist is more fun with friends.</string>
 	<string name="noPhotosTitle">You haven't posted any photos yet</string>
@@ -37,6 +37,7 @@
 	<string name="contactsDisallowed">"Please go to your iPhone Privacy Settings and allow Fashionist to access your Contacts. We will not email anyone without your prior approval."</string>
 	<string name="news">News</string>
 	<string name="meSettings">Me</string>
+	<string name="profileSettings">Profile</string>	
 	<string name="findFriendsOnFashionist">Find your friends on Fashionist</string>
 	<string name="noPostWithoutApproval">Your privacy is safe. We will never post to your facebook timeline or email your contacts without your approval</string>			
 	<string name="minInfoUserSearch">Please provide a username, a full name or a valid email address to start the search.</string>			
@@ -52,6 +53,7 @@
 	<string name="searchResultsTitle">Select User</string>
 	<string name="infoSearchResults">Select one of the results and click 'Add Friend' to send a friend request to the selected user.</string>	
 	<string name="noMatchFound">No match was found for this search. Please add some information and try again.</string>										
+	<string name="userSearchError">Something went wrong with your search. Please try again. The fashionist team has been notified.</string>										
 	<string name="inviteFriendsToFashionist">Invite your friends to Fashionist</string>	
 	<string name="friendRequestSent">Your friend request was sent successfully and recipients have been notified.</string>	
 	<string name="findExactHashTag">#findexact</string>
@@ -63,9 +65,15 @@
 	<string name="postSuccess">Your new post has been published</string>
 	<string name="user_agent_message">user agent set to</string>
 	<string name="format_fashionist">Your name is %s</string>
-	<string name="base_ui_title">Base UI</string>
-	<string name="controls_win_title">Controls</string> 
-	<string name="phone_win_title">Phone</string>
-	<string name="platform_win_title">Platform</string>
-	<string name="mashups_win_title">Mashups</string>	
+	<string name="find">Find</string>
+	<string name="friendsFeed">Home</string>
+	<string name="publicFeed">Find It!</string> 
+	<string name="camera">Camera</string>
+	<string name="gallery">Gallery</string>
+	<string name="userProfile">Profile</string>
+	<string name="friends">Friends</string>
+	<string name="privateInfo">Private Information</string>
+	<string name="saveChanges">Save Changes</string>
+	<string name="bioPrompt">Write something about yourself...</string>
+
 </resources>

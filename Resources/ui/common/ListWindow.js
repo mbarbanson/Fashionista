@@ -49,11 +49,13 @@ function createListTable(tableData) {
 
 function populateList(listWindow, friends, check, clickHandler) {
 	'use strict';
-	var table,
+	var acs = require('lib/acs'),
+		defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
+		table,
 		numFriends = friends.length,
-		tableData = [],
+		tableData = [], row,
 		i,
-		friend,
+		friend, avatar, avatarView,
 		title,
 		actionFun;
 	actionFun = function (fid, add) { 
@@ -71,14 +73,20 @@ function populateList(listWindow, friends, check, clickHandler) {
 		if (friend.email) {
 			title = friend.email;
 		}			
-		
-		tableData.push({
-			title: friend.first_name + " " + friend.last_name, 
+		avatar = acs.getUserAvatar(friend);
+		avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 30, width: 30});
+		row = Ti.UI.createTableViewRow ({
+			className: 'friendRow',			
+			title: friend.first_name + " " + friend.last_name,
+			indentionLevel: 3, 
 			id: friend.id, 
-			leftimage: friend.photo,
+			//leftImage: avatarView,
 			hasCheck: check(friend.id),
-			action: actionFun
-		});				
+			action: actionFun,
+			font: {fontSize: defaultFontSize + 2, fontWeight:'bold'}			
+		});	
+		row.add(avatarView)
+		tableData.push(row);				
 	}
 	table = createListTable(tableData);
 	
@@ -86,7 +94,7 @@ function populateList(listWindow, friends, check, clickHandler) {
 	table.addEventListener('click', function(e) {
 		var handler = e.rowData.action;
 		e.rowData.hasCheck = !e.rowData.hasCheck; 
-		if (handler) {
+		if (handler && !check(e.rowData.id)) {
 			//FIXME
 			// pass in e.rowData and add if hasCheck is true, remove if false would allow adding *and* removing of fashion buddies
 			handler(e.rowData.id, e.rowData.hasCheck); 

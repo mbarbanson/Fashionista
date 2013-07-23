@@ -5,6 +5,7 @@
  * 
  */
 
+
 (function () {
 	'use strict';
 	
@@ -64,6 +65,22 @@
 		var post = row.post;		
 		alert("Flag post as inappropriate" + post.content);
 	}
+	
+//Find
+	function findSource(row) {
+		var post = row.post,
+			baseUrl = "https://www.google.com/searchbyimage?image_url=",
+			imageUrl = row.photo.slice(7),
+			suffix = "&btnG=Search+by+image",
+			webview = Titanium.UI.createWebView({url:baseUrl + imageUrl}),
+			window = Titanium.UI.createWindow(),
+			tab = Ti.App.mainTabGroup.getActiveTab();
+	    window.add(webview);
+	    window.containingTab = tab;
+	    tab.open(window);
+	}	
+	
+	
 
 
 	/*
@@ -91,9 +108,6 @@
 	/*
 	 * displayPostDetailsView. Do not use this directly in a long lived closure!!! post objects are mutable!!!!!
 	 */
-
-
-
 	function displayPostDetailsFeedView (fWin, post, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
@@ -119,6 +133,7 @@
 		displayPostDetailsFeedView(FeedWindow.currentFeedWindow(), post, newComment);	
 	}	
 
+
 	/*
 	 * displayRowDetails
 	 */
@@ -132,14 +147,19 @@
 	 * populatePostView
 	 */
 	function populatePostView (row, displayComments, photoBlob) {
-		var MoreActionDialog = require('/ui/common/moreActionDialog'),
+		var acs = require('lib/acs'),
+			MoreActionDialog = require('/ui/common/moreActionDialog'),
 			CommentsView = require('ui/common/CommentsView'),
+			ProfileView = require('ui/common/ProfileView'),
 			Facebook = require('lib/facebook'),
 			IMG_BASE = 'https://github.com/appcelerator/titanium_mobile/raw/master/demos/KitchenSink/Resources/images/',
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
+			containingTab = Ti.App.mainTabGroup.getActiveTab(),			
 			author = row.post.user,
+			currentUser = acs.currentUser(),
 			facebookUID,
-			imageAvatar,
+			avatarView, 
+			avatarImg = IMG_BASE + 'custom_tableview/user.png',
 			labelUserName,
 			labelDetails,
 			imgView, photoUrls = row.post.photo.urls,
@@ -149,12 +169,17 @@
 			postW, postH, postL, postT,
 			labelDate,
 			createdAtDate,
+			findBtn,
 			likeBtn,
 			commentBtn,
 			moreBtn,
 			likeIcon, likesCount,
 			commentIcon, commentsCount;
-			
+
+			if (currentUser.id === author.id) {
+				author = currentUser;
+			}
+
 			if (!displayComments) {
 				// if photoBlob is null, this was called to display a photo that's already uploaded
 				if (!photoBlob) {
@@ -179,25 +204,18 @@
 					imgW = photoBlob.width;
 					imgH = photoBlob.height;
 				}
-				
-				postW = imgW / Ti.App.pixelScaling; //Math.min(Ti.App.SCREEN_WIDTH, imgW);
-				postH = imgH / Ti.App.pixelScaling; //Math.min(Ti.App.SCREEN_HEIGHT, imgH);
-				postL = 0;
-				postT = 0;
 	
 				// images are square. make them fit
 				// first row
 				imgView = Ti.UI.createImageView({
-								image: img,
-								borderColor: '#5D3879',
-								borderWidth: 1,							
+								image: img,						
 								width:Ti.UI.SIZE, 
 								height:Ti.UI.SIZE
 								});
 				row.add(imgView);
 				row.photo = img;
-				//imgView.setLeft((Ti.App.SCREEN_WIDTH - imgView.width) / 2);
-				//imgView.setTop((Ti.App.SCREEN_HEIGHT - imgView.height) / 2);
+				row.imgView = imgView;
+
 				clickHandler = function (e) {
 									likePost(row);				
 								};
@@ -205,27 +223,53 @@
 
 				//second row
 				facebookUID = Facebook.getLinkedFBId(author);
-				imageAvatar = Ti.UI.createImageView({
-								image: (author.external_accounts ? 'https://graph.facebook.com/' + facebookUID + '/picture' : IMG_BASE + 'custom_tableview/user.png'),
+				
+				if (author.photo && author.photo.processed) {
+					avatarImg = author.photo.urls.small_240;				
+				}				
+				else if (facebookUID) {
+					avatarImg = 'https://graph.facebook.com/' + facebookUID + '/picture';	
+				}
+				 
+				avatarView = Ti.UI.createImageView({
+								image: avatarImg,
 								left: 5, top:5,
 								width:30, height:30
 								});
-				row.add(imageAvatar);
-	  
-				labelUserName = Ti.UI.createLabel({
-									color:'#576996',
+				row.add(avatarView);
+									
+									
+				labelUserName = Ti.UI.createButton({
+									color: '#576996',
+									background: 'white',
+									style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
 									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
 									ellipsize: false,
-									text: author.username,
-									left: 45, top: -30,
-									width:155, height: 20
+									title: author.username,
+									left: 40, top: -30,
+									width:80, height: 20
 									});
+				labelUserName.addEventListener('click', function (e) {
+															ProfileView.displayUserProfile(containingTab, author);
+															});									
 				row.add(labelUserName);
-				
+
+				findBtn = Ti.UI.createButton({
+									//image: '/icons/light_heart.png',
+									title: Ti.Locale.getString('find'),
+									color: 'white',
+									backgroundColor: '#5D3879',
+									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
+									left: 135, top:-20,
+									width:50,
+									height: 30
+									});
+				row.add(findBtn);
+								
 				likeBtn = Ti.UI.createButton({
 									image: '/icons/light_heart.png',
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
-									left: 200, top:-20,
+									left: 200, top:-30,
 									width:30,
 									height: 30
 									});
@@ -251,10 +295,11 @@
 									});
 				row.add(moreBtn);
 				
+				findBtn.addEventListener('click', function(e) { findSource(row);});
 				likeBtn.addEventListener('click', function(e) { likePost(row);});
 				
 				moreBtn.addEventListener('click', function(e) { 
-														MoreActionDialog.createMoreDialog(row);
+														MoreActionDialog.createMoreDialog(row.post, imgView);
 													});
 	
 				commentBtn.addEventListener('click', 
@@ -279,7 +324,8 @@
 							left:40, top: -5,
 							width:160, height:20
 							});
-			row.add(labelDate);
+			// tumblr is not showing the date. let's not show it until we have better formatting
+			//row.add(labelDate);
 				
 						
 			// photo caption

@@ -22,6 +22,7 @@ if (Ti.version < 2.0 ) {
 	//determine platform and form factor and render approproate components
 	var acs = require('lib/acs'),
 		Cloud = require('ti.cloud'),
+		Flurry = require('ti.flurry'),
 		FB = require('lib/facebook'),
 		ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		osname = Ti.Platform.osname,
@@ -35,7 +36,16 @@ if (Ti.version < 2.0 ) {
 		showGuestWindow,
 		AppWindow;
 
-	
+
+	// Flurry initialization
+	Flurry.debugLogEnabled = true;
+	Flurry.eventLoggingEnabled = true;	
+	Flurry.initialize('D82FTRKTYMS9SJKWHT6P' /* FASHIONIST APP KEY*/);	
+	Flurry.reportOnClose = true;
+	Flurry.sessionReportsOnPauseEnabled = true;
+	Flurry.secureTransportEnabled = false;
+	Flurry.logAllPageViews();
+		
 	// test out logging to developer console, formatting and localization
 	Ti.API.info(String.format("%s%s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));
 	Ti.API.debug(String.format("%s %s", Ti.Locale.getString("user_agent_message","default_not_set"),Titanium.userAgent));
@@ -85,6 +95,8 @@ if (Ti.version < 2.0 ) {
 	    Ti.API.info('Fashionist is closing. See you again soon.');
 	});
 	
+	// max number of posts in feed
+	Ti.App.maxNumPosts = 100;
 	
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
@@ -133,6 +145,7 @@ if (Ti.version < 2.0 ) {
 	Ti.App.photoSizes ={"thumbnail": [50,50], "iphone": [640,640], "ipad": [768,768], "android": [478,478]};
 	
 	Ti.App.rootWindow = AppWindow.createApplicationWindow(Ti.Locale.getString('fashionista'));
+	Ti.App.rootWindow.open();
 	
 	// for now exit if device is offline
 	if (!Ti.Network.online) {

@@ -7,34 +7,79 @@
 
 (function () {
 	'use strict';
+	var selectedUser = null;
 
 
-	function populateResultsList (win, results, fashionBuddies, selectAction, queryType) {	
+	function isFriend (contact, fashionBuddies) {
+		var fName = contact.first_name,
+			lName = contact.last_name, 
+			email = contact.email, 
+			i, numBuddies = fashionBuddies.length, 
+			found = false, 
+			buddy;
+		for (i = 0; i < numBuddies; i = i + 1) {
+			buddy = fashionBuddies[i];
+			if ((email && email === buddy.email)	||
+				(fName && lName && fName === buddy.first_name && lName === buddy.last_name)) {
+					found = true;
+					break;
+				}		
+		}
+		return found;				
+	}
+
+
+	function selectAction (user, add) {
+		if (add) {
+			Ti.API.info("selectAction: " + user.first_name + ' ' + user.last_name + ' ' + user.username);
+			selectedUser = user.id;	
+		}
+	}	
+
+
+	function populateResultsList (win, results, fashionBuddies, queryType) {	
 		var acs = require('/lib/acs'),
 			currentUser = acs.currentUser(),
+			selectAction, addFriend,
 			isCurrentUser,
-			makeTable, isFriend, tableview, infoLabel;	
+			makeTable, tableview, infoLabel,
+			doneBtn = Titanium.UI.createButton({
+						title: Ti.Locale.getString('addFriend'),
+					    style : Ti.UI.iPhone.SystemButtonStyle.DONE
+			});	
+
+		doneBtn.addEventListener('click', function() {
+			var tab = win.containingTab;
+			addFriend();
 	
-		isFriend = function (contact) {
-			var fName = contact.first_name,
-				lName = contact.last_name, 
-				email = contact.email, 
-				i, numBuddies = fashionBuddies.length, 
-				found = false, 
-				buddy;
-			for (i = 0; i < numBuddies; i = i + 1) {
-				buddy = fashionBuddies[i];
-				if ((email && email === buddy.email)	||
-					(fName && lName && fName === buddy.first_name && lName === buddy.last_name)) {
-						found = true;
-						break;
-					}		
+			if (tab) {
+				tab.close(win);			
 			}
-			return found;				
-		};
+		});
+		win.setRightNavButton(doneBtn);
+
+		
+		addFriend = function () {
+			var acs = require('lib/acs'),
+				notificationSuccess = function (e) {
+					var dialog = Ti.UI.createAlertDialog({
+							title: Ti.Locale.getString('fashionista'), 
+							message: Ti.Locale.getString('friendRequestSent') 
+						});
+					dialog.show();				
+				},			
+				notifyAddedFriend = function (userIdList) {
+					win.close();
+			        acs.newFriendNotification(userIdList, notificationSuccess);				        
+				};
+			if (selectedUser && !isFriend(selectedUser, fashionBuddies)) {
+				Ti.API.info("Adding selected User " + selectedUser);
+				acs.addFriends([selectedUser], notifyAddedFriend);					
+			}
+		}; 
 		
 		makeTable = function() {
-			var rows = [], i, title, actionFun,
+			var rows = [], i, title, actionFun, user, avatar,
 				defaultFontSize = (Ti.Platform.name === 'android' ? 18 : 16);
 			actionFun = function (user, add) { 
 				Ti.API.info("calling populateList click handler");
@@ -42,24 +87,27 @@
 			};			
 			for (i = 0; i < results.length; i = i + 1) {
 				Ti.API.info("People object is: "+ results[i].first_name + " " + results[i].last_name + " " + results[i].email);
+				user = results[i];
+				avatar = acs.getUserAvatar(user);
 				
-				if (!results[i].first_name || !results[i].last_name) {
+				if (!user.first_name || !user.last_name) {
 					// only list email if the user already knew it
-					if (queryType === 'email' && results[i].email) {
-						title = results[i].email;
+					if (queryType === 'email' && user.email) {
+						title = user.email;
 					}
 					else {
-						title = results[i].username;
+						title = user.username;
 					}
 				}
 				else {
-					title = results[i].first_name + ' ' + results[i].last_name;	
+					title = user.first_name + ' ' + user.last_name;	
 				}			
 				rows[i] = Ti.UI.createTableViewRow({
+					className: 'friendRow',					
 					title: title,
-					leftImage: results[i].photo,
-					person: results[i],
-					hasCheck: isFriend(results[i], fashionBuddies),   // we need to check whether person is currently a friend
+					leftImage: avatar,
+					person: user,
+					hasCheck: isFriend(user, fashionBuddies),   // we need to check whether person is currently a friend
 					action: actionFun,
 					height: Ti.UI.SIZE,
 					font: {fontSize:defaultFontSize, fontWeight:'bold'}
@@ -103,54 +151,22 @@
 		});
 		win.add(infoLabel);
 	
-		return win;
+		return;
 	}
 
 	function createSearchResultsWindow(results, parentWin, queryType) {
 		var acs = require('/lib/acs'),
-			doneBtn = Titanium.UI.createButton({
-						title: Ti.Locale.getString('addFriend'),
-					    style : Ti.UI.iPhone.SystemButtonStyle.DONE
-			}),
 			win = Ti.UI.createWindow({
 				backgroundColor: '#ddd',
 				color: 'black',
 				barColor: '#5D3879',
-				title: Ti.Locale.getString('searchResultsTitle'),
-				rightNavButton: doneBtn
+				title: Ti.Locale.getString('searchResultsTitle')
 			}),
-			tab = parentWin.containingTab,
-			selectedUser,
-			selectAction = function (user, add) {
-				if (add) {
-					Ti.API.info("selectAction: " + user.first_name + ' ' + user.last_name + ' ' + user.username);
-					selectedUser = user.id;	
-				}
-			},
-			addSelectedUser = function () {
-				var acs = require('lib/acs'),
-					notifyAddedFriend = function (userIdList) {
-						win.close();
-				        acs.newFriendNotification(userIdList);				        
-					};
-				Ti.API.info("Adding selected User " + selectedUser);
-				acs.addFriends([selectedUser], notifyAddedFriend);
-				alert(Ti.Locale.getString('friendRequestSent'));
-			}; 
+			tab = parentWin.containingTab;
 			
-		win.containingTab = tab;
-		tab.open(win);	
-		doneBtn.addEventListener('click', function() {
-			var tab = win.containingTab;
-	
-			addSelectedUser();
-	
-			if (tab) {
-				tab.close(win);			
-			}
-		});
-		acs.getFriendsList(function (fashionBuddies) { populateResultsList(win, results, fashionBuddies, selectAction, queryType); });
-		
+		win.containingTab = tab;	
+		acs.getFriendsList(function (fashionBuddies) { populateResultsList(win, results, fashionBuddies, queryType); });
+		tab.open(win);
 		return win;
 	}
 
