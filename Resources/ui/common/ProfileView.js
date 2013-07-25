@@ -125,6 +125,7 @@
 	}
 	
 	
+	
 	function doDisplayUserProfile(user, profileView) {
 		Ti.API.info("displaying user profile");		
 
@@ -139,7 +140,21 @@
 			usernameLabel, usernameField, 
 			firstNameLabel, firstNameField,
 			lastNameLabel, lastNameField,
-			canEdit = (acs.currentUserId() === user.id);
+			canEdit = (acs.currentUserId() === user.id),
+			bioFocusHandler = function(e) {
+				bioLabel.editable = true;										
+				if (e.source.value === bioLabel.privHintText) {
+					e.source.value = "";
+					e.source.color = 'black';
+				}
+			},
+			bioBlurHandler = function(e) {
+				bioLabel.editable = false;										
+				if (e.source.value === "") {
+					e.source.value = bioLabel.privHintText;
+					e.source.color = '#aaa';
+				}
+			};
 
 		if (!user.custom_fields) {
 			user.custom_fields = {};
@@ -153,8 +168,7 @@
 			backgroundColor : '#DDD',
 			height : 110,
 			left : 0,
-			width: '100%',
-			selectedBackgroundColor: 'transparent'			
+			width: '100%'			
 		});
 		
 		// custom user avatar (ie: not facebook avatar)
@@ -190,12 +204,11 @@
 		photoBioRow.add(avatarView);
 
 		bioLabel = Ti.UI.createTextArea({
-			value: privProfileInfo.savedBio,
+			value: privProfileInfo.savedBio || Ti.Locale.getString('bioPrompt'),
 			autolink: Ti.UI.AUTOLINK_URLS,			
 			color: privProfileInfo.savedBio ? 'black' : '#aaa',
 			bubbleParent: false,
 			backgroundColor: '#FFF',
-			selectedBackgroundColor: 'transparent',
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
 			textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 			autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
@@ -217,20 +230,10 @@
 		
 		if (canEdit) {
 			bioLabel.privHintText = Ti.Locale.getString('bioPrompt');					
-			bioLabel.addEventListener('focus', function(e) {
-				bioLabel.editable = canEdit;										
-				if (e.source.value === bioLabel.privHintText) {
-					e.source.value = "";
-					e.source.color = 'black';
-				}
-			});
-			bioLabel.addEventListener('blur', function(e) {
-				bioLabel.editable = false;										
-				if (e.source.value === "") {
-					e.source.value = bioLabel.privHintText;
-					e.source.color = '#aaa';
-				}
-			});
+			bioLabel.addEventListener('focus', bioFocusHandler);
+			bioLabel.addEventListener('selected', bioFocusHandler);
+			bioLabel.addEventListener('singletap', bioFocusHandler);											
+			bioLabel.addEventListener('blur', bioBlurHandler);					
 			bioLabel.addEventListener('change', function (e){
 				if (e.source.value !== "" && e.source.value !== bioLabel.privHintText) {
 					privProfileInfo.editedBio = e.source.value;					
@@ -242,8 +245,7 @@
 		usernameRow = Ti.UI.createTableViewRow({
 			className : 'profileRow',
 			color : 'black',
-			backgroundColor : '#DDD',
-			selectedBackgroundColor: 'transparent',			
+			backgroundColor : '#DDD',		
 			height : 50,
 			left : 0,
 			width: '100%',
@@ -295,8 +297,7 @@
 		firstNameRow = Ti.UI.createTableViewRow({
 			className : 'profileRow',
 			color : 'black',
-			backgroundColor : '#DDD',
-			selectedBackgroundColor: 'transparent',			
+			backgroundColor : '#DDD',		
 			height : 50,
 			left : 0,
 			width: '100%'
@@ -353,8 +354,7 @@
 		lastNameRow = Ti.UI.createTableViewRow({
 			className : 'profileRow',
 			color : 'black',
-			backgroundColor : '#DDD',
-			selectedBackgroundColor: 'transparent',			
+			backgroundColor : '#DDD',	
 			height : 50,
 			left : 0,
 			width: '100%'
@@ -426,8 +426,7 @@
 			paddingRight : 0,
 			layout: 'absolute',
 			separatorColor: '#DDD',
-			backgroundColor: '#DDD',
-			selectedBackgroundColor: 'transparent'
+			backgroundColor: '#DDD'
 		});
 		doDisplayUserProfile(user, profileTable);
 		

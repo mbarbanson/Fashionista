@@ -18,6 +18,7 @@
 		Ti.App.mainTabGroup = null;
 		GuestWindow.createGuestWindow(Ti.App.rootWindow);
 	}
+
 		
 	function displayNews (win) {
 		var acs = require('lib/acs'),
@@ -30,6 +31,7 @@
 			message: "Thanks for letting us know that you would like to be able to browse through notifications you've received from fashionist. We are working on it and it will be available soon. The fashionist team."
 			});
 	}
+
 	
 	function hideNews (win) {
 		var acs = require('lib/acs'),
@@ -38,17 +40,21 @@
 		Ti.API.info("displaying all notifications received by current user");
 		Flurry.logEvent('hideNews', {'username': currentUser.username, 'email': currentUser.email});	
 	}
+
 	
 	function hideMe(win) {
 		var acs = require('lib/acs'),
 			Flurry = require('ti.flurry'),
 			currentUser = acs.currentUser();		
-		if (win.profileView) { 
+		if (win.profileView) {
+			win.profileView.vsible = false;
+			win.profileView.hide(); 
 			win.remove(win.profileView);
 		}
 		Flurry.logEvent('hideUserProfile', {'username': currentUser.username, 'email': currentUser.email});						
 		win.profileView = null;	
 	}
+
 	
 	function displayMe (win) {
 		var acs = require('lib/acs'),
@@ -70,8 +76,7 @@
 									color: 'black',
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 									backgroundColor: '#FFF'
-							    }),
-			containingTab = Ti.App.mainTabGroup.getActiveTab();
+							    });
 							    
 		// event listeners
 		logoutBtn.addEventListener('click', function() {
@@ -87,15 +92,42 @@
 		profileView.show();
 		Flurry.logEvent('displayProfile', {'username': currentUser.username, 'email': currentUser.email});	
 	}
+
 	
 	function hideFriends(win) {
-		if (win.privacyLabel) { win.remove(win.privacyLabel); }
+		var acs = require('lib/acs'),
+			Flurry = require('ti.flurry'),
+			currentUser = acs.currentUser(),
+			friendsView = win.friendsView;		
+		/*
+		if (win.privacyLabel) {
+			win.privacyLabel.visible = false;
+			win.privacyLabel.hide(); 
+			win.remove(win.privacyLabel); 
+		}
 		win.privacyLabel = null;
-		if (win.findFriendsLabel) {win.remove(win.findFriendsLabel);}
+		if (win.findFriendsLabel) {
+			win.findFriendsLabel.visible = false;
+			win.findFriendsLabel.hide();
+			win.remove(win.findFriendsLabel);
+		}
 		win.findFriendsLabel = null;
-		if (win.inviteTable) { win.remove(win.inviteTable); }
+		if (win.inviteTable) {
+			win.inviteTable.visible = false;
+			win.inviteTable.hide(); 
+			win.remove(win.inviteTable); 
+		}
 		win.inviteTable = null;
+		*/
+
+		if (friendsView) {
+			friendsView.hide();
+			win.remove(friendsView);
+			win.friendsView = null;	
+		}
+		Flurry.logEvent('hideFriends', {'username': currentUser.username, 'email': currentUser.email});								
 	}
+	
 	
 	function displayFriends (win) {
 		Ti.API.info("displaying current user settings");		
@@ -103,11 +135,14 @@
 			FB = require('lib/facebook'), 
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			InviteView = require('ui/common/InviteView'),
+			friendsView,
 			Flurry = require('ti.flurry'),
 			currentUser = acs.currentUser(),			
 		    findFriendsLabel, 
 		    inviteTable,
 		    privacyLabel;
+		    
+	    friendsView = Ti.UI.createView({backgroundColor: '#DDD'});
 	
 		// add remaining of the objects on the page
 		findFriendsLabel = Ti.UI.createLabel({
@@ -127,12 +162,12 @@
 				fontSize : '18'
 			}
 		});
-		win.add(findFriendsLabel);
-		win.findFriendsLabel = findFriendsLabel;
+		friendsView.add(findFriendsLabel);
+		friendsView.findFriendsLabel = findFriendsLabel;
 	
 		inviteTable = InviteView.createInviteView(win, '15%');
-		win.add(inviteTable);
-		win.inviteTable = inviteTable;
+		friendsView.add(inviteTable);
+		friendsView.inviteTable = inviteTable;
 	
 		privacyLabel = Ti.UI.createLabel({
 			text : Ti.Locale.getString('noPostWithoutApproval'),
@@ -151,8 +186,11 @@
 				fontSize : '12'
 			}
 		});
-		win.add(privacyLabel);
-		win.privacyLabel = privacyLabel;
+		friendsView.add(privacyLabel);
+		friendsView.privacyLabel = privacyLabel;
+		
+		win.add(friendsView);
+		win.friendsView = friendsView;
 		
 		Flurry.logEvent('displayFriendsTab', {'username': currentUser.username, 'email': currentUser.email});	
 	}
@@ -264,5 +302,6 @@
 	exports.createSettingsWindow = createSettingsWindow;
 	exports.getSettingsWindow = getSettingsWindow;
 	exports.showSettingsWindow = showSettingsWindow;
-	exports.displayMe = displayMe;	
+	exports.displayMe = displayMe;
+	exports.displayFriends = displayFriends;	
 } ());

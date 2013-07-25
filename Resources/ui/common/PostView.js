@@ -67,17 +67,16 @@
 	}
 	
 //Find
-	function findSource(row) {
+	function findSource(containingTab, row) {
 		var post = row.post,
 			baseUrl = "https://www.google.com/searchbyimage?image_url=",
 			imageUrl = row.photo.slice(7),
 			suffix = "&btnG=Search+by+image",
 			webview = Titanium.UI.createWebView({url:baseUrl + imageUrl}),
-			window = Titanium.UI.createWindow(),
-			tab = Ti.App.mainTabGroup.getActiveTab();
+			window = Titanium.UI.createWindow();
 	    window.add(webview);
-	    window.containingTab = tab;
-	    tab.open(window);
+	    window.containingTab = containingTab;
+	    containingTab.open(window);
 	}	
 	
 	
@@ -111,10 +110,10 @@
 	function displayPostDetailsFeedView (fWin, post, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
-			detailWindow = DetailWindow.createDetailWindow(),
+			detailWindow = DetailWindow.createDetailWindow(fWin.containingTab),
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			CommentsView = require('ui/common/CommentsView'),
-			tab = Ti.App.mainTabGroup.getActiveTab();  //fWin.containingTab; 
+			tab = fWin.containingTab; 
 		if (tab) {
 			tab.open(detailWindow);
 		}
@@ -146,15 +145,14 @@
 	/*
 	 * populatePostView
 	 */
-	function populatePostView (row, displayComments, photoBlob) {
+	function populatePostView (containingTab, row, displayComments, photoBlob) {
 		var acs = require('lib/acs'),
 			MoreActionDialog = require('/ui/common/moreActionDialog'),
 			CommentsView = require('ui/common/CommentsView'),
 			ProfileView = require('ui/common/ProfileView'),
 			Facebook = require('lib/facebook'),
 			IMG_BASE = 'https://github.com/appcelerator/titanium_mobile/raw/master/demos/KitchenSink/Resources/images/',
-			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
-			containingTab = Ti.App.mainTabGroup.getActiveTab(),			
+			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),		
 			author = row.post.user,
 			currentUser = acs.currentUser(),
 			facebookUID,
@@ -295,7 +293,7 @@
 									});
 				row.add(moreBtn);
 				
-				findBtn.addEventListener('click', function(e) { findSource(row);});
+				findBtn.addEventListener('click', function(e) { findSource(containingTab, row);});
 				likeBtn.addEventListener('click', function(e) { likePost(row);});
 				
 				moreBtn.addEventListener('click', function(e) { 
@@ -425,11 +423,11 @@
 	/*
 	 * displayPostSummaryView
 	 */
-	function displayPostSummaryView (post) {
+	function displayPostSummaryView (containingTab, post) {
 		var row = createPostView(post);
 		
 		Ti.API.info('display post summary: create and populate a row from current post ');
-		populatePostView(row, false);
+		populatePostView(containingTab, row, false);
 		setPostViewEventHandlers (row);
 		
 		return row;

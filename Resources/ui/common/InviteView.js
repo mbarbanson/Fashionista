@@ -257,7 +257,7 @@
 		acs.setHasRequestedFriends(true);			
 		FB.authorize(authCB, errorCB);		
 	}
-	
+	/*
 	function inviteFBFriendsPromptBeforeAction(window, action) {
 		var acs = require('lib/acs'),
 			//inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
@@ -311,8 +311,70 @@
 			
 			acs.getFriendsList(getFriendsSuccessCallback);
 	}
+*/
 
 
+	function inviteFriendsBeforeShare(tab, action) {
+		var acs = require('lib/acs'),
+			SettingsWindow = require('ui/common/SettingsWindow'),
+			window = Ti.UI.createWindow({
+								backgroundColor: '#DDD',
+								barColor: '#5D3879'				
+			}),
+			//inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
+			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
+			//window = inviteTable.window,
+			rightButton,
+			hasFriends = function (fList) { return fList.length > 0; },
+			getFriendsSuccessCallback = function (fList) {
+				// no friends yet! prompt to select and add friends
+				if (!hasFriends(fList) && !acs.getHasRequestedFriends()) {
+					  var dialog = Ti.UI.createAlertDialog({
+									    cancel: 0,
+									    persistent: true,
+									    buttonNames: ['Not Now', 'OK'],
+									    message: Ti.Locale.getString('findFriendsMessage'),
+									    title: Ti.Locale.getString('findFriendsTitle')
+									  });
+									  dialog.addEventListener('click', function(e){
+									    if (e.index === 1){
+											//inviteFBFriendsRow.fireEvent('click', {});
+											//inviteFBFriendsHandler(window);
+											SettingsWindow.displayFriends(window);
+											window.containingTab = tab;
+											tab.open(window);
+									    }
+									    else {
+											Ti.API.info('The button ' + e.index + ' was clicked');
+										    // user has been prompted to request friends once, move on until next time the app is started
+											acs.setHasRequestedFriends(true);
+											action();
+									    }
+										if (window) {
+											activityIndicator.hide();
+											window.setRightNavButton(rightButton);
+										}
+									  });
+									  dialog.show();				
+				}
+				// user already has friends, go ahead and share
+				else if (action) { 
+					if (window) {
+						activityIndicator.hide();
+						window.setRightNavButton(null);
+						window.setRightNavButton(rightButton);
+					}					
+					action();
+				}
+			};
+			if (window) {
+				rightButton = window.getRightNavButton();
+				window.setRightNavButton(activityIndicator);
+				activityIndicator.show();
+			}
+			
+			acs.getFriendsList(getFriendsSuccessCallback);
+	}
 
 	function createInviteView(parentWin, offsetTop) {
 	
@@ -328,7 +390,8 @@
 			borderRadius : 5,
 			//borderColor: 'black',
 			//borderWidth: 1,
-			backgroundColor: 'transparent',
+			backgroundColor: 'white',
+			//selectedBackgroundColor: 'transparent',
 			paddingLeft : 0,
 			paddingRight : 2,
 			paddingTop: 10
@@ -396,8 +459,9 @@
 	}
 
 	exports.createInviteView = createInviteView;
-	exports.inviteFBFriendsPromptBeforeAction = inviteFBFriendsPromptBeforeAction;
+	//exports.inviteFBFriendsPromptBeforeAction = inviteFBFriendsPromptBeforeAction;
 	exports.inviteFBFriendsHandler = inviteFBFriendsHandler;
+	exports.inviteFriendsBeforeShare = inviteFriendsBeforeShare;
 
 } ());
 

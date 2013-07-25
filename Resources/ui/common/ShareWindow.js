@@ -124,8 +124,8 @@ function createShareWindow(postModel, shareAction) {
 		shareWindow.setRightNavButton(shareBtn);
 		shareBtn.show();				
 				
-		InviteView.inviteFBFriendsPromptBeforeAction(shareWindow, doShare);
-		
+		//InviteView.inviteFBFriendsPromptBeforeAction(shareWindow, doShare);
+		InviteView.inviteFriendsBeforeShare(shareWindow.containingTab, doShare);
 		
 			
 	});

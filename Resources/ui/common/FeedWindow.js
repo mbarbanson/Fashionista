@@ -42,7 +42,7 @@
 		var PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser(),
-			row = PostView.displayPostSummaryView(post),
+			row = PostView.displayPostSummaryView(fWin.containingTab, post),
 			tableView = fWin.table,
 			tabGroup;
 			

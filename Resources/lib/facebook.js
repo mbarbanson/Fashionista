@@ -253,7 +253,9 @@
 		    } else if (e.cancelled) {
 		        Ti.API.info("Facebook login cancelled");
 		    }
-	        if (cleanupCB) {cleanupCB();}
+	        if (cleanupCB) {
+				cleanupCB();
+			}
 		};
 		Ti.Facebook.addEventListener('login', loginListener);
 		if (logoutListener) {
