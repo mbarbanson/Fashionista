@@ -68,7 +68,7 @@
 	<string name="format_fashionist">Your name is %s</string>
 	<string name="find">Find</string>
 	<string name="friendsFeed">Home</string>
-	<string name="publicFeed">Find It!</string> 
+	<string name="publicFeed">Explore</string> 
 	<string name="camera">Camera</string>
 	<string name="gallery">Gallery</string>
 	<string name="userProfile">Profile</string>
@@ -76,5 +76,6 @@
 	<string name="privateInfo">Private Information</string>
 	<string name="saveChanges">Save Changes</string>
 	<string name="bioPrompt">Write something about yourself...</string>
+
 
 </resources>
