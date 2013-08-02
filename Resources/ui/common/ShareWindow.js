@@ -209,32 +209,32 @@ function createShareWindow(postModel, shareAction) {
 	findExactBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('findExactHashTag'),
-		color: 'black',
-		backgroundColor: '#AAA',
-		borderRadius: 3,
+		color: 'white',
+		backgroundColor: '#5D3879',
+		borderRadius: 1,
 		borderWidth: 1,		
 		top: 130, left: '5%',
-		height: 40, width: '30%'
+		height: 30, width: '30%'
 	});
 	findSimilarBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('findSimilarHashTag'),
-		color: 'black',
-		backgroundColor: '#AAA',
-		borderRadius: 3,
+		color: 'white',
+		backgroundColor: '#5D3879',
+		borderRadius: 1,
 		borderWidth: 1,				
 		top: 130, left: '37%',
-		height: 40, width: '30%'
+		height: 30, width: '30%'
 	});
 	friendsOnlyBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('friendsOnlyHashTag'),
-		color: 'black',
-		backgroundColor: '#AAA',
-		borderRadius: 3,
+		color: 'white',
+		backgroundColor: '#5D3879',
+		borderRadius: 1,
 		borderWidth: 1,				
-		top: 130, left: '69%',
-		height: 40, width: Ti.UI.SIZE
+		top: 175, left: '5%',
+		height: 30, width: '40%'
 	});	
 	
 	shareWindow.add(findExactBtn);

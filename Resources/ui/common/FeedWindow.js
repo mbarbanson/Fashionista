@@ -121,7 +121,7 @@
 	}
 	
 	
-	function showFeedWin(fWin, postQuery, noPhotoTitleId, noPhotoMsgId) {
+	function showFeedWin(fWin, postQuery, noPhotoTitle, noPhotoMsg) {
 		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
@@ -141,14 +141,16 @@
 			//clear table view
 			clearFeedWin(fWin);			
 			cleanupAction = function() {
-								var dialog;
+								var dialog, mainTabGroup = Ti.App.mainTabGroup;
 								if (!tableView.flipped) {
-									Ti.App.mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+									mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
 									tableView.flipped = true;
 								}
 								if (!tableView.data || tableView.data.length === 0) {
-									dialog = Ti.UI.createAlertDialog({cancel: -1, title: Ti.Locale.getString(noPhotoTitleId), message: Ti.Locale.getString(noPhotoMsgId)});
-									dialog.show();																		
+									dialog = Ti.UI.createAlertDialog({cancel: -1, title: Ti.Locale.getString(noPhotoTitle), message: Ti.Locale.getString(noPhotoMsg)});
+									dialog.show();	
+									// no photos in friend feed, show public feed
+									mainTabGroup.setActiveTab(1);																										
 								}
 								activityIndicator.hide(); 
 								fWin.rightNavButton = fWin.savedRightNavButton;
@@ -368,7 +370,7 @@
 			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(); });		
 		}
 		else {
-			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('publicFeed');
+			fWin.title = Ti.Locale.getString('publicFeed') + ' ' + Ti.Locale.getString('fashionista');
 			refreshBtn.addEventListener('click', function(e) { showFindFeed(); });				
 			fWin.addEventListener('refreshFeedWindow', function(e) {showFindFeed(); });		
 		}
