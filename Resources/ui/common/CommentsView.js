@@ -126,10 +126,20 @@
 	}
 
 
+	function openInWebView(containingTab, url) {
+		var webview = Titanium.UI.createWebView({url: url}),
+			window = Titanium.UI.createWindow();
+	    window.add(webview);
+	    window.containingTab = containingTab;
+	    containingTab.open(window);
+	}
+	
+	
 	
 	function displayComment(row, comment) {
 		/*jslint regexp: true */
-		var	commenter = comment.user ? comment.user.username + ": " : "",
+		var	PostView = require('ui/common/PostView'),
+			commenter = comment.user ? comment.user.username + ": " : "",
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
 			label = Ti.UI.createTextArea({
 				        autoLink: Ti.UI.AUTOLINK_URLS,
@@ -144,7 +154,16 @@
 						width: Ti.UI.FILL,
 						color: 'black',
 						visible: true	
-					}),
+			}),
+			clickHandler = function(event) {
+					var tableSection = row.getParent(),
+						tableView = tableSection ? tableSection.getParent() : null,
+						detailWin = tableView ? tableView.getParent() : null,
+						containingTab = detailWin ? detailWin.containingTab : null;
+					if (containingTab && url) {
+						openInWebView(containingTab, url);	
+					}			
+			},
 			urlRe = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9.\-]+|(?:www.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9.\-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[\-\+=&;%@.\w_]*)#?(?:[.\!\/\\w]*))?)/,		
 			url,
 			numLines;
@@ -158,10 +177,8 @@
 			numLines = Math.floor(label.value.length / maxCharsPerLine) + 1;
 			label.height = singleLineHeight * numLines;
 			row.add(label);	
-			label.addEventListener('singletap', 
-				function(event) {
-					alert('singletap in text area x ' + event.x + ' y ' + event.y + ' source ' + event.source.toString());
-					});					
+			label.addEventListener('singletap', clickHandler);
+			label.addEventListener ('click', clickHandler);					
 	}
 	
 	
@@ -178,6 +195,8 @@
 		Ti.API.info("createPostCommentsTable");
 		var	Comments = require('lib/comments'),
 			DetailWindow = require('ui/common/DetailWindow'),
+			PostView = require('ui/common/PostView'),
+			linkHandler = function (row) {PostView.findSource(win.containingTab, row);},
 			tableView = Ti.UI.createTableView({
 								objname: 'PostDetails',
 								backgroundColor: 'white',
@@ -187,9 +206,10 @@
 							
 			if (tableView) {
 				win.add(tableView);	
-				win.table = tableView;				
+				win.table = tableView;
+				win.linkHandler = linkHandler;				
 				// retrieves comments for current post and display each post followed by its comments on separate rows
-				Comments.getPostComments(post.id, function (comments) {DetailWindow.showPostComments (tableView, post, newComment, comments);});
+				Comments.getPostComments(post.id, function (comments) {DetailWindow.showPostComments (win.containingTab, tableView, post, newComment, comments);});
 			}							
 	}
 	

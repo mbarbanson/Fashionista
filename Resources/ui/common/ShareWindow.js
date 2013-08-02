@@ -39,7 +39,7 @@ function createShareWindow(postModel, shareAction) {
 		FeedWindow = require('ui/common/FeedWindow'),
 		InviteView = require('ui/common/InviteView'), 
 		shareBtn, cancelBtn,
-		findExactBtn, findSimilarBtn, publicBtn,
+		findExactBtn, findSimilarBtn, friendsOnlyBtn,
 		tagsLabel, 
 		shareWindow, 
 		shareTabGroup,
@@ -168,8 +168,6 @@ function createShareWindow(postModel, shareAction) {
 		paddingLeft : 2,
 		paddingRight : 2,
 		backgroundColor : 'white'
-		//borderColor: 'black',
-		//borderWidth: 1
 	});
 	caption.privHintText = caption.value;
 
@@ -228,20 +226,20 @@ function createShareWindow(postModel, shareAction) {
 		top: 130, left: '37%',
 		height: 40, width: '30%'
 	});
-	publicBtn = Titanium.UI.createButton({
+	friendsOnlyBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-		title : Ti.Locale.getString('publicHashTag'),
+		title : Ti.Locale.getString('friendsOnlyHashTag'),
 		color: 'black',
 		backgroundColor: '#AAA',
 		borderRadius: 3,
 		borderWidth: 1,				
 		top: 130, left: '69%',
-		height: 40, width: '26%'
+		height: 40, width: Ti.UI.SIZE
 	});	
 	
 	shareWindow.add(findExactBtn);
 	shareWindow.add(findSimilarBtn);
-	shareWindow.add(publicBtn);
+	shareWindow.add(friendsOnlyBtn);
 		
 	findExactBtn.addEventListener('click', function(e) {
 		var hashTag = Ti.Locale.getString('findExactHashTag');
@@ -267,8 +265,8 @@ function createShareWindow(postModel, shareAction) {
 		postModel.tags.push(hashTag);
 	});
 	
-    publicBtn.addEventListener('click', function(e) {
-		var hashTag = Ti.Locale.getString('publicHashTag');
+    friendsOnlyBtn.addEventListener('click', function(e) {
+		var hashTag = Ti.Locale.getString('friendsOnlyHashTag');
 		if (caption.value === captionHintText) {
 			caption.value = hashTag;
 			caption.color = 'black';

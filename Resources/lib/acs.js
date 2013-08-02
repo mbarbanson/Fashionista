@@ -902,10 +902,16 @@
 		    order: '-created_at',
 		    response_json_depth: 2,
 		    where: {
+				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag')]}
+		    }
+/*		    
+		    where: {
 		        "$or": [{"tags_array": Ti.Locale.getString('findExactHashTag')}, 
 		                {"tags_array": Ti.Locale.getString('findSimilarHashTag')},
-		                {"tags_array": Ti.Locale.getString('publicHashTag')} ]
+		                {"tags_array": Ti.Locale.getString('publicHashTag')},
+		                {"$ne": {"tags_array": Ti.Locale.getString('friendsOnlyHashTag')}} ]
 		    }
+		    */
 		}, function (e) {
 			var i,
 				post,

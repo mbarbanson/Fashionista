@@ -363,10 +363,12 @@
 				objname: 'PostSummary'
 		});
 		if (type === 'friendFeed') {
+			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('friendsFeed');
 			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });
 			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(); });		
 		}
 		else {
+			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('publicFeed');
 			refreshBtn.addEventListener('click', function(e) { showFindFeed(); });				
 			fWin.addEventListener('refreshFeedWindow', function(e) {showFindFeed(); });		
 		}

@@ -107,15 +107,14 @@
 	/*
 	 * displayPostDetailsView. Do not use this directly in a long lived closure!!! post objects are mutable!!!!!
 	 */
-	function displayPostDetailsFeedView (fWin, post, newComment) {
+	function displayPostDetailsFeedView (containingTab, post, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
-			detailWindow = DetailWindow.createDetailWindow(fWin.containingTab),
+			detailWindow = DetailWindow.createDetailWindow(containingTab),
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
-			CommentsView = require('ui/common/CommentsView'),
-			tab = fWin.containingTab; 
-		if (tab) {
-			tab.open(detailWindow);
+			CommentsView = require('ui/common/CommentsView'); 
+		if (containingTab) {
+			containingTab.open(detailWindow);
 		}
 		else {
 			Ti.API.error("displayPostDetails: currentTab is null");
@@ -126,19 +125,19 @@
 	
 	
 	
-	function displayPostDetailsView (post, newComment) {
+	function displayPostDetailsView (containingTab, post, newComment) {
 		Ti.API.info('show post details');
 		var FeedWindow = require('ui/common/FeedWindow');
-		displayPostDetailsFeedView(FeedWindow.currentFeedWindow(), post, newComment);	
+		displayPostDetailsFeedView(containingTab, post, newComment);	
 	}	
 
 
 	/*
 	 * displayRowDetails
 	 */
-	function displayRowDetails (row, newComment) {
+	function displayRowDetails (containingTab, row, newComment) {
 		Ti.API.info('show row details');
-		displayPostDetailsView(row.post, newComment);		
+		displayPostDetailsView(containingTab, row.post, newComment);		
 	}
 
 		
@@ -219,38 +218,42 @@
 								};
 				imgView.addEventListener('click', clickHandler);
 
-				//second row
-				facebookUID = Facebook.getLinkedFBId(author);
-				
-				if (author.photo && author.photo.processed) {
-					avatarImg = author.photo.urls.small_240;				
-				}				
-				else if (facebookUID) {
-					avatarImg = 'https://graph.facebook.com/' + facebookUID + '/picture';	
-				}
-				 
-				avatarView = Ti.UI.createImageView({
-								image: avatarImg,
-								left: 5, top:5,
-								width:30, height:30
+			}
+
+			//second row
+			facebookUID = Facebook.getLinkedFBId(author);
+			
+			if (author.photo && author.photo.processed) {
+				avatarImg = author.photo.urls.small_240;				
+			}				
+			else if (facebookUID) {
+				avatarImg = 'https://graph.facebook.com/' + facebookUID + '/picture';	
+			}
+							 
+			avatarView = Ti.UI.createImageView({
+							image: avatarImg,
+							left: 5, top:5,
+							width:30, height:30
+							});
+			row.add(avatarView);
+								
+								
+			labelUserName = Ti.UI.createButton({
+								color: '#576996',
+								background: 'white',
+								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
+								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
+								ellipsize: false,
+								title: author.username,
+								left: 40, top: -30,
+								width:80, height: 20
 								});
-				row.add(avatarView);
-									
-									
-				labelUserName = Ti.UI.createButton({
-									color: '#576996',
-									background: 'white',
-									style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
-									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
-									ellipsize: false,
-									title: author.username,
-									left: 40, top: -30,
-									width:80, height: 20
-									});
-				labelUserName.addEventListener('click', function (e) {
-															ProfileView.displayUserProfile(containingTab, author);
-															});									
-				row.add(labelUserName);
+			labelUserName.addEventListener('click', function (e) {
+														ProfileView.displayUserProfile(containingTab, author);
+														});									
+			row.add(labelUserName);
+			
+			if (!displayComments) {
 
 				findBtn = Ti.UI.createButton({
 									//image: '/icons/light_heart.png',
@@ -303,7 +306,7 @@
 				commentBtn.addEventListener('click', 
 											function(e) {
 													if (!displayComments) {
-														displayRowDetails(row, true);
+														displayRowDetails(containingTab, row, true);
 													}
 													else {
 														CommentsView.inputComment(row);
@@ -335,7 +338,7 @@
 								wordWrap : true,
 								horizontalWrap : true,
 								ellipsize: true,															
-								left:5, top: 0,
+								left:5, top: 10,
 								width:Ti.UI.FILL,
 								height: 20
 								});
@@ -382,7 +385,7 @@
 			row.commentsCount = commentsCount;
 			
 			if (!displayComments) {
-				commentsCount.addEventListener('click', function (e) {displayRowDetails(row, true);});	
+				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});	
 			}
 	
 			return row;
@@ -442,5 +445,6 @@
 	exports.displayPostDetailsView = displayPostDetailsView;
 	exports.displayPostDetailsFeedView = displayPostDetailsFeedView;
 	exports.likePost = likePost;
+	exports.findSource = findSource;
 	
 } ());

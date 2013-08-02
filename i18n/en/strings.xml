@@ -59,6 +59,7 @@
 	<string name="findExactHashTag">#findexact</string>
 	<string name="findSimilarHashTag">#findsimilar</string>
 	<string name="publicHashTag">#public</string>
+	<string name="friendsOnlyHashTag">#friendsonly</string>
 	<string name="emptyComment">Your comment is empty. Please enter a comment or go back to the previous window.</string>
 	<string name="commentProTip">\nPro tip: reply to comments to get even more viewer interaction with your posts.</string>
 	<string name="findTags">Ask other fashionistas for help</string>
