@@ -12,15 +12,15 @@
 		Flurry;
 	acs = require('lib/acs');
 	Notifications = require('ui/common/notifications');
-	Flurry = require('ti.flurry');
-		
+	Flurry = require('ti.flurry');		
 						
-	function createLoginWindow(action, cb) {
+	function createLoginWindow(action, cb, containingTab) {
 		var isLoginAction, 
 			dialogHeight, 
 			lWin, 
-			done, 
-			winTitle, 
+			done,
+			signInBtn,
+			forgotPwdBtn, 
 			lwDialog, 
 			username,
 			email, 
@@ -43,26 +43,17 @@
 		lWin = Ti.UI.createWindow({
 			backgroundColor: '#DDD',
 			barColor: '#5D3879',
-			rightNavButton: done,
-			title: Ti.Locale.getString(action),
+			//rightNavButton: done,
+			title: Ti.Locale.getString(action + 'WinTitle'),
 			tabBarHidden: true
-		});
-		
-		//FIXME not used
-		winTitle = Titanium.UI.createButton({
-			color: 'white',	
-			focusable: false,
-			enabled: true,
-			title: Ti.Locale.getString(action),
-			font: {fontFamily: 'Thonburi', fontsize: 14},
-			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
 		});
 			
 		username = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('username'),
 			autocorrect: false,
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
-			top:25, //70,
+			returnKeyType: Ti.UI.RETURNKEY_NEXT,			
+			top:25,
 			width: '90%',
 			height: 40,
 			font: {
@@ -77,7 +68,12 @@
 		});
 		
 		lWin.add(username);
-
+		username.addEventListener('return', function()
+		{
+			username.value.toLowerCase();
+			// validate username here
+			password.focus();
+		});
 		
 		password = Ti.UI.createTextField({
 			hintText: Ti.Locale.getString('password'),
@@ -86,7 +82,7 @@
 			autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 //			keyboardType: Ti.UI.KEYBOARD_EMAIL,
 			returnKeyType: Ti.UI.RETURNKEY_DONE,
-			top:70, //115,
+			top:70, 
 			width: '90%',
 			height: 40,
 			font: {
@@ -99,14 +95,33 @@
 			borderRadius: 3,
 			paddingLeft: 2, paddingRight: 2
 		});
+
+		signInBtn = Titanium.UI.createButton({
+			title: Ti.Locale.getString(action),
+			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+			backgroundColor: '#5D3879',
+			color: 'white',
+			width: '30%',
+			height: '8%',
+			left: '35%',
+			top: 140 
+		});
 		
+
+				
 		if (!isLoginAction)	{
+			signInBtn.setTop(185);
+			password.setReturnKeyType(Ti.UI.RETURNKEY_DONE);
+			password.addEventListener('return', function()
+			{
+				email.focus();
+			});			
 			email = Ti.UI.createTextField({
 				hintText: Ti.Locale.getString('email'),
 				autocorrect: false,
 				autocapitalization: Titanium.UI.TEXT_AUTOCAPITALIZATION_NONE,
 				returnKeyType: Ti.UI.RETURNKEY_DONE,				
-				top:115, //25,
+				top:115,
 				width: '90%',
 				height: 40,
 				font: {
@@ -124,18 +139,48 @@
 				done.fireEvent('click');
 			});			
 			
-			lWin.add(email);			
+			lWin.add(email);
+						
+		}
+		else {
+			forgotPwdBtn = Titanium.UI.createButton({
+				title: Ti.Locale.getString('forgotPassword'),
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+				backgroundColor: 'transparent',
+				color: '#3366BB',
+				textAlign: 'right',
+				font: {
+					fontWeight: 'normal',
+					fontSize: '10'
+				},				
+				width: '40%',
+				height: 12,
+				left: '55%',
+				top: 115 
+			});	
+			lWin.add(forgotPwdBtn);
+			
+			forgotPwdBtn.addEventListener('click', function () {
+				var ResetWindow = require('ui/common/ResetWindow'),
+					resetWindow = ResetWindow.createResetWindow();
+				if (resetWindow) {
+					containingTab.open(resetWindow);
+				}				
+			});
+						
+			password.addEventListener('return', function()
+			{
+				done.fireEvent('click');
+			});			
 		}
 		
+		lWin.add(signInBtn);		
 		
-		
-		password.addEventListener('return', function()
-		{
+		signInBtn.addEventListener('click', function() {
 			done.fireEvent('click');
 		});
 		
 		lWin.add(password);
-
 
 		function validateEmail(email) {
 			/*jslint regexp: true */
@@ -186,4 +231,5 @@
 	}
 	exports.createLoginWindow = createLoginWindow;	
 } ());
+
 

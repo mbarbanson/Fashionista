@@ -42,7 +42,7 @@ function createGuestWindow() {
 	ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
 	thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow();
 	ThumbnailsWindow.refreshThumbnails();
-	
+	Flurry.logEvent('GuestPageThumbnailsVisible')
 	//  crate a tab group with a single tab to hold the thubnail window stack
 	guestTabGroup = Ti.UI.createTabGroup();
 	tab1 = Ti.UI.createTab({
@@ -62,13 +62,13 @@ function createGuestWindow() {
     });
 
     signup = Ti.UI.createButton({
-        title: Ti.Locale.getString('Sign Up'),
+        title: Ti.Locale.getString('signup'),
         style: Ti.UI.iPhone.SystemButtonStyle.DONE,
         backgroundColor: '#5D3879'
     });
     
     login = Ti.UI.createButton({
-        title: Ti.Locale.getString('Login'),
+        title: Ti.Locale.getString('login'),
         style: Ti.UI.iPhone.SystemButtonStyle.DONE,
         backgroundColor: '#5D3879'
     });
@@ -147,12 +147,12 @@ function createGuestWindow() {
 
     
     signup.addEventListener('click', function(e){
-        tab1.open(LoginWindow.createLoginWindow('signup', loginCallback));
+        tab1.open(LoginWindow.createLoginWindow('signup', loginCallback, tab1));
 		Flurry.logEvent('SignupClick', { 'button': "signupButton" });        
     });
 	 
     login.addEventListener('click', function(e){
-        tab1.open(LoginWindow.createLoginWindow('login', loginCallback));
+        tab1.open(LoginWindow.createLoginWindow('login', loginCallback, tab1));
 		Flurry.logEvent('LoginClick', { 'button': "loginButton" });        
     });
 	   

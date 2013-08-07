@@ -1,4 +1,4 @@
-/**
+/*
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -97,6 +97,112 @@
 	}
 	
 	
+	// gettingStartedOverlay
+	function removeGettingStartedOverlay(parentWin) {
+		parentWin.remove(parentWin.transparentOverlay);
+		parentWin.remove(parentWin.translucentOverlay);		
+	}
+	
+	function showGettingStartedOverlay(parentWin) {
+		var translucentOverlay = Ti.UI.createView({
+			backgroundColor: '#444444',
+			opacity: 0.70,
+			width: Ti.UI.FILL,
+			height: Ti.UI.FILL,
+			navBarHidden: true
+			}),
+			transparentOverlay = Ti.UI.createView({
+			backgroundColor: 'transparent',
+			opacity: 1,
+			width: Ti.UI.FILL,
+			height: Ti.UI.FILL,
+			navBarHidden: true
+			}),			
+			welcomeText = Ti.UI.createLabel({
+				text: Ti.Locale.getString('welcome_message'),
+				textAlign: Ti.UI.TEXT_ALIGNMENT_CENTER,
+				font: {
+					fontWeight: 'bold',
+					fontSize: '40'
+				},					
+				backgroundColor: 'transparent', //'#5D3879',
+				color: 'white',
+				borderRadius: 1,
+				top: '10%',
+				height: '28%',
+				left: '20%',
+				width: '60%'				
+			}),
+			exploreBtn = Ti.UI.createButton({
+				title: Ti.Locale.getString('publicFeed'),
+				font: {
+					fontWeight: 'bold',
+					fontSize: '20'
+				},				
+				backgroundColor: '#5D3879',
+				color: 'white',
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+				borderRadius: 1,
+				top: '40%',
+				height: '6%',
+				left: '35%',
+				width: '30%'
+			}),
+			editProfileBtn = Ti.UI.createButton({
+				title: Ti.Locale.getString('userProfile'),
+				font: {
+					fontWeight: 'bold',
+					fontSize: '20'
+				},				
+				backgroundColor: '#5D3879',
+				color: 'white',
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+				borderRadius: 1,				
+				top: '60%',
+				height: '6%',
+				left: '35%',
+				width: '30%'				
+			}),
+			createPostBtn = Ti.UI.createButton({
+				title: Ti.Locale.getString('camera'),
+				font: {
+					fontWeight: 'bold',
+					fontSize: '20'
+				},				
+				backgroundColor: '#5D3879',
+				color: 'white',
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+				borderRadius: 1,				
+				top: '80%',
+				height: '6%',
+				left: '35%',
+				width: '30%'				
+			});
+		parentWin.transparentOverlay = transparentOverlay;
+		parentWin.translucentOverlay = translucentOverlay;
+		exploreBtn.window = parentWin;
+		transparentOverlay.add(welcomeText);
+		transparentOverlay.add(exploreBtn);
+		transparentOverlay.add(editProfileBtn);
+		transparentOverlay.add(createPostBtn);
+		parentWin.add(translucentOverlay);
+		parentWin.add(transparentOverlay);
+		
+		exploreBtn.addEventListener('click', function (e) {
+			removeGettingStartedOverlay(parentWin);		
+		});
+		
+		editProfileBtn.addEventListener('click', function(e) {
+			removeGettingStartedOverlay(parentWin);
+			Ti.App.mainTabGroup.setActiveTab(4);	
+		});
+		
+		createPostBtn.addEventListener('click', function(e) {
+			removeGettingStartedOverlay(parentWin);
+			Ti.App.mainTabGroup.setActiveTab(2);	
+		});		
+		
+	}
 	
 
 	/*
@@ -121,7 +227,7 @@
 	}
 	
 	
-	function showFeedWin(fWin, postQuery, noPhotoTitle, noPhotoMsg) {
+	function showFeedWin(fWin, postQuery) {
 		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
@@ -141,16 +247,19 @@
 			//clear table view
 			clearFeedWin(fWin);			
 			cleanupAction = function() {
-								var dialog, mainTabGroup = Ti.App.mainTabGroup;
+								var mainTabGroup = Ti.App.mainTabGroup;
 								if (!tableView.flipped) {
 									mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
 									tableView.flipped = true;
 								}
 								if (!tableView.data || tableView.data.length === 0) {
-									dialog = Ti.UI.createAlertDialog({cancel: -1, title: Ti.Locale.getString(noPhotoTitle), message: Ti.Locale.getString(noPhotoMsg)});
-									dialog.show();	
-									// no photos in friend feed, show public feed
-									mainTabGroup.setActiveTab(1);																										
+									// no photos in friend feed, show public feed									
+									mainTabGroup.setActiveTab(1);									
+									// this is the first time the user is using fasghionist. provide some guidance
+									if (Ti.App.showGettingStartedOverlay) {
+										showGettingStartedOverlay(mainTabGroup.getActiveTab().getWindow());
+										//Ti.App.showGettingStartedOverlay = false;
+									}																											
 								}
 								activityIndicator.hide(); 
 								fWin.rightNavButton = fWin.savedRightNavButton;
@@ -362,7 +471,8 @@
 		        navBarHidden: false				
 		}),
 		tableView =  Ti.UI.createTableView ({
-				objname: 'PostSummary'
+				objname: 'PostSummary',
+				separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE
 		});
 		if (type === 'friendFeed') {
 			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('friendsFeed');

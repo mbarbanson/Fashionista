@@ -47,7 +47,7 @@
 	
 		// tabgroup containing main Fashionist Tabs ie: feed, featured, camera, gallery, settings
 		Ti.App.mainTabGroup = tabGroup;		
-																		
+		Ti.App.showGettingStartedOverlay = true;																
 		// left most tab is the feed
 		FeedWindow.setCurrentFriendFeedWindow(friendFeedWindow);
 		tab1 = Ti.UI.createTab({
@@ -160,7 +160,7 @@
 									CameraView.photoSuccessCallback(e);
 							};
 			if (currentUser) {
-				Flurry.logEvent('openTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
+				Flurry.logEvent('openCameraTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
 				CameraView.pickPhoto(successCallback, cancelCallback);
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
 				tabGroup.setActiveTab(0);

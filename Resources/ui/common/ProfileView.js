@@ -204,7 +204,7 @@
 		photoBioRow.add(avatarView);
 
 		bioLabel = Ti.UI.createTextArea({
-			value: privProfileInfo.savedBio || Ti.Locale.getString('bioPrompt'),
+			value: privProfileInfo.savedBio,
 			autolink: Ti.UI.AUTOLINK_URLS,			
 			color: privProfileInfo.savedBio ? 'black' : '#aaa',
 			bubbleParent: false,
@@ -229,7 +229,8 @@
 		profileView.bio = bioLabel;
 		
 		if (canEdit) {
-			bioLabel.privHintText = Ti.Locale.getString('bioPrompt');					
+			bioLabel.privHintText = Ti.Locale.getString('bioPrompt');
+			bioLabel.value = privProfileInfo.savedBio || Ti.Locale.getString('bioPrompt');					
 			bioLabel.addEventListener('focus', bioFocusHandler);
 			bioLabel.addEventListener('selected', bioFocusHandler);
 			bioLabel.addEventListener('singletap', bioFocusHandler);											
