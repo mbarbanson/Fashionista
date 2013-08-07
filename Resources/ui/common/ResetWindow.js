@@ -120,7 +120,7 @@ function checkemail(emailAddress) {
 			}
 			// avoid repeat click on done
 			resetBtn.setEnabled(false);
-			acs.sendResetPasswordLink(email.value, successCallback, errorCallback);
+			acs.sendResetPasswordLink(emailAddy, successCallback, errorCallback);
 			//acs.sendWelcome(email.value, successCallback, errorCallback);
 			win.add(spinner);
 			spinner.show();						

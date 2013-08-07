@@ -953,6 +953,55 @@
 		return avatar;
 	}
 
+// email
+
+function sendWelcome(email, successCallback, errorCallback) {
+	Flurry.logEvent('Cloud.Emails.send', { 'email': email.value });		
+	Cloud.Emails.send({
+	    template: 'welcome',
+		recipients: email
+	}, function (e) {
+	    if (e.success) {
+	        if (successCallback) { successCallback(e); }
+			Flurry.logEvent('welcomeEmailSuccess', { 'email': email.value});						
+		} else {
+		    Ti.API.info('Error:\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+		    }
+			Flurry.logEvent('welcomeEmailError', { 'email': email.value });
+			if (errorCallback) { 
+				errorCallback(e); 
+			}
+		});
+}
+
+
+function sendResetPasswordLink(email, successCallback, errorCallback) {
+	Flurry.logEvent('Cloud.Users.sendResetPasswordLink', { 'email': email });
+	Cloud.Users.requestResetPassword({
+	    //template: 'resetPassword',
+		email: email
+		//dynamic_fields: { Fashionist: Ti.Locale.getString('fashionista') }
+	}, function (e) {
+	    if (e.success) {
+	        if (successCallback) { 
+				successCallback(e);
+			}
+			Flurry.logEvent('resetPasswordSuccess', { 'email': email});						
+		} else {
+		    Ti.API.info('Error:\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+			Flurry.logEvent('resetPasswordError', { 'email': email });
+			if (errorCallback) { 
+				errorCallback(e); 
+			}
+		}
+	});
+}
+
+
+
+
 
 	exports.getPhotoCollectionId = getPhotoCollectionId;
 	exports.setPhotoCollectionId = setPhotoCollectionId;
@@ -990,7 +1039,8 @@
 	exports.getFriendsPosts = getFriendsPosts;
 	exports.getPublicPosts = getPublicPosts;
 	exports.getUserAvatar = getUserAvatar;
-
+	exports.sendResetPasswordLink = sendResetPasswordLink;
+	exports.sendWelcome = sendWelcome;
 
 
 } ());

@@ -196,8 +196,8 @@
 			var refreshCallback = function () {
 				refreshUserProfile(profileView);
 			};
-			// only facebook photo is supported, don't do anything if facebook account is already linked
-			if (canEdit  && user.external_accounts.length === 0) {
+
+			if (canEdit) {
 				pickAvatarPicture(profileView, refreshCallback);				
 			}
 		});
@@ -436,14 +436,13 @@
 			
 	
 	function createProfileWindow(user, parentWin) {
-		var ProfileView = require('ui/common/ProfileView'),
-			acs = require('lib/acs'),
+		var acs = require('lib/acs'),
 			Flurry = require('ti.flurry'),
 			currentUser = acs.currentUser(),
 			isSameUser = (user.id === currentUser.id),
 			addFriendBtn,
 			profileWin = Ti.UI.createWindow({title: user.username, backgroundColor: '#DDD'}),
-			profileView = ProfileView.createProfileView(user),
+			profileView = createProfileView(user),
 			notifyAddedFriends, notificationSuccess;
 		profileWin.add(profileView);
 		profileWin.parentWin = parentWin;
@@ -475,7 +474,6 @@
 					if (currentUser.id === user.id) {
 						hasChangedVisibly = saveProfileChanges(user);
 						if (hasChangedVisibly) {
-							//refreshUserProfile(profileView);
 							parentWin.fireEvent('refreshFeedWindow');	
 						}
 					}
