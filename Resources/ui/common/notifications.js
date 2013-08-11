@@ -64,8 +64,7 @@
 						acs.showPost(postId, function (p) {
 												FeedWindow.displayPostInFeed(p, true); 
 												});
-												*/
-						Ti.App.FriendsFeedNeedRefresh = true;						
+												*/					
 						FeedWindow.showFriendsFeed();													
 					}
 				}
