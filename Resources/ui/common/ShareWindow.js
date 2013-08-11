@@ -28,7 +28,10 @@ function parseHashTags(postModel, caption) {
 					postModel.tags.push(hashStr);	
 				}	
 				break;			
-			}			
+			}
+			if (hashStr === '#friendsOnly')	{
+				Ti.App.newPublicPost = false;
+			}		
 		}	
 	}
 }
@@ -107,9 +110,10 @@ function createShareWindow(postModel, shareAction) {
 		doShare = function () {
 			// go back to feed page
 			shareTabGroup.close();
+			Ti.App.newPublicPost = true;
 			// add post
 			if (captionValue === captionHintText || captionValue === "") {
-				postModel.caption = defaultCaption;			
+				postModel.caption = defaultCaption;		
 			} else {
 				parseHashTags(postModel, captionValue);					
 				postModel.caption = escape(captionValue);			

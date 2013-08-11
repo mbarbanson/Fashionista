@@ -18,7 +18,8 @@
 		// handle new post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newPost handler");
 		Ti.App.addEventListener('newPost', function (e) {
-			var tab = Ti.App.getFeedTab(), 
+			var mainTabGroup = Ti.App.mainTabGroup,
+				tab = mainTabGroup.tabs[0], // friendfeed tab
 				postId = e.pid, message = e.message, senderId = e.uid,
 				currentUser = acs.currentUser();
 			Flurry.logEvent('newPost', { 'username': currentUser.username, message: message});
@@ -38,7 +39,8 @@
 		// handle new friend post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
-			var tab = Ti.App.getFeedTab(),
+			var mainTabGroup = Ti.App.mainTabGroup,
+				tab = mainTabGroup.tabs[0], // friendfeed tab
 				currentUser = acs.currentUser(), 
 				postId = e.pid, message = e.message, senderId = e.uid,
 				appBadge = e.badge;
@@ -63,6 +65,7 @@
 												FeedWindow.displayPostInFeed(p, true); 
 												});
 												*/
+						Ti.App.FriendsFeedNeedRefresh = true;						
 						FeedWindow.showFriendsFeed();													
 					}
 				}
@@ -160,7 +163,8 @@
 
 	
 	function newCommentHandler (postId, senderId, message, appBadge) {
-		var tab = Ti.App.getFeedTab(),
+		var mainTabGroup = Ti.App.mainTabGroup,
+			tab = mainTabGroup.tabs[0], // friendfeed tab
 			Flurry = require('ti.flurry'),		
 			FeedWindow = require('ui/common/FeedWindow'),
 			PostView = require('ui/common/PostView'),

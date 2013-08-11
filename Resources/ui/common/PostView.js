@@ -300,7 +300,7 @@
 				likeBtn.addEventListener('click', function(e) { likePost(row);});
 				
 				moreBtn.addEventListener('click', function(e) { 
-														MoreActionDialog.createMoreDialog(row.post, imgView);
+														MoreActionDialog.createMoreDialog(containingTab, row.post, imgView);
 													});
 	
 				commentBtn.addEventListener('click', 

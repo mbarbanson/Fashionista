@@ -11,28 +11,40 @@
 		Ti.Media.saveToPhotoGallery(photoBlob, {success: successCallback, error: errorCallback});
 	}
 
-    function deletePost(post) {
+    function deletePost(containingTab, post) {
 		var acs = require('lib/acs'),
 			FeedWindow = require('ui/common/FeedWindow'),
+			fWin = containingTab.window,
+			postId = post.id,
+			callback = function (e) {
+						//update both feeds
+						fWin.fireEvent('deletePost', {postId: postId});
+						if (fWin.type === 'friendFeed') {
+							FeedWindow.currentFindFeedWindow().fireEvent('deletePost', {postId: postId});
+						}
+						else {
+							FeedWindow.currentFeedWindow().fireEvent('deletePost', {postId: postId});							
+						}							
+			},
 			dialog = Ti.UI.createAlertDialog({
-					    cancel: 1,
-					    buttonNames: ['Ok', 'Cancel'],
-					    message: 'Delete this post?',
-					    title: 'Confirm'
+					    cancel: 0,
+					    buttonNames: [Ti.Locale.getString('cancel'), Ti.Locale.getString('ok')],
+					    message: Ti.Locale.getString('deletePostConfirmation'),
+					    title: Ti.Locale.getString('confirmationPrompt')
 					    });
 		    dialog.addEventListener('click', function(e) {
 						if (e.index === e.source.cancel) {
 							Ti.API.info('The cancel button was clicked');
 					    }
 						else {
-							acs.removePost(post.id, function (e) {FeedWindow.showFriendsFeed();});							
+							acs.removePost(postId, callback);							
 						}
 					});
 			dialog.show();
 }
 
 
-	function createMoreDialog(post, imgView) {
+	function createMoreDialog(containingTab, post, imgView) {
 	
 		var acs = require('lib/acs'),
 			Flurry = require('ti.flurry'),
@@ -64,7 +76,7 @@
 				Flurry.logEvent(optionLabel, {'username': currentUser.username, 'email': currentUser.email});
 				switch (e.index) {
 					case 0:
-						deletePost(post);
+						deletePost(containingTab, post);
 						break;
 					case 1:
 						saveToCameraRoll(imgView.toBlob());

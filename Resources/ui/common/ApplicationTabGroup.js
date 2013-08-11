@@ -46,8 +46,7 @@
 			cameraBtn, galleryBtn;
 	
 		// tabgroup containing main Fashionist Tabs ie: feed, featured, camera, gallery, settings
-		Ti.App.mainTabGroup = tabGroup;		
-		Ti.App.showGettingStartedOverlay = true;																
+		Ti.App.mainTabGroup = tabGroup;																	
 		// left most tab is the feed
 		FeedWindow.setCurrentFriendFeedWindow(friendFeedWindow);
 		tab1 = Ti.UI.createTab({
@@ -60,21 +59,21 @@
 		tab1.tabGroup = tabGroup;
 		tabGroup.addTab(tab1);
 		friendFeedWindow.containingTab = tab1;
-		Ti.App.getFeedTab = function () { return tab1;};
 		
 		// this tab requires a logged in user
 		tab1.addEventListener('focus', function (e) {
 			if (acs.currentUser()) {
-				Ti.API.info("Feed page");
-				Flurry.logEvent('focusTab', {'tab': 'friendsFeed', 'username': currentUser.username, 'email': currentUser.email});																						
+				Ti.API.info("Friend Feed tab received a focus event");
+				Flurry.logEvent('focusTab', {'tab': 'friendsFeed', 'username': currentUser.username, 'email': currentUser.email});
+				FeedWindow.handleEmptyFriendsFeed();																										
 			}
 			else {
 				alert('Please log in or sign up first');
 			}
 		});
 		
-		
 		FeedWindow.showFriendsFeed();
+		friendFeedWindow.initialized = true;
 
 				
 		// find feed
@@ -91,10 +90,16 @@
 		tabGroup.addTab(tab2);
 		
 		tab2.addEventListener('focus', function(e){
-			Ti.API.info("Find Feed page. ");
-			Flurry.logEvent('focusTab', {'tab': 'publicFeed', 'username': currentUser.username, 'email': currentUser.email});																		
-			FeedWindow.showFindFeed(findFeedWindow, FeedWindow.findFeedPostQuery);
-			tabGroup.setActiveTab(1); 
+			Ti.API.info("Explore tab received a focus event");
+			Flurry.logEvent('focusTab', {'tab': 'publicFeed', 'username': currentUser.username, 'email': currentUser.email});
+			if (!findFeedWindow.initialized) {
+				FeedWindow.showFindFeed(findFeedWindow, FeedWindow.findFeedPostQuery, true); // do not force refresh every time we switch to explore tab	
+			}																		
+			findFeedWindow.initialized = true;
+		});
+		
+		tab2.addEventListener('blur', function(e) {
+			FeedWindow.dismissGettingStartedOverlay(findFeedWindow);
 		});
 		
 		// camera tab
@@ -115,19 +120,21 @@
 				cancelCallback = function () {
 									Ti.API.info("Take photo cancel callback");
 									Flurry.logEvent('takePhotoCancel', {'username': currentUser.username, 'email': currentUser.email});																											
-									Ti.Media.hideCamera(); 
+									Ti.Media.hideCamera();
+									tabGroup.setActiveTab(0); 
 							},
 				successCallback = function (e) {
 									Ti.API.info("Take Photo success callback");
 									Flurry.logEvent('takePhotoSuccess', {'username': currentUser.username, 'email': currentUser.email});																		
 									CameraView.photoSuccessCallback(e);
+									//tabGroup.setActiveTab(0);
 							};
 			if (currentUser) {
 				CameraView.takePhoto(successCallback, cancelCallback);
 				Flurry.logEvent('focusTab', {'tab': 'camera', 'username': currentUser.username, 'email': currentUser.email});									
 				
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery				
-				tabGroup.setActiveTab(0);		
+				//tabGroup.setActiveTab(0);		
 			}			
 			else {
 				alert("Please log in or sign up first");
@@ -153,17 +160,19 @@
 									Ti.API.info("Pick photo cancel callback");
 									Flurry.logEvent('cancelPickPhoto', {'username': currentUser.username, 'email': currentUser.email});									
 									Ti.Media.hideCamera();
+									tabGroup.setActiveTab(0);
 							},
 				successCallback = function (e) {
 									Ti.API.info("Pick Photo success callback");
 									Flurry.logEvent('PickPhotoSuccess', {'username': currentUser.username, 'email': currentUser.email});																		
 									CameraView.photoSuccessCallback(e);
+									//tabGroup.setActiveTab(0);
 							};
 			if (currentUser) {
 				Flurry.logEvent('openCameraTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
 				CameraView.pickPhoto(successCallback, cancelCallback);
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
-				tabGroup.setActiveTab(0);
+				//tabGroup.setActiveTab(0);
 			}			
 			else {
 				alert("Please log in or sign up first");
@@ -188,9 +197,7 @@
 			SettingsWindow.showSettingsWindow();
 			Ti.API.info("handle focus on settings page");
 		});
-		
-		// default to Feed
-		tabGroup.setActiveTab(0);
+			
 	}
 	
 	// Called once we've established a logged in user

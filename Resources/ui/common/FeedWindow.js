@@ -97,16 +97,27 @@
 	}
 	
 	
-	// gettingStartedOverlay
-	function removeGettingStartedOverlay(parentWin) {
-		parentWin.remove(parentWin.transparentOverlay);
-		parentWin.remove(parentWin.translucentOverlay);		
+	// gettingStartedOverlay	
+	
+	// check that the overlays are around
+	function dismissGettingStartedOverlay (parentWin) {
+		var transparentOverlay = parentWin.transparentOverlay,
+			translucentOverlay = parentWin.translucentOverlay;
+		if (transparentOverlay && transparentOverlay.getParent() === parentWin) {
+			parentWin.remove(transparentOverlay);
+			parentWin.transparentOverlay = null;	
+		}
+		if (translucentOverlay && translucentOverlay.getParent() === parentWin) {
+			parentWin.remove(translucentOverlay);
+			parentWin.translucentOverlay = null;	
+		}		
 	}
+	
 	
 	function showGettingStartedOverlay(parentWin) {
 		var translucentOverlay = Ti.UI.createView({
 			backgroundColor: '#444444',
-			opacity: 0.70,
+			opacity: 0.60,
 			width: Ti.UI.FILL,
 			height: Ti.UI.FILL,
 			navBarHidden: true
@@ -123,18 +134,20 @@
 				textAlign: Ti.UI.TEXT_ALIGNMENT_CENTER,
 				font: {
 					fontWeight: 'bold',
-					fontSize: '40'
+					fontSize: '30'
 				},					
 				backgroundColor: 'transparent', //'#5D3879',
-				color: 'white',
+				shadowColor: '#5D3879',
+				shadowOffset: {x:2, y:2},				
+				color: '#FFFFFF',
 				borderRadius: 1,
-				top: '10%',
-				height: '28%',
-				left: '20%',
-				width: '60%'				
+				top: '2%',
+				height: '25%',
+				left: '10%',
+				width: '80%'				
 			}),
 			exploreBtn = Ti.UI.createButton({
-				title: Ti.Locale.getString('publicFeed'),
+				title: Ti.Locale.getString('explorePublicFeed'),
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
@@ -143,13 +156,13 @@
 				color: 'white',
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				borderRadius: 1,
-				top: '40%',
+				top: '30%',
 				height: '6%',
-				left: '35%',
-				width: '30%'
+				left: '10%',
+				width: '80%'
 			}),
 			editProfileBtn = Ti.UI.createButton({
-				title: Ti.Locale.getString('userProfile'),
+				title: Ti.Locale.getString('fillProfile'),
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
@@ -158,13 +171,13 @@
 				color: 'white',
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				borderRadius: 1,				
-				top: '60%',
+				top: '46%',
 				height: '6%',
-				left: '35%',
-				width: '30%'				
+				left: '10%',
+				width: '80%'				
 			}),
 			createPostBtn = Ti.UI.createButton({
-				title: Ti.Locale.getString('camera'),
+				title: Ti.Locale.getString('createPost'),
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
@@ -173,34 +186,47 @@
 				color: 'white',
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				borderRadius: 1,				
-				top: '80%',
+				top: '62%',
 				height: '6%',
-				left: '35%',
-				width: '30%'				
+				left: '10%',
+				width: '80%'				
+			}),
+			closeBtn = Ti.UI.createButton ({
+				top: 0, 
+				left: 290,
+				width: 30,
+				height: 30,
+				image: '/icons/298-circlex.png',
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN				
 			});
-		parentWin.transparentOverlay = transparentOverlay;
-		parentWin.translucentOverlay = translucentOverlay;
-		exploreBtn.window = parentWin;
+
 		transparentOverlay.add(welcomeText);
 		transparentOverlay.add(exploreBtn);
 		transparentOverlay.add(editProfileBtn);
 		transparentOverlay.add(createPostBtn);
+		transparentOverlay.add(closeBtn);
 		parentWin.add(translucentOverlay);
 		parentWin.add(transparentOverlay);
+		parentWin.translucentOverlay = translucentOverlay;
+		parentWin.transparentOverlay = transparentOverlay;
 		
 		exploreBtn.addEventListener('click', function (e) {
-			removeGettingStartedOverlay(parentWin);		
+			dismissGettingStartedOverlay(parentWin);		
 		});
 		
 		editProfileBtn.addEventListener('click', function(e) {
-			removeGettingStartedOverlay(parentWin);
+			dismissGettingStartedOverlay(parentWin);
 			Ti.App.mainTabGroup.setActiveTab(4);	
 		});
 		
 		createPostBtn.addEventListener('click', function(e) {
-			removeGettingStartedOverlay(parentWin);
+			dismissGettingStartedOverlay(parentWin);
 			Ti.App.mainTabGroup.setActiveTab(2);	
-		});		
+		});
+		
+		closeBtn.addEventListener('click', function(e) {
+			dismissGettingStartedOverlay(parentWin);
+		});				
 		
 	}
 	
@@ -227,7 +253,24 @@
 	}
 	
 	
-	function showFeedWin(fWin, postQuery) {
+	function handleEmptyFriendsFeed() {
+		var fWin = currentFeedWindow(), // returns FriendsFeedWindow
+			findFeedWin = currentFindFeedWindow(),
+			tableView = fWin.table,
+			mainTabGroup = Ti.App.mainTabGroup;
+		// check that we don't already show the getting started overlay
+		if (tableView && !findFeedWin.translucentOverlay) {
+			if (!tableView.data || tableView.data.length === 0) {
+				// no photos in friend feed, show public feed									
+				mainTabGroup.setActiveTab(1);									
+				// this is the first time the user is using fasghionist. provide some guidance
+				showGettingStartedOverlay(currentFindFeedWindow());																						
+			}			
+		}			
+	}
+	
+	
+	function showFeedWin(fWin, postQuery, noRefresh) {
 		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
@@ -245,25 +288,24 @@
 		inShowFeedWindow = true;					
 		if (tableView) {
 			//clear table view
-			clearFeedWin(fWin);			
+			if (!noRefresh) {
+				clearFeedWin(fWin);
+			}			
 			cleanupAction = function() {
 								var mainTabGroup = Ti.App.mainTabGroup;
-								if (!tableView.flipped) {
-									mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
-									tableView.flipped = true;
+								
+								if (fWin === currentFeedWindow()) {
+									if (!tableView.flipped) {
+										handleEmptyFriendsFeed();									
+										mainTabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+										tableView.flipped = true;
+									}	
 								}
-								if (!tableView.data || tableView.data.length === 0) {
-									// no photos in friend feed, show public feed									
-									mainTabGroup.setActiveTab(1);									
-									// this is the first time the user is using fasghionist. provide some guidance
-									if (Ti.App.showGettingStartedOverlay) {
-										showGettingStartedOverlay(mainTabGroup.getActiveTab().getWindow());
-										//Ti.App.showGettingStartedOverlay = false;
-									}																											
-								}
+								
 								activityIndicator.hide(); 
 								fWin.rightNavButton = fWin.savedRightNavButton;
 								inShowFeedWindow = false;
+								fWin.initialized = true;
 							};
 			tableView.displayComments = false;	
 			Ti.API.info("showFeedWin. Refreshing Feed window");
@@ -281,18 +323,18 @@
 		}
 	}
 	
-	function showFriendsFeed(selectedPostId) {
-		showFeedWin(privFeedWindow, friendFeedPostQuery, 'noPhotosTitle', 'noPhotosMsg');
+	function showFriendsFeed(noRefresh, selectedPostId) {
+		showFeedWin(privFeedWindow, friendFeedPostQuery, noRefresh);
 	}
 	
-	function showFindFeed(selectedPostId) {
-		showFeedWin(privFindFeedWindow, findFeedPostQuery, 'noFindPostTitle', 'noFindPostMsg');
+	function showFindFeed(noRefresh, selectedPostId) {
+		showFeedWin(privFindFeedWindow, findFeedPostQuery, noRefresh);
 	}
 	
 	
-	Ti.App.addEventListener('refreshFeedWindow', function (e) { showFriendsFeed(); Ti.UI.iPhone.setAppBadge(0);});
+	Ti.App.addEventListener('refreshFeedWindow', function (e) { showFriendsFeed(false);});
 	
-	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { showFeedWin(privFindFeedWindow);});
+	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { showFindFeed(false);});
 	
 	
 	function createFinishingUpRow(postModel) {
@@ -380,6 +422,10 @@
 							Ti.API.info('At least one post besides the finishing up row. Insert new post at top');
 							displayPostInFeedWin(fWin, post, true); // post is inserted at top with index 0
 						}
+						// if the public feed has already been initialized just add the new post at the top. Otherwise, it will get displayed as part of the initialization process
+						if (Ti.App.newPublicPost && currentFindFeedWindow().initialized) {
+							displayPostInFindFeed(post, true); // post is inserted at top with index 0							
+						}
 					}
 					return;					
 				}
@@ -443,6 +489,7 @@
 	
 	function beforeSharePost(postModel, successCallback, errorCallback) {
 		beforeSharePostFeedWin(privFeedWindow, postModel, successCallback, errorCallback);
+		Ti.App.mainTabGroup.setActiveTab(0);		
 	}
 	
 
@@ -455,6 +502,31 @@
 		removeFinishingUpRowFeedWin(privFeedWindow,true, post);		
 	}
 	
+	
+	function findRowforPost(tableView, postId) {
+		var section, rows, numRows, i;
+		section = tableView.data[0];
+		rows = section && section.getRows();
+		numRows = rows && rows.length;
+		for (i = 0; i < numRows; i = i +1) {
+			if (rows[i].post.id === postId) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	
+	function deleteRowforPost(tableView, postId) {
+		var rowIdx = -1;
+		if (postId) {
+			rowIdx = findRowforPost(tableView, postId);
+		}
+		if (rowIdx !== -1) {
+			tableView.deleteRow(rowIdx, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT});
+			Ti.API.info("deleteRowforPost: rowIdx " + rowIdx);
+		} 
+	}
 	
 		
 	/*
@@ -474,7 +546,18 @@
 				objname: 'PostSummary',
 				separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE
 		});
-		if (type === 'friendFeed') {
+		
+		fWin.type = type;
+		// window should know how to update its posts
+		fWin.addEventListener('deletePost', function (e) {
+				deleteRowforPost(tableView, e.postId);
+		});
+		tableView.addEventListener('postlayout', function (e) {
+				if (fWin.type === 'friendFeed') {
+					handleEmptyFriendsFeed();
+				}
+		});			
+		if (type === 'friendFeed') {	
 			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('friendsFeed');
 			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });
 			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(); });		
@@ -487,7 +570,9 @@
 		tableView.flipped = false;
 		fWin.add(tableView);
 		fWin.table = tableView;
-		fWin.setRightNavButton(refreshBtn);												
+		fWin.setRightNavButton(refreshBtn);
+		// go to a push model to refresh public feed windows. just show when switching tabs instead of forcing a rebuild everytime 
+		fWin.initialized = false;												
 		return fWin;
 	}
 		
@@ -502,6 +587,7 @@
 	exports.clearFeed = clearFeed;
 	exports.showFindFeed = showFindFeed;	
 	exports.showFriendsFeed = showFriendsFeed;
+	exports.handleEmptyFriendsFeed = handleEmptyFriendsFeed;
 	exports.beforeSharePostFeedWin = beforeSharePostFeedWin;
 	exports.afterSharePostFeedWin = afterSharePostFeedWin;
 	exports.displayPostInFeedWin = displayPostInFeedWin;
@@ -515,5 +601,6 @@
 	exports.resizeToPlatform = resizeToPlatform;
 	exports.getNeedsUpdate = getNeedsUpdate;
 	exports.setNeedsUpdate = setNeedsUpdate;
+	exports.dismissGettingStartedOverlay = dismissGettingStartedOverlay;
 
 } ());
