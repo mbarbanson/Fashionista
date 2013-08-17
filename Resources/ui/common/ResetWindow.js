@@ -26,7 +26,7 @@ function checkemail(emailAddress) {
 		Flurry;
 	acs = require('lib/acs');
 	Notifications = require('ui/common/notifications');
-	Flurry = require('ti.flurry');		
+	Flurry = require('sg.flurry');		
 						
 	function createResetWindow() {
 		var win, 

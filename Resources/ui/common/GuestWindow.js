@@ -8,7 +8,7 @@
 function createGuestWindow() {
 	'use strict';
 	var acs = require('lib/acs'),
-		Flurry = require('ti.flurry'),
+		Flurry = require('sg.flurry'),
 		ThumbnailsWindow,
 		ApplicationTabGroup,
 		LoginWindow,

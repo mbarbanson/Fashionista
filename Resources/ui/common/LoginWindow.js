@@ -12,7 +12,7 @@
 		Flurry;
 	acs = require('lib/acs');
 	Notifications = require('ui/common/notifications');
-	Flurry = require('ti.flurry');		
+	Flurry = require('sg.flurry');		
 						
 	function createLoginWindow(action, cb, containingTab) {
 		var isLoginAction, 

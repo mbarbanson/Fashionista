@@ -22,7 +22,7 @@
 		
 	function displayNews (win) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser();
 		Ti.API.info("displaying all notifications received by current user");
 		Flurry.logEvent('displayNews', {'username': currentUser.username, 'email': currentUser.email});	
@@ -35,7 +35,7 @@
 	
 	function hideNews (win) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser();
 		Ti.API.info("displaying all notifications received by current user");
 		Flurry.logEvent('hideNews', {'username': currentUser.username, 'email': currentUser.email});	
@@ -44,7 +44,7 @@
 	
 	function hideMe(win) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser();		
 		if (win.profileView) {
 			win.profileView.vsible = false;
@@ -58,7 +58,7 @@
 	
 	function displayMe (win) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			ProfileView = require('ui/common/ProfileView'),
 			currentUser = acs.currentUser(),
 		    profileView,
@@ -96,7 +96,7 @@
 	
 	function hideFriends(win) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser(),
 			friendsView = win.friendsView;		
 		/*
@@ -136,7 +136,7 @@
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			InviteView = require('ui/common/InviteView'),
 			friendsView,
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser(),			
 		    findFriendsLabel, 
 		    inviteTable,
@@ -199,7 +199,7 @@
 	
 	function showSettingsWindow(index) {
 		var ProfileView = require('ui/common/ProfileView'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser(),
 			settingsWin = privSettingsWindow,
@@ -240,7 +240,7 @@
 	function createSettingsWindow() {
 		// title control
 		var acs = require('lib/acs'),
-			//Flurry = require('ti.flurry'),
+			//Flurry = require('sg.flurry'),
 			ProfileView = require('ui/common/ProfileView'),
 			//currentUser = acs.currentUser(),
 			newsTitle = Ti.Locale.getString('news'),

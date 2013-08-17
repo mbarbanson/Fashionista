@@ -10,7 +10,7 @@
 	// call this before initNotification so that the event handlers are defined before the events are fired
 	function initNotificationHandlers () {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			FeedWindow = require('ui/common/FeedWindow'),
 			PostView = require('ui/common/PostView');
 		Ti.API.info("calling initSubscriptions to setup event handlers");
@@ -76,7 +76,7 @@
 	function approvedFriendRequestHandler (appBadge, message) {
 			Ti.API.info("executing approvedFriendRequestHandler");
 			var acs = require('/lib/acs'),
-				Flurry = require('ti.flurry'),			
+				Flurry = require('sg.flurry'),			
 				requesters = [],
 				currentUser = acs.currentUser(),
 				FeedWindow = require('ui/common/FeedWindow');
@@ -97,7 +97,7 @@
 	function approveFriendRequest (requesterId, appBadge, message) {
 			Ti.API.info("executing approveFriendRequest handler");
 			var acs = require('/lib/acs'),
-				Flurry = require('ti.flurry'),
+				Flurry = require('sg.flurry'),
 				requesters = [],
 				currentUser = acs.currentUser(),
 				FeedWindow = require('ui/common/FeedWindow'),
@@ -125,7 +125,7 @@
 	
 	function newLikeHandler (postId, senderId, message, appBadge) {
 			var acs = require('/lib/acs'),
-				Flurry = require('ti.flurry'),			
+				Flurry = require('sg.flurry'),			
 				FeedWindow = require('ui/common/FeedWindow'),
 				currentUser = acs.currentUser();
 			Ti.API.info("handling new like " + message + " Updating likes count ");
@@ -164,7 +164,7 @@
 	function newCommentHandler (postId, senderId, message, appBadge) {
 		var mainTabGroup = Ti.App.mainTabGroup,
 			tab = mainTabGroup.tabs[0], // friendfeed tab
-			Flurry = require('ti.flurry'),		
+			Flurry = require('sg.flurry'),		
 			FeedWindow = require('ui/common/FeedWindow'),
 			PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
@@ -212,7 +212,7 @@
 	
 	function registerNotificationCallback (e) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),		
+			Flurry = require('sg.flurry'),		
 			appBadge = Titanium.UI.iPhone.getAppBadge(),
 			badge = e.data.badge,
 			inBackground = e.data.inBackground,
@@ -276,7 +276,7 @@
 	
 	// should be called after we have a logged in user
 	function initNotifications () {
-		var Flurry = require('ti.flurry'),
+		var Flurry = require('sg.flurry'),
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser();		
 

@@ -26,16 +26,18 @@
 		Ti.API.info("showPostComments");
 		var CommentsView = require('ui/common/CommentsView'),
 			PostView = require('ui/common/PostView'),
-			row;
+			row, success = false;
 		if (tableView) {
 			tableView.displayComments = true; 
 			row = PostView.createPostView (post);
 			PostView.setPostViewEventHandlers (row);
-			PostView.populatePostView(containingTab, row, true);
-			tableView.appendRow(row);
-			CommentsView.createCommentsView(row, comments);
-			if (newComment) {
-				CommentsView.inputComment(row);
+			success = PostView.populatePostView(containingTab, row, true);
+			if (success) {
+				tableView.appendRow(row);
+				CommentsView.createCommentsView(row, comments);
+				if (newComment) {
+					CommentsView.inputComment(row);
+				}				
 			}			
 		}
 	}

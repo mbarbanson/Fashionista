@@ -107,7 +107,7 @@
 	function createChangePictureDialog(imgView, callback) {
 	
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			isAndroid = Ti.Platform.osname === 'android',
 			currentUser = acs.currentUser(),
 			actionDialogOpts,

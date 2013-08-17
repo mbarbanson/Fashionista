@@ -7,16 +7,17 @@
     <property name="acs-oauth-key-development" type="string">3N74de2Kv8fvjQ4bQX23U7PznKFhTqrh</property>
     <property name="acs-api-key-development" type="string">VtBOemkWS2i8oF8ky5Zw72RlLnRaRRov</property>
     <deployment-targets>
+        <target device="tizen">false</target>
         <target device="mobileweb">false</target>
         <target device="iphone">true</target>
         <target device="ipad">true</target>
-        <target device="android">false</target>
+        <target device="android">true</target>
         <target device="blackberry">false</target>
     </deployment-targets>
-    <sdk-version>3.0.0.GA</sdk-version>
-    <id>com.3pmrevolution.fashionist</id>
+    <sdk-version>3.1.1.GA</sdk-version>
+    <id>com.threepmrevolution.fashionist</id>
     <name>Fashionist</name>
-    <version>1.0007</version>
+    <version>1.0008</version>
     <publisher>monique</publisher>
     <url>http://3pmrevolution.com</url>
     <description>social shopping</description>
@@ -55,7 +56,9 @@
     </mobileweb>
     <modules>
         <module platform="commonjs" version="2.3.0">ti.cloud</module>
-        <module platform="android" version="2.0.7">ti.cloudpush</module>
-        <module platform="iphone">ti.flurry</module>
+        <module platform="android">facebook</module>
+        <module platform="iphone">facebook</module>
+        <module platform="android">sg.flurry</module>
+        <module platform="iphone">sg.flurry</module>
     </modules>
 </ti:app>

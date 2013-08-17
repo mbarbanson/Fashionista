@@ -437,7 +437,7 @@
 	
 	function createProfileWindow(user, parentWin) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser(),
 			isSameUser = (user.id === currentUser.id),
 			addFriendBtn,
@@ -484,7 +484,7 @@
 		
 	function displayUserProfile(containingTab, user) {
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			ProfileView = require('ui/common/ProfileView'),
 			profileWin,
 			currentUser = acs.currentUser();

@@ -146,6 +146,7 @@
 	 */
 	function populatePostView (containingTab, row, displayComments, photoBlob) {
 		var acs = require('lib/acs'),
+			Flurry = require('sg.flurry'),
 			MoreActionDialog = require('/ui/common/moreActionDialog'),
 			CommentsView = require('ui/common/CommentsView'),
 			ProfileView = require('ui/common/ProfileView'),
@@ -159,7 +160,9 @@
 			avatarImg = IMG_BASE + 'custom_tableview/user.png',
 			labelUserName,
 			labelDetails,
-			imgView, photoUrls = row.post.photo.urls,
+			imgView,
+			post = row.post, 
+			photoUrls = post.photo && post.photo.urls,
 			img, clickHandler,
 			imgW,
 			imgH,
@@ -193,7 +196,9 @@
 						}					
 					}
 					else {
-						alert("no photo in post!");
+						Flurry.logEvent('noPhotoInPost', {'caption': post.content})
+						Ti.API.info("no photo in post!");
+						return false;
 					}
 				}
 				else {
@@ -334,7 +339,7 @@
 								color:'#222',
 								autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (row.post.content === Ti.Locale.getString('nocaption') ? '' : unescape(row.post.content)),
+								text: (post.content === Ti.Locale.getString('nocaption') ? '' : unescape(post.content)),
 								wordWrap : true,
 								horizontalWrap : true,
 								ellipsize: true,															
@@ -388,7 +393,7 @@
 				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});	
 			}
 	
-			return row;
+			return true;
 	}
 	
 
@@ -427,13 +432,17 @@
 	 * displayPostSummaryView
 	 */
 	function displayPostSummaryView (containingTab, post) {
-		var row = createPostView(post);
+		var row = createPostView(post), success = false;
 		
 		Ti.API.info('display post summary: create and populate a row from current post ');
-		populatePostView(containingTab, row, false);
-		setPostViewEventHandlers (row);
-		
-		return row;
+		success = populatePostView(containingTab, row, false);
+		if (success) {
+			setPostViewEventHandlers (row);			
+			return row;			
+		}
+		else {
+			return null;
+		}
 	}
 
 

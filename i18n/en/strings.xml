@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <resources>
-	<string name="login">Login</string>	
-	<string name="logout">Logout</string>	
-	<string name="signup">Sign Up</string>
+	<string name="login">Sign In</string>
+	<string name="loginWinTitle">Let's sign you in</string>	
+	<string name="logout">Sign out</string>	
+	<string name="signup">Register</string>
+	<string name="signupWinTitle">Create Your Account</string>
+	<string name='resetPasswordWinTitle'>Request Password Reset</string>
+	<string name='forgotPassword'>forgot your password?</string>
+	<string name='resetLinkSent'>Check your email in a few minutes for instructions on how to reset your password</string>
+	<string name='agreeToTerms'>By creating an account, I accept Fashionist's Terms of Service and Privacy Policy</string>	
 	<string name="fashionista">Fashionist</string>
-	<string name="ok">Ok</string>
+	<string name="ok">OK</string>
+	<string name="cancel">Cancel</string>
+	<string name="deletePostConfirmation">Are you sure you want to delete this post?</string>	
+	<string name="confirmationPrompt">Please Confirm</string>		
 	<string name="home">home</string>
 	<string name="search">search</string>
 	<string name="post">post</string>
@@ -24,12 +33,12 @@
 	<string name="shareWindow">Share</string>
 	<string name="listWindow">Select Friends</string>
 	<string name="contactsWindow">Select Contacts</string>
-	<string name="welcome_message">Welcome to Fashionist, your private fashion network!</string>
+	<string name="welcome_message">Let's get fashionistic!</string>
 	<string name="findFriendsMessage">Would you like to find which of your facebook friends are also using Fashionist? We will not share your information with anyone.</string>
 	<string name="findFriendsTitle">Fashionist is more fun with friends.</string>
 	<string name="noPhotosTitle">You haven't posted any photos yet</string>
 	<string name="noPhotosMsg">Take a photo or choose one from your camera roll. Click one of the buttons below to get started!</string>
-	<string name="noFindPostTitle">Your Find Feed is Empty</string>
+	<string name="noFindPostTitle">Your Public Feed is Empty</string>
 	<string name="noFindPostMsg">Tag a photo #findexact or #findsimilar and post it to get help finding what you want from our community.</string>
 	<string name="firstuser">You are the first of your friends to use Fashionist. Kudos! Tell your friends to download Fashionist now.</string>
 	<string name="firstContact">We didn't find any fashionist users in your contacts. If you know the name, email or username of a user, look them up directly instead.</string>	
@@ -68,7 +77,10 @@
 	<string name="format_fashionist">Your name is %s</string>
 	<string name="find">Find</string>
 	<string name="friendsFeed">Home</string>
-	<string name="publicFeed">Explore</string> 
+	<string name="publicFeed">Explore</string>
+	<string name="explorePublicFeed">Explore public posts</string>
+	<string name="fillProfile">Fill out your profile</string>	
+	<string name="createPost">Post your latest find</string>		 
 	<string name="camera">Camera</string>
 	<string name="gallery">Gallery</string>
 	<string name="userProfile">Profile</string>

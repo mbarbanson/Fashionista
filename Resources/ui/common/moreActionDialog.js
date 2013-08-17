@@ -47,7 +47,7 @@
 	function createMoreDialog(containingTab, post, imgView) {
 	
 		var acs = require('lib/acs'),
-			Flurry = require('ti.flurry'),
+			Flurry = require('sg.flurry'),
 			isAndroid = Ti.Platform.osname === 'android',
 			currentUser = acs.currentUser(),
 			ownsPost = (post.user.id === currentUser.id),

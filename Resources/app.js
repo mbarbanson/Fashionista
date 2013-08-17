@@ -22,7 +22,7 @@ if (Ti.version < 2.0 ) {
 	//determine platform and form factor and render approproate components
 	var acs = require('lib/acs'),
 		Cloud = require('ti.cloud'),
-		Flurry = require('ti.flurry'),
+		Flurry = require('sg.flurry'),
 		FB = require('lib/facebook'),
 		ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		osname = Ti.Platform.osname,
@@ -34,17 +34,21 @@ if (Ti.version < 2.0 ) {
 		accessToken,
 		GuestWindow = require('ui/common/GuestWindow'),
 		showGuestWindow,
-		AppWindow;
+		AppWindow,
+		appKey = 'D82FTRKTYMS9SJKWHT6P';
 
 
 	// Flurry initialization
-	Flurry.debugLogEnabled = true;
-	Flurry.eventLoggingEnabled = true;	
-	Flurry.initialize('D82FTRKTYMS9SJKWHT6P' /* FASHIONIST APP KEY*/);	
+	Flurry.secureTransport(true); //use https to send request to make them more safe
+	Flurry.logUncaughtExceptions(true); //logs exception in objective-c code
+	Flurry.crashReportingEnabled(true); //enable crash reporting	
+	Flurry.startSession(appKey);
+	Flurry.setContinueSessionMillis(10000);
+	Flurry.setReportLocation(true);
+	Flurry.setUseHttps(true);
+	Flurry.setCaptureUncaughtExceptions(true);		
 	Flurry.reportOnClose = true;
-	Flurry.sessionReportsOnPauseEnabled = true;
-	Flurry.secureTransportEnabled = false;
-	Flurry.logAllPageViews();
+	
 		
 	// test out logging to developer console, formatting and localization
 	Ti.API.info(String.format("%s%s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));

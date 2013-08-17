@@ -7,7 +7,7 @@
 	'use strict';
 	
 	var acs = require('lib/acs'),
-		Flurry = require('ti.flurry'),	
+		Flurry = require('sg.flurry'),	
 		CameraView = require('/ui/common/CameraView'),
 		SettingsWindow = require('/ui/common/SettingsWindow'),
 		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),

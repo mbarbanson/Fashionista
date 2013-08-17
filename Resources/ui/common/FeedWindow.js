@@ -46,7 +46,7 @@
 			tableView = fWin.table,
 			tabGroup;
 			
-		if (tableView) {
+		if (tableView && row) {
 			if (insertAtTop) {
 				Ti.API.info("insert row at top of feed window");
 				if (tableView.data && tableView.data.length > 0) {
@@ -68,6 +68,9 @@
 				tabGroup.open({transition: Titanium.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
 				Ti.API.info("Flipped tabgroup open");
 			}
+		}
+		else {
+			Ti.API.info("failed to display new post! Likely because of corrupted data on the backend");
 		}
 	}
 	
