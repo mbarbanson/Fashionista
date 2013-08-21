@@ -1,4 +1,4 @@
-/*
+/**
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
@@ -44,7 +44,7 @@
 			currentUser = acs.currentUser(),
 			row = PostView.displayPostSummaryView(fWin.containingTab, post),
 			tableView = fWin.table,
-			tabGroup;
+			tabGroup = null;
 			
 		if (tableView && row) {
 			if (insertAtTop) {
@@ -265,7 +265,8 @@
 		if (tableView && !findFeedWin.translucentOverlay) {
 			if (!tableView.data || tableView.data.length === 0) {
 				// no photos in friend feed, show public feed									
-				mainTabGroup.setActiveTab(1);									
+				mainTabGroup.setActiveTab(1);
+				mainTabGroup.tabs[1].fireEvent('focus');									
 				// this is the first time the user is using fasghionist. provide some guidance
 				showGettingStartedOverlay(currentFindFeedWindow());																						
 			}			
@@ -391,8 +392,8 @@
 	function findRowIndex(row, tableView) {
 		var section, rows, numRows, i;
 		section = tableView.data[0];
-		rows = section.getRows();
-		numRows = section.getRowCount();
+		rows = section && section.getRows();
+		numRows = section ? section.getRowCount() : 0;
 		for (i = 0; i < numRows; i = i +1) {
 			if (rows[i] === row) {
 				return i;
@@ -409,8 +410,8 @@
 			fRow, numRows, i;
 		if (tableView && tableView.data && tableView.data.length >= 0) {
 			section = tableView.data[0];
-			rows = section.getRows();
-			numRows = rows.length;
+			rows = section && section.getRows();
+			numRows = (rows && rows.length) || 0;
 			for (i = 0; i < numRows; i = i + 1) {
 				fRow = rows[i];
 				if (fRow.className === 'finishingUp') {
@@ -510,7 +511,7 @@
 		var section, rows, numRows, i;
 		section = tableView.data[0];
 		rows = section && section.getRows();
-		numRows = rows && rows.length;
+		numRows = (rows && rows.length) || 0 ;
 		for (i = 0; i < numRows; i = i +1) {
 			if (rows[i].post.id === postId) {
 				return i;

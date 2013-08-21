@@ -42,7 +42,7 @@ function createGuestWindow() {
 	ThumbnailsWindow = require('ui/common/ThumbnailsWindow');
 	thumbnailsWindow = ThumbnailsWindow.createThumbnailsWindow();
 	ThumbnailsWindow.refreshThumbnails();
-	Flurry.logEvent('GuestPageThumbnailsVisible')
+	Flurry.logEvent('GuestPageThumbnailsVisible');
 	//  crate a tab group with a single tab to hold the thubnail window stack
 	guestTabGroup = Ti.UI.createTabGroup();
 	tab1 = Ti.UI.createTab({

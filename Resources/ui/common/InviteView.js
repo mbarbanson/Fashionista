@@ -65,8 +65,6 @@
 			notifyAddedFriends = function (userIdList) {
 							        acs.newFriendNotification(userIdList, notificationSuccess);
 								},			
-
-
 			displayContactsOnFashionist = function(contacts, fashionBuddies) {
 				var contactsWin, 
 					rightButton, 
@@ -92,6 +90,8 @@
 					isFriend = function (contact, buddies) {
 									return friendIndex(contact, buddies) !== buddies.length;
 								},
+					// since we're allowing adding and removing by checking off the contacts that were checked on,
+					// adding and removing contacts one by one
 					selectContact = function (contact, add) {
 						var contactsToAdd = [contact.id];						
 						if (add) {
@@ -99,7 +99,7 @@
 							//contactsList.push(contact.id);
 							acs.addFriends(contactsToAdd, function (e) {
 															fashionBuddies.push (contact); 
-															notifyAddedFriends (contactsToAdd);
+															notifyAddedFriends (contact.id.toString());
 															});	
 						}
 						else {
@@ -113,7 +113,8 @@
 																notifyRemovedFriends (contactsToAdd);
 															});	
 						}
-					},								
+					},
+					// not used for now since we add/remove as contacts are selected/unselected								
 					addSelectedContacts = function () {
 						var acs = require('lib/acs'),
 							friendsToAdd, 
@@ -239,79 +240,28 @@
 								parentWin.remove(activityIndicator);								
 							}
 						},
-			fashionBuddiesFilter = function (fbFriends) {acs.getFriendsList(function (fashionBuddies) {callback(fbFriends, fashionBuddies);});},
+			fashionBuddiesFilter = function (fbFriends) {
+				acs.getFriendsList(function (fashionBuddies) {
+					callback(fbFriends, fashionBuddies);
+					});
+				},
 			//facebook integration
 			FB = require('lib/facebook'),
-			errorCB = function () {
+			cleanupCB = function () {
 				activityIndicator.hide();
 				parentWin.remove(activityIndicator);				
 			},			 
 			authCB = function() {
 				Ti.API.info("facebook authorize callback");
-				social.findFBFriends(fashionBuddiesFilter, errorCB);
+				social.findFBFriends(fashionBuddiesFilter, cleanupCB);
 			};
 			
 		parentWin.add(activityIndicator);
 		activityIndicator.show();	
 	    // user has been prompted to request friends once, don't prompt until next time the app is started
 		acs.setHasRequestedFriends(true);			
-		FB.authorize(authCB, errorCB);		
+		FB.authorize(authCB, cleanupCB);		
 	}
-	/*
-	function inviteFBFriendsPromptBeforeAction(window, action) {
-		var acs = require('lib/acs'),
-			//inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
-			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
-			//window = inviteTable.window,
-			rightButton,
-			hasFriends = function (fList) { return fList.length > 0; },
-			getFriendsSuccessCallback = function (fList) {
-				// no friends yet! prompt to select and add friends
-				if (!hasFriends(fList) && !acs.getHasRequestedFriends()) {
-					  var dialog = Ti.UI.createAlertDialog({
-									    cancel: 0,
-									    persistent: true,
-									    buttonNames: ['Not Now', 'Yes'],
-									    message: Ti.Locale.getString('findFriendsMessage'),
-									    title: Ti.Locale.getString('findFriendsTitle')
-									  });
-									  dialog.addEventListener('click', function(e){
-									    if (e.index === 1){
-											//inviteFBFriendsRow.fireEvent('click', {});
-											inviteFBFriendsHandler(window);
-									    }
-									    else {
-											Ti.API.info('The button ' + e.index + ' was clicked');
-										    // user has been prompted to request friends once, move on until next time the app is started
-											acs.setHasRequestedFriends(true);
-											action();
-									    }
-										if (window) {
-											activityIndicator.hide();
-											window.setRightNavButton(rightButton);
-										}
-									  });
-									  dialog.show();				
-				}
-				// user already has friends, go ahead and share
-				else if (action) { 
-					if (window) {
-						activityIndicator.hide();
-						window.setRightNavButton(null);
-						window.setRightNavButton(rightButton);
-					}					
-					action();
-				}
-			};
-			if (window) {
-				rightButton = window.getRightNavButton();
-				window.setRightNavButton(activityIndicator);
-				activityIndicator.show();
-			}
-			
-			acs.getFriendsList(getFriendsSuccessCallback);
-	}
-*/
 
 
 	function inviteFriendsBeforeShare(tab, action) {
@@ -381,10 +331,9 @@
 		var inviteTable, inviteFBFriendsRow, inviteContactsRow, userSearchRow;
 		
 		inviteTable = Ti.UI.createTableView({
-			//bottom: 40,
 			top: offsetTop || 140,
 			height : Ti.UI.SIZE,
-			rowHeight : 40,
+			rowHeight : 50,
 			width : '90%',
 			left : '5%',
 			borderRadius : 5,
@@ -405,14 +354,18 @@
 			color : 'black',
 			backgroundColor : '#fff',
 			top: 10,
-			height : 30,
+			height : Ti.UI.FILL,
 			left : 0,
 			font: {fontSize: 16, fontWeight: 'bold'},
-			//leftImage: '/images/f_logo.png',
+			leftImage: '/images/f_logo_small.png',
 			hasChild : true
 		});
 	
-		inviteFBFriendsRow.addEventListener('click', function (e) { inviteFBFriendsHandler (parentWin); } );
+		inviteFBFriendsRow.addEventListener('click', 
+						function (e) { 
+											inviteFBFriendsHandler (parentWin);
+									}
+						);
 	
 		inviteContactsRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
@@ -420,12 +373,12 @@
 			color : 'black',
 			backgroundColor : '#FFF',
 			top : 10,
-			height : 30,
+			height : Ti.UI.FILL,
 			left : 0,
 			font: {fontSize: 16, fontWeight: 'bold'},			
 			//borderWidth: 1,
 			//borderColor: 'black',
-			//leftImage: '/images/contacts-medium.png',
+			leftImage: '/images/contacts-small.png',
 			hasChild : true
 		});
 		
@@ -438,10 +391,10 @@
 			color : 'black',
 			backgroundColor : '#FFF',
 			top : 10,
-			height : 30,
+			height : Ti.UI.FILL,
 			left : 0,
 			font: {fontSize: 16, fontWeight: 'bold'},			
-			//leftImage: '/images/contacts-medium.png',
+			leftImage: '/icons/111-user@2x.png',
 			hasChild : true
 		});
 		

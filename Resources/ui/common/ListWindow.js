@@ -39,7 +39,9 @@ function createListWindow(doneHandler) {
 function createListTable(tableData) {
 	'use strict';
 	return Ti.UI.createTableView({
-		data: tableData
+		data: tableData,
+		rowHeight: 50
+		//separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE		
 	});
 }
 
@@ -74,18 +76,19 @@ function populateList(listWindow, friends, check, clickHandler) {
 			title = friend.email;
 		}			
 		avatar = acs.getUserAvatar(friend);
-		avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 30, width: 30});
+		avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 50, width: 50});
 		row = Ti.UI.createTableViewRow ({
 			className: 'friendRow',			
 			title: friend.first_name + " " + friend.last_name,
-			indentionLevel: 3, 
+			indentionLevel: 4,
+			//leftImage: avatar, 
 			id: friend.id, 
-			//leftImage: avatarView,
 			hasCheck: check(friend.id),
 			action: actionFun,
-			font: {fontSize: defaultFontSize + 2, fontWeight:'bold'}			
+			font: {fontSize: defaultFontSize + 2, fontWeight:'bold'},
+			height: Ti.UI.FILL			
 		});	
-		row.add(avatarView)
+		row.add(avatarView);
 		tableData.push(row);				
 	}
 	table = createListTable(tableData);

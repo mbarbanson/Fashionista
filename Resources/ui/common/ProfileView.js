@@ -453,7 +453,9 @@
 						title: Ti.Locale.getString('fashionista'), 
 						message: Ti.Locale.getString('friendRequestSent') 
 					});
-				dialog.show();				
+				dialog.show();
+				addFriendBtn.setTitle(Ti.Locale.getString('requestPending'));
+				addFriendBtn.setEnabled(false);				
 			};
 			notifyAddedFriends = function (userIdList) {
 						Flurry.logEvent('notifyAddedFriends', {'friendIdList': userIdList}); 

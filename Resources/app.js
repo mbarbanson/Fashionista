@@ -91,7 +91,7 @@ if (Ti.version < 2.0 ) {
 	    Ti.App.isInForeground = true;
 	    if (appBadge > 0 ) {
 			Ti.API.info("Fashionist resumed with appBadge " + appBadge);
-			Ti.App.fireEvent('refreshFeedWindow', {});
+			//Ti.App.fireEvent('refreshFeedWindow', {});
 	    }
 	});
 	

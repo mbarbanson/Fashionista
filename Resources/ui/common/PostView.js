@@ -15,12 +15,17 @@
 // Like a post
 	function likePost(row) {
 		var post,
+			likeBtn = row.likeBtn,
 			social = require('lib/social'),
 			Likes = require('lib/likes'),		
 			createLikeCallback;
 		if (row && row.post) {
 			post = row.post;
 			Ti.API.info("You liked a post: " + post.content);
+			// put code here to change the color of the like icon
+			//likeBtn.backgroundColor = '#5D3879';
+			likeBtn.image = '/icons/purple_heart.png';
+			likeBtn.setEnabled(false);			
 			createLikeCallback = function (like) {
 													social.newLikeNotification(post);
 													if (row.updateLikesCountHandler) {
@@ -62,8 +67,10 @@
 	
 // Flag	
 	function flagPost(row) {
-		var post = row.post;		
-		alert("Flag post as inappropriate" + post.content);
+		var Flurry = require('sg.flurry'),
+			post = row.post;
+		Flurry.logEvent('flaggedPostAsInappropriate');		
+		alert("Flagged post as inappropriate" + post.content);
 	}
 	
 //Find
@@ -73,7 +80,9 @@
 			imageUrl = row.photo.slice(7),
 			suffix = "&btnG=Search+by+image",
 			webview = Titanium.UI.createWebView({url:baseUrl + imageUrl}),
-			window = Titanium.UI.createWindow();
+			window = Titanium.UI.createWindow(),
+			Flurry = require('sg.flurry');
+		Flurry.logEvent('priceTagBtnClicked');
 	    window.add(webview);
 	    window.containingTab = containingTab;
 	    containingTab.open(window);
@@ -196,7 +205,7 @@
 						}					
 					}
 					else {
-						Flurry.logEvent('noPhotoInPost', {'caption': post.content})
+						Flurry.logEvent('noPhotoInPost', {'caption': post.content});
 						Ti.API.info("no photo in post!");
 						return false;
 					}
@@ -219,9 +228,9 @@
 				row.imgView = imgView;
 
 				clickHandler = function (e) {
-									likePost(row);				
+									likePost(row);
 								};
-				imgView.addEventListener('click', clickHandler);
+				imgView.addEventListener('dblclick', clickHandler);
 
 			}
 
@@ -245,13 +254,13 @@
 								
 			labelUserName = Ti.UI.createButton({
 								color: '#576996',
-								background: 'white',
+								backgroundColor: 'white',
 								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
 								ellipsize: false,
 								title: author.username,
 								left: 40, top: -30,
-								width:80, height: 20
+								width:90, height: 20
 								});
 			labelUserName.addEventListener('click', function (e) {
 														ProfileView.displayUserProfile(containingTab, author);
@@ -261,13 +270,13 @@
 			if (!displayComments) {
 
 				findBtn = Ti.UI.createButton({
-									//image: '/icons/light_heart.png',
-									title: Ti.Locale.getString('find'),
-									color: 'white',
+									image: '/icons/172-pricetag.png',
+									//title: Ti.Locale.getString('find'),
+									//color: 'white',
 									backgroundColor: '#5D3879',
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
-									left: 135, top:-20,
-									width:50,
+									left: 150, top:-20,
+									width:30,
 									height: 30
 									});
 				row.add(findBtn);
@@ -281,7 +290,7 @@
 									});
 				row.add(likeBtn);
 				
-				row.likeButton = likeBtn;
+				row.likeBtn = likeBtn;
 				
 				commentBtn = Ti.UI.createButton({
 									image: '/icons/light_comment.png',
@@ -304,12 +313,14 @@
 				findBtn.addEventListener('click', function(e) { findSource(containingTab, row);});
 				likeBtn.addEventListener('click', function(e) { likePost(row);});
 				
-				moreBtn.addEventListener('click', function(e) { 
+				moreBtn.addEventListener('click', function(e) {
+														Flurry.logEvent('moreBtnClicked'); 
 														MoreActionDialog.createMoreDialog(containingTab, row.post, imgView);
 													});
 	
 				commentBtn.addEventListener('click', 
 											function(e) {
+													Flurry.logEvent('commentBtnClicked');
 													if (!displayComments) {
 														displayRowDetails(containingTab, row, true);
 													}

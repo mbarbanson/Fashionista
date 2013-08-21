@@ -139,6 +139,7 @@
 	function displayComment(row, comment) {
 		/*jslint regexp: true */
 		var	PostView = require('ui/common/PostView'),
+			ProfileView = require('ui/common/ProfileView'),		
 			commenter = comment.user ? comment.user.username + ": " : "",
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
 			label = Ti.UI.createTextArea({
@@ -155,6 +156,19 @@
 						color: 'black',
 						visible: true	
 			}),
+			authorBtn = Ti.UI.createButton({
+								color: '#576996',
+								backgroundColor: 'white',
+								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
+								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
+								ellipsize: false,
+								title: commenter,
+								left: 5, top: 0,
+								width:Ti.UI.SIZE, height: 20
+								}),			
+			urlRe = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9.\-]+|(?:www.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9.\-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[\-\+=&;%@.\w_]*)#?(?:[.\!\/\\w]*))?)/,		
+			url = null,
+			numLines = 0,
 			clickHandler = function(event) {
 					var tableSection = row.getParent(),
 						tableView = tableSection ? tableSection.getParent() : null,
@@ -163,10 +177,7 @@
 					if (containingTab && url) {
 						openInWebView(containingTab, url);	
 					}			
-			},
-			urlRe = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9.\-]+|(?:www.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9.\-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[\-\+=&;%@.\w_]*)#?(?:[.\!\/\\w]*))?)/,		
-			url,
-			numLines;
+			};
 
 			url = comment.content.match(urlRe);
 			if (url) {
@@ -176,9 +187,16 @@
 			// very rough approx, quick and dirty for now
 			numLines = Math.floor(label.value.length / maxCharsPerLine) + 1;
 			label.height = singleLineHeight * numLines;
-			row.add(label);	
+			authorBtn.top = -label.height + (defaultFontSize + 2)/2;
+			row.add(label);
+			row.add(authorBtn);	
 			label.addEventListener('singletap', clickHandler);
-			label.addEventListener ('click', clickHandler);					
+			label.addEventListener ('click', clickHandler);		
+			authorBtn.addEventListener('click', function (e) {
+														var containingTab = Ti.App.mainTabGroup.getActiveTab();
+														ProfileView.displayUserProfile(containingTab, comment.user);
+														});
+						
 	}
 	
 	
@@ -201,7 +219,8 @@
 								objname: 'PostDetails',
 								backgroundColor: 'white',
 								color: 'black',
-								visible: true				
+								visible: true
+								//separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE												
 							});
 							
 			if (tableView) {
@@ -219,4 +238,4 @@
 	exports.createPostCommentsTable = createPostCommentsTable;
 	exports.inputComment = inputComment;	
 	
-} ())
+} ());

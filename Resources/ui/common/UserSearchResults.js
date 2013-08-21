@@ -109,14 +109,19 @@
 					person: user,
 					hasCheck: isFriend(user, fashionBuddies),   // we need to check whether person is currently a friend
 					action: actionFun,
-					height: Ti.UI.SIZE,
+					height: Ti.UI.FILL,
 					font: {fontSize:defaultFontSize, fontWeight:'bold'}
 				});
 			}
 			return rows;
 		};
 		
-		tableview = Ti.UI.createTableView({height: '70%',top: '0%'});
+		tableview = Ti.UI.createTableView({
+			height: '70%',
+			top: '0%', 
+			rowHeight: 50 
+			//separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE
+			});
 		
 		tableview.setData(makeTable());
 	

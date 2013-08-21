@@ -6,6 +6,7 @@
 (function () {
 	'use strict';
 	var Cloud = require('ti.cloud'),
+		fb = require('facebook'),
 		authAction = null,
 		loginListener = null,
 		logoutListener = null;
@@ -16,7 +17,8 @@
 			user = author || acs.currentUser(),
 			extAccounts = user.external_accounts,
 			extAccount = null,
-			numAccounts = extAccounts.length, i;
+			numAccounts = (extAccounts && extAccounts.length) || 0, 
+			i;
 		for (i= 0; i < numAccounts ; i = i + 1) {
 			extAccount = extAccounts[i];
 			if (extAccount.external_type === "facebook") {
@@ -53,7 +55,7 @@
 	
 	
 	function getAllFBFriends() {
-		Ti.Facebook.requestWithGraphPath('me/friends', {}, 'GET', function(e) {
+		fb.requestWithGraphPath('me/friends', {}, 'GET', function(e) {
 			var result = null;
 		    if (e.success) {
 		        Ti.API.info("getAllFBFriends Success! Returned from FB: " + e.result);
@@ -83,7 +85,7 @@
 }
 	 */	
 	function getFBProfilePic(successCallback, errorCallback) {
-		Ti.Facebook.requestWithGraphPath('me?fields=picture', {}, 'GET', function(e) {
+		fb.requestWithGraphPath('me?fields=picture', {}, 'GET', function(e) {
 			var result = null,
 				picData, isSilhouette,
 				imgView;
@@ -97,14 +99,14 @@
 					successCallback("http://fbcdn-profile-a.akamaihd.net/hprofile-ak-ash3/49136_1646556920_4385_q.jpg");
 				}
 		        else {
-					alert("getFBProfilePic wasn't able to retrieve a profile picture from Facebook " + result);
+					Ti.API.info("getFBProfilePic wasn't able to retrieve a profile picture from Facebook " + result);
 		        }
 		    } else {
 		        if (e.error) {
 					if (errorCallback) {errorCallback();}
-		            alert(e.error);
+		            Ti.API.info(e.error);
 		        } else {
-		            alert("Unknown result");
+		            Ti.API.info("Unknown result");
 		        }
 		    }
 		    return;
@@ -130,7 +132,8 @@
 
 	function linktoFBAccount(successCallback, errorCallback) {
 		var acs = require('lib/acs'),
-			token = Ti.Facebook.accessToken;
+			Flurry = require('sg.flurry'),
+			token = fb.accessToken;
 		Cloud.SocialIntegrations.externalAccountLink({
 		    type: 'facebook',
 		    token: token
@@ -148,7 +151,13 @@
 					successCallback(e);
 			    }		            
             } else {
-		        alert(((e.error && e.message) || JSON.stringify(e)));
+				if (e.code === 400) {
+					alert(((e.error && e.message) || JSON.stringify(e)));	
+				}
+				else {
+					Ti.API.info(((e.error && e.message) || JSON.stringify(e)));
+				}
+		        Flurry.logEvent('externalAccountLinkError', {'message': e.message, 'error': e.error});
 	            if (errorCallback) {
 					Ti.API.info(" Calling linktoFBAccount errorCallback");
 					errorCallback();
@@ -160,8 +169,8 @@
 
 	
 	function logout() {
-		if (Ti.Facebook.getLoggedIn()) {
-			Ti.Facebook.logout();
+		if (fb.getLoggedIn()) {
+			fb.logout();
 			Ti.API.info("Logged out of facebook");
 		}
 		else {
@@ -189,7 +198,7 @@
 		            'first name: ' + user.first_name + '\\n' +
 		            'last name: ' + user.last_name);
 		    } else {
-		        Ti.API.info('Error. Failed to unlink to Facebook account: ' + Ti.Facebook.uid +  ' \\n' +
+		        Ti.API.info('Error. Failed to unlink to Facebook account: ' + fb.uid +  ' \\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 		    }
 	        if (callback) {
@@ -215,27 +224,28 @@
 	
 	
 	function initFBIntegration(actionCB, cleanupCB) {
+		var fb = require('facebook');
 		// configure facebook options
-		Ti.Facebook.appid = '355242507898610';
-		Ti.Facebook.permissions = ['email'];   //'publish_stream', 'offline_access', 'xmpp_login']; // Permissions your app needs
+		fb.appid = '355242507898610';
+		fb.permissions = ['email'];   //'publish_stream', 'offline_access', 'xmpp_login']; // Permissions your app needs
 		// set to false to use SSO on device if facebook app is present. defaults to true
-		Ti.Facebook.forceDialogAuth = false;
+		fb.forceDialogAuth = false;
 		
 		authAction = actionCB;
 		// cleanup after ourselves to make sure we can call initFBIntegration several times without problems
 		if (loginListener) {
-			Ti.Facebook.removeEventListener('login', loginListener);
+			fb.removeEventListener('login', loginListener);
 		}
 		loginListener = function(e) {
 		    if (e.success) {
-		        Ti.API.info('Logged In to Facebook ' + Titanium.Facebook.getLoggedIn() + ". fb access token " + Ti.Facebook.getAccessToken());
+		        Ti.API.info('Logged In to Facebook ' + fb.getLoggedIn() + ". fb access token " + fb.getAccessToken());
 				if (!hasLinkedFBAccount()) {
 					Ti.API.info("current user doesn't have a linked facebook account.");
-			        linktoFBAccount(function () { authAction(e.data); }, function () { Ti.Facebook.logout(); });
+			        linktoFBAccount(function () { authAction(e.data); }, function () { fb.logout(); });
 				}
-				else {
-					if (authAction) { authAction(e.data); }
-				}
+				//else {
+				//	if (authAction) { authAction(e.data); }
+				//}
 	            // e.data: { link, id, name, first_name, last_name, gender, timezone, locale, updated_time, username}
 	            // updating user photo seems to be broken
 	            populateNameAndPicFromFB(e.data);		              
@@ -243,12 +253,12 @@
 		        Ti.API.info("Facebook login listener. Error result from authorize " + e.error);
 		        // log out of Facebook to reset all cached info
 		        if (hasLinkedFBAccount()) {
-					unlinkFBAccount(function () { Ti.Facebook.logout(); });
+					unlinkFBAccount(function () { fb.logout(); });
 				}
 				else {
-					Ti.Facebook.logout();					
+					fb.logout();					
 				}	
-		        Ti.Facebook.authorize();
+		        fb.authorize();
 		        Ti.API.info("Trying facebook authorize again");
 		    } else if (e.cancelled) {
 		        Ti.API.info("Facebook login cancelled");
@@ -257,19 +267,19 @@
 				cleanupCB();
 			}
 		};
-		Ti.Facebook.addEventListener('login', loginListener);
+		fb.addEventListener('login', loginListener);
 		if (logoutListener) {
-			Ti.Facebook.removeEventListener('logout', logoutListener);
+			fb.removeEventListener('logout', logoutListener);
 		}		
 		logoutListener = function(e) {
-		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.getLoggedIn + ' access token ' + Ti.Facebook.getAccessToken());
+		    Ti.API.info('Logged out of facebook ' + Titanium.Facebook.getLoggedIn + ' access token ' + fb.getAccessToken());
 		};
-		Ti.Facebook.addEventListener('logout', logoutListener);
+		fb.addEventListener('logout', logoutListener);
 	}
 	
 
 	// make sure user is authorized for facebook before executing action
-	// if the current user has a linked fb account already, logging into Fashionist will have already updated Ti.Facebook.accessToken
+	// if the current user has a linked fb account already, logging into Fashionist will have already updated fb.accessToken
 	function authorize(actionCB, cleanupCB) {
 		var acs = require('lib/acs'),
 			currentUser = acs.currentUser(),
@@ -287,14 +297,14 @@
 			authAction = actionCB;
 		}
 		
-		Ti.API.info("Facebook login status " + Ti.Facebook.loggedIn + " FB access token " + Ti.Facebook.accessToken);
+		Ti.API.info("Facebook login status " + fb.loggedIn + " FB access token " + fb.accessToken);
 		// if user is not logged in to Facebook, call authorize
-		if (!Ti.Facebook.getLoggedIn() || !facebookUID) {
+		if (!fb.getAccessToken() || !facebookUID) {
 			Ti.API.info("Calling facebook authorize");
-			Ti.Facebook.authorize();	
+			fb.authorize();	
 		}
 		else {
-			Ti.API.info("Current user is already logged in to facebook. calling actionCB directly");
+			Ti.API.info("Current user already authorized Fashionist to access their facebook public profile and friends. Calling actionCB directly");
 			authAction();
 		}
 	}

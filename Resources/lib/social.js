@@ -71,11 +71,11 @@
 		            ((e.error && e.message) || JSON.stringify(e)));
 				if (Facebook.hasLinkedFBAccount()) {
 					Ti.API.info("unlink facebook account and log out of Facebook to reset facebook token");			
-					Facebook.unlinkFBAccount(function () {if (Ti.Facebook.getLoggedIn()) {Facebook.logout();}});	
+					Facebook.unlinkFBAccount(function () {if (fb.getLoggedIn()) {Facebook.logout();}});	
 				}
 				else {
-					if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); }
-					Ti.Facebook.authorize();
+					if (fb.getLoggedIn()) { fb.logout(); }
+					fb.authorize();
 				}			       
 		    }
 		});	

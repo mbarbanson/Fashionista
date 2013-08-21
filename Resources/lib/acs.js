@@ -9,8 +9,7 @@
 	// a couple local variables to save state
 	//FIXME define a userModel with additional properties like hasRequestedFriends etc...
 	var privCurrentUser = null,
-		Cloud = require('ti.cloud'),
-		Flurry = require('ti.flurry');
+		Cloud = require('ti.cloud');
 
 	function checkInternetConnection (e) {
 		if (e.message.indexOf("'null' is not an object (evaluating 'n.trim')") > -1) {
@@ -45,8 +44,129 @@
 		return null;
 	}
 	
+
+	function subscribeNotifications (channelName) {
+		var Flurry = require('sg.flurry');
+		
+		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
+		Cloud.PushNotifications.subscribe({
+		    channel: channelName,
+		    device_token: Ti.Network.remoteDeviceUUID,
+		    type: 'ios'
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('Successfully subscribed current user to push notifications for channel ' + channelName);
+				Flurry.logEvent('Cloud.PushNotifications.subscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
+		        
+		    } else {
+		        Ti.API.info('Error:\\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('subscribeNotifications', {'message': e.message, 'error': e.error});			            
+	            checkInternetConnection(e);
+		    }
+		});
+	}
+	
+	function unsubscribeNotifications (channelName, callback) {
+		var Flurry = require('sg.flurry');
+		
+		//if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) { return; }
+		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
+		
+		Cloud.PushNotifications.unsubscribe({
+		    //channel: channelName,
+		    device_token: Ti.Network.remoteDeviceUUID
+		}, function (e) {
+		    if (e.success) {
+		        Ti.API.info('unsusbcribe Notifications Success');
+				Flurry.logEvent('Cloud.PushNotifications.unsubscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
+		        
+		    } else {
+		        Ti.API.info('Error:  unsubscribeNotifications \\n' +
+		            ((e.error && e.message) || JSON.stringify(e)));
+				Flurry.logEvent('unsubscribeNotifications', {'message': e.message, 'error': e.error});			            
+		            
+	            checkInternetConnection(e);
+		    }
+		    // always execute callback, whether or not we successfully unregistered
+		    if (callback) { callback(); }
+		});		
+	}	
+
+	// login, logout
+	function login(username, password, successCallback, errorCallback) {
+		var Flurry = require('sg.flurry');
+		
+		Cloud.Users.login({
+		    login: username,
+		    password: password
+		}, function (e) {
+		    if (e.success) {
+				var Notifications = require('ui/common/notifications');
+
+				privCurrentUser = e.users[0];
+				setHasRequestedFriends(false);
+				if (!privCurrentUser.custom_fields) {
+					privCurrentUser.custom_fields = {};
+				}
+				Cloud.sessionId = e.meta.session_id;
+				// save the new session id
+				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
+				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Cloud.sessionId);
+				// once we have a logged in user, setup Notifications	
+				Notifications.initNotifications();	
+				successCallback(e);
+				
+				Flurry.logEvent('login', {'username': username, 'result': 'success'});			            
+				
+		    } else {
+		        Ti.API.info('Error: acs.login e.success ' + e.success + '\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
+		        alert(e.message);
+				Flurry.logEvent('login', {'errorMessage': e.message, 'error': e.error});			            
+		        
+	            checkInternetConnection(e);
+		        privCurrentUser = null;
+				errorCallback(e.message);
+		    }
+		});	
+	}
+	
+	// logout user and cancel all subscriptions so APS can stop sending notifications to this user
+	function logout(callback) {
+		var Facebook = require('/lib/facebook'),
+			fb = require('facebook'),
+			Flurry = require('sg.flurry'),
+			doLogout = function () {
+							Cloud.Users.logout(
+								function (e) {
+									    if (e.success) {
+											Ti.API.info("Logged out of Fashionist and unsubscribed from fashionist channel");
+									        privCurrentUser = null;
+									        // clear session id
+											Ti.App.Properties.setString('sessionId', null);
+											// invoke UI callback
+									        if (callback) { callback(e); }
+									        
+											Flurry.logEvent('logout', {'result': 'success'});			            
+									        
+									    }
+									    else {
+											Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
+											Flurry.logEvent('logout', {'errorMessage': e.message, 'error': e.error});			            
+											
+								            checkInternetConnection(e);
+									    }
+								}
+							);				
+					};
+		// do not log out of facebook to clear fb.loggedIn etc...Next time user logs in Fashionist should remember that it was authroized already	
+		//if (fb.getLoggedIn()) { fb.logout(); fb.setUid(null);}			
+		unsubscribeNotifications("fashionist", doLogout);
+	}	
+	
 	
 	function updateUser(dict) {
+		var Flurry = require('sg.flurry');
 		Cloud.Users.update(dict, 
 				function (e) {
 			    if (e.success) {
@@ -75,7 +195,8 @@
 	
 		
 	
-	function createUser (username, email, password, successCallback, errorCallback) { 
+	function createUser (username, email, password, successCallback, errorCallback, doNotRepeat) {
+		var Flurry = require('sg.flurry'); 
 		// ACS API requires password & confirm, but we do the checking elsewhere so use the same for both here
 		Cloud.Users.create({
 			username: username,
@@ -99,8 +220,13 @@
 				Notifications.initNotifications();	
 				
 		        successCallback(e);
-		    } else {
-				Ti.API.info('Error create User failed' + e.message);
+		    } else if (e.code === 400 && Ti.App.sessionId && !doNotRepeat) {
+				logout();
+				createUser(username, email, password, successCallback, errorCallback, true);	
+		    }
+		    else
+		    {
+				Ti.API.error('Error create User failed' + e.message);
 				alert(e.message);
 	            checkInternetConnection(e);
 				privCurrentUser = null;
@@ -114,6 +240,7 @@
 	
 	// get user details 
 	function getCurrentUserDetails(successCallback, errorCallback) {
+		var Flurry = require('sg.flurry');
 		Cloud.Users.showMe(function (e) {
 	        if (e.success) {
 	            var user = e.users[0],
@@ -123,6 +250,7 @@
 	                'username: ' + user.username + '\\n' +
 	                'email: ' + user.email + '\\n');
 	            setCurrentUser(user);
+	            Flurry.setUserID(user.username);
 				setHasRequestedFriends(false);
 				Notifications.initNotifications();					
 				if (successCallback) { successCallback();}
@@ -143,7 +271,8 @@
 	
 	
 	function queryUsers (query, successCallback, errorCallback, pageNum) {
-		var i, user;
+		var i, user, 
+			Flurry = require('sg.flurry');
 		Cloud.Users.query({
 		    page: pageNum,
 		    per_page: 20,
@@ -170,6 +299,7 @@
 	// may want to pass in a callback from caller later on
 	function createUserPhotoCollection(user, name) {
 		// create a photo collection and add it to the current user's properties
+		var Flurry = require('sg.flurry');		
 	    Cloud.PhotoCollections.create({
 	        name: name
 	    }, function (e) {
@@ -195,6 +325,8 @@
 	
 	// may want to pass in a callback from caller later on
 	function getUserPhotoCollection() {
+		var Flurry = require('sg.flurry');
+		
 		// create a photo collection and add it to the current user's properties
 	    Cloud.PhotoCollections.search({
 	        user_id: currentUserId()
@@ -219,6 +351,7 @@
 	
 	
 	function getUserCollectionIdPhotos(collectionId, callback) {
+		var Flurry = require('sg.flurry');
 		try {
 		    Cloud.PhotoCollections.showPhotos({
 		        page: 1,
@@ -262,6 +395,8 @@
 	
 	
 	function uploadPhoto (image, collectionId, callback) {
+		var Flurry = require('sg.flurry');
+		
 		Cloud.Photos.create({
 	        photo: image,
 	        collection_id: collectionId,
@@ -323,52 +458,12 @@
 		}
 	}
 	
-	function subscribeNotifications (channelName) {
-		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
-		Cloud.PushNotifications.subscribe({
-		    channel: channelName,
-		    device_token: Ti.Network.remoteDeviceUUID,
-		    type: 'ios'
-		}, function (e) {
-		    if (e.success) {
-		        Ti.API.info('Successfully subscribed current user to push notifications for channel ' + channelName);
-				Flurry.logEvent('Cloud.PushNotifications.subscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
-		        
-		    } else {
-		        Ti.API.info('Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-				Flurry.logEvent('subscribeNotifications', {'message': e.message, 'error': e.error});			            
-	            checkInternetConnection(e);
-		    }
-		});
-	}
-	
-	function unsubscribeNotifications (channelName, callback) {
-		//if (!Ti.Network.remoteNotificationsEnabled || !Ti.Network.remoteDeviceUUID) { return; }
-		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
-		
-		Cloud.PushNotifications.unsubscribe({
-		    //channel: channelName,
-		    device_token: Ti.Network.remoteDeviceUUID
-		}, function (e) {
-		    if (e.success) {
-		        Ti.API.info('unsusbcribe Notifications Success');
-				Flurry.logEvent('Cloud.PushNotifications.unsubscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
-		        
-		    } else {
-		        Ti.API.info('Error:  unsubscribeNotifications \\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-				Flurry.logEvent('unsubscribeNotifications', {'message': e.message, 'error': e.error});			            
-		            
-	            checkInternetConnection(e);
-		    }
-		    // always execute callback, whether or not we successfully unregistered
-		    if (callback) { callback(); }
-		});		
-	}
+
 	
 
 	function notifyUsers (channel, message, userIds, customPayload, successCallback) {
+		var Flurry = require('sg.flurry');
+		
 		// if not device is not registered for push notifications
 		// or running on simulator, bail
 		Ti.API.info("sending push notification " + message + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
@@ -424,7 +519,9 @@
 								"badge": badge,
 								"sound": "default",
 								"alert": msg
-							};
+							},
+			Flurry = require('sg.flurry');
+
 		notifyUsers('fashionist', msg, userIds, customPayload, successCallback);
 		Flurry.logEvent('newNotification', {'message': msg, 'to': userId, 'type': 'friend_request', 'result': 'success'});
 		
@@ -436,66 +533,56 @@
 		// or running on simulator, bail
 		Ti.API.info("sending push notification " + notificationContent + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
 		//always send notification from current user
-		var username = '@' + privCurrentUser.username, //post.user.username,
+		var Flurry = require('sg.flurry'),
+			username = '@' + privCurrentUser.username, //post.user.username,
 			message = username + notificationContent,
 			userId = currentUserId(),
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
-			paramDict;
-			
-		if (notifyAllFriends) {
-			paramDict = {
-			response_json_depth: 2,
-		    channel: 'fashionist',
-		    friends: true,
-		    payload: {
-			    "f": {
+			fPayload = {
 						"pid": post.id, 
 						"uid": userId, //post.user.id, 
 						"type": notificationType
-						},
-				"badge": badge,
-				"sound": "default",							
-			    "alert" : message.substr(0, 119)
-			}};			
-		}
-		else {
-			paramDict = {
-			response_json_depth: 2,
-		    channel: 'fashionist',
-		    to_ids: user_ids || post.user.id,    
-		    payload: {
-			    "f": {
-						"pid": post.id, 
-						"uid": userId, //post.user.id, 
-						"type": notificationType
-						},
+					},
+			customPayload = {
+			    "f": fPayload,
 				"badge": badge,
 				"sound": "default",							
 			    "alert" : message.substr(0,119)
-			}};			
+			},
+			notifyCallback = function (e) {
+			    if (e.success) {
+			        Ti.API.debug('Successfully notified friends ' + (notifyAllFriends ? 'all' : user_ids || userId) + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
+			        Ti.UI.iPhone.setAppBadge(badge);			        
+			    } else {
+			        Ti.API.error('Error:\\n' +
+			            ((e.error && e.message) || JSON.stringify(e)));
+					Flurry.logEvent('newNotification', {'errorMessage': e.message, 'error': e.error});			             
+					checkInternetConnection(e);
+			    }
+			},
+			paramDict;
+			
+		if (!fPayload) {
+			alert("noPayload");
+		}			
+		if (notifyAllFriends) {
+			paramDict = {
+					response_json_depth: 2,
+				    channel: 'fashionist',
+				    friends: true,
+				    payload: customPayload
+			    };			
 		}
-				
-		Cloud.PushNotifications.notify(
-			paramDict, function (e) {
-		    if (e.success) {
-		        Ti.API.info('Successfully notified friends ' + user_ids || post.user.id + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
-		        Ti.UI.iPhone.setAppBadge(badge);
-				Flurry.logEvent('newNotification', 
-									{
-										'message': paramDict.payload['alert'],
-										'to': userId, 
-										'type': paramDict.payload['f']['type'],
-										'result': 'success'
-									});
-		        
-		    } else {
-		        Ti.API.info('Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-				Flurry.logEvent('newNotifications', {'errorMessage': e.message, 'error': e.error});			            
-		            
-				checkInternetConnection(e);
-		    }
-		});
+		else {
+			paramDict = {
+				response_json_depth: 2,
+			    channel: 'fashionist',
+			    to_ids: user_ids || userId,    
+			    payload: customPayload
+		    };			
+		}
+		Ti.API.info('calling Cloud.PushNotifications.notify, notificationType: ' + notificationType);		
+		Cloud.PushNotifications.notify(paramDict, notifyCallback);
 	}
 	
 	
@@ -554,78 +641,14 @@
 
 
 
-	// login, logout
-	function login(username, password, successCallback, errorCallback) {
-		Cloud.Users.login({
-		    login: username,
-		    password: password
-		}, function (e) {
-		    if (e.success) {
-				var Notifications = require('ui/common/notifications');
-
-				privCurrentUser = e.users[0];
-				setHasRequestedFriends(false);
-				if (!privCurrentUser.custom_fields) {
-					privCurrentUser.custom_fields = {};
-				}
-				Cloud.sessionId = e.meta.session_id;
-				// save the new session id
-				Ti.App.Properties.setString('sessionId', Cloud.sessionId);			
-				Ti.API.info("Successfully Logged in " + privCurrentUser.username + " saved sessionId " + Cloud.sessionId);
-				// once we have a logged in user, setup Notifications	
-				Notifications.initNotifications();	
-				successCallback(e);
-				
-				Flurry.logEvent('login', {'username': username, 'result': 'success'});			            
-				
-		    } else {
-		        Ti.API.info('Error: acs.login e.success ' + e.success + '\n' + (e && ((e.error && e.message) || JSON.stringify(e))));
-		        alert(e.message);
-				Flurry.logEvent('login', {'errorMessage': e.message, 'error': e.error});			            
-		        
-	            checkInternetConnection(e);
-		        privCurrentUser = null;
-				errorCallback(e.message);
-		    }
-		});	
-	}
-	
-	// logout user and cancel all subscriptions so APS can stop sending notifications to this user
-	function logout(callback) {
-		var Facebook = require('/lib/facebook'),
-			doLogout = function () {
-							Cloud.Users.logout(
-								function (e) {
-									    if (e.success) {
-											Ti.API.info("Logged out of Fashionist and unsubscribed from fashionist channel");
-									        privCurrentUser = null;
-									        // clear session id
-											Ti.App.Properties.setString('sessionId', null);
-											// invoke UI callback
-									        callback(e);
-									        
-											Flurry.logEvent('logout', {'result': 'success'});			            
-									        
-									    }
-									    else {
-											Ti.API.info("Logout call returned " + e.success + " logoutCallback will not be executed.");
-											Flurry.logEvent('logout', {'errorMessage': e.message, 'error': e.error});			            
-											
-								            checkInternetConnection(e);
-									    }
-								}
-							);				
-					};
-		// log out of facebook to clear Ti.Facebook.loggedIn etc...	
-		if (Ti.Facebook.getLoggedIn()) { Ti.Facebook.logout(); Ti.Facebook.setUid(null);}			
-		unsubscribeNotifications("fashionist", doLogout);
-	}
 
 	
 	// Friends
 	function removeFriends (friends, callback) {
 		Ti.API.info('acs.removeFriends');
-		var userIdList = friends.join();
+		var userIdList = friends.join(),
+			Flurry = require('sg.flurry');
+
 		Cloud.Friends.remove({
 		    user_ids: userIdList,
 		    response_json_depth: 2
@@ -646,7 +669,8 @@
 	
 	function addFriends (friends, callback) {
 		Ti.API.info('acs.addFriends');
-		var userIdList = friends.join();
+		var userIdList = friends.join(),
+			Flurry = require('sg.flurry');
 		Cloud.Friends.add({
 		    user_ids: userIdList,
 		    response_json_depth: 2
@@ -669,7 +693,9 @@
 	// friends: list of user ids to approve as friends
 	function approveFriendRequests (friends, successCallback, errorCallback) {
 		Ti.API.info('acs.approveFriendRequests ' + friends.toString());
-		var userIdList = friends.join();
+		var userIdList = friends.join(),
+			Flurry = require('sg.flurry');
+
 		Cloud.Friends.approve({
 		    user_ids: userIdList,
 		    response_json_depth: 2
@@ -693,6 +719,8 @@
 	
 	function getFriendRequests (callback) {
 		Ti.API.info('acs.getFriendRequests');
+		var Flurry = require('sg.flurry');
+		
 		Cloud.Friends.requests(function (e) {
 		    if (e.success) {
 				var friendRequests = e.friend_requests;
@@ -710,7 +738,9 @@
 
 
 	function getFriendsList (successCallback, cleanupAction) {
-		var userId = currentUserId();
+		var userId = currentUserId(),
+			Flurry = require('sg.flurry');
+		
 		Cloud.Friends.search({
 		    user_id: userId,
 		    response_json_depth: 2
@@ -738,7 +768,8 @@
 	// Posts
 	function addPost (postModel, pPhoto, successCallback, errorCallback) {
 
-		var sync_sizes = 'iphone', 
+		var Flurry = require('sg.flurry'),
+			sync_sizes = 'iphone', 
 		    pBody = postModel.caption,
 		    tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
@@ -779,6 +810,8 @@
 	
 	function showPost(savedPostId, successCallback, errorCallback) {
 		Ti.API.info("get updated values for post " + savedPostId);
+		var Flurry = require('sg.flurry');
+		
 		Cloud.Posts.show({
 		    post_id: savedPostId,
 		    response_json_depth: 2
@@ -810,6 +843,8 @@
 	
 	function updatePost (postId, pTitle, pBody, callback) {
 		Ti.API.info("Update post..." + pBody + " callback " + callback);
+		var Flurry = require('sg.flurry');
+		
 		Cloud.Posts.update({
 			post_id: postId,
 		    content: pBody,
@@ -834,6 +869,8 @@
 	
 	
 	function removePost(savedPostId, successCallback, errorCallback) {
+		var Flurry = require('sg.flurry');
+		
 		Cloud.Posts.remove({
 		    post_id: savedPostId
 		}, function (e) {
@@ -853,7 +890,8 @@
 	
 	function getFriendsPosts (friendsList, postAction, cleanupAction) {
 		Ti.API.info('acs.getFriendsPosts');
-		var getID = function(user) { return user.id;},
+		var Flurry = require('sg.flurry'),
+			getID = function(user) { return user.id;},
 			usersList = friendsList;
 		usersList.splice(usersList.length, 0, privCurrentUser);
 		Cloud.Posts.query({
@@ -895,6 +933,7 @@
 	// query on tags
 	function getPublicPosts (postAction, cleanupAction) {
 		Ti.API.info('acs.getPublicPosts');
+		var Flurry = require('sg.flurry');
 
 		Cloud.Posts.query({
 		    page: 1,
@@ -956,6 +995,8 @@
 // email
 
 function sendWelcome(email, successCallback, errorCallback) {
+	var Flurry = require('sg.flurry');
+	
 	Flurry.logEvent('Cloud.Emails.send', { 'email': email.value });		
 	Cloud.Emails.send({
 	    template: 'welcome',
@@ -977,6 +1018,8 @@ function sendWelcome(email, successCallback, errorCallback) {
 
 
 function sendResetPasswordLink(email, successCallback, errorCallback) {
+	var Flurry = require('sg.flurry');
+	
 	Flurry.logEvent('Cloud.Users.sendResetPasswordLink', { 'email': email });
 	Cloud.Users.requestResetPassword({
 	    //template: 'resetPassword',

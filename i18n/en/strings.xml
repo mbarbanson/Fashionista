@@ -57,7 +57,8 @@
 	<string name="searchByEmail">Or look up a user by email address</string>	
 	<string name="searchByUsername">Look up a user by username</string>	
 	<string name="search">Search</string>
-	<string name="addFriend">Add Friend</string>	
+	<string name="addFriend">Add Friend</string>
+	<string name="requestPending">Request Pending</string>		
 	<string name="userSearchTitle">People Search</string>
 	<string name="searchResultsTitle">Select User</string>
 	<string name="infoSearchResults">Select one of the results and click 'Add Friend' to send a friend request to the selected user.</string>	

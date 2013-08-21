@@ -8,8 +8,9 @@
 function createContactsWindow(doneHandler) {
 	'use strict';
 	var done = Titanium.UI.createButton({
-				style: Titanium.UI.iPhone.SystemButtonStyle.DONE,
-				title: 'Add All'
+				//style: Titanium.UI.iPhone.SystemButtonStyle.DONE,
+				//title: 'Add All'
+				systemButton : Ti.UI.iPhone.SystemButton.DONE
 		}),
 		win = Ti.UI.createWindow({
 			backgroundColor: '#ddd',
@@ -57,7 +58,7 @@ function populateContactsInviteList (contactsWin, contacts, fashionBuddies, cont
 		currentUser = acs.currentUser(),
 		android = (Ti.Platform.osname === 'android'),
 		// getting all from Android is very slow...
-		activityIndicator,
+		activityIndicator = null,
 		makeTable, tableview;
 	if (android) {
 		activityIndicator = Ti.UI.createActivityIndicator({
@@ -97,16 +98,16 @@ function populateContactsInviteList (contactsWin, contacts, fashionBuddies, cont
 					title = contact.first_name + ' ' + contact.last_name;	
 				}
 				avatar = acs.getUserAvatar(contact);
-				avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 30, width: 30});
-				
+				avatarView = Ti.UI.createImageView({image: avatar, left: 0, height: 50, width: 50});
 				row = Ti.UI.createTableViewRow({
 					className: 'friendRow',
 					title: title,
-					indentionLevel: 3,				
+					//leftImage: avatar,
+					indentionLevel: 4,				
 					person: contact,
 					hasCheck: isFriend(contact, fashionBuddies),   // we need to check whether person is currently a friend
 					action: actionFun,
-					height: Ti.UI.SIZE,
+					height: Ti.UI.FILL,
 					font: {fontSize: defaultFontSize + 2, fontWeight:'bold'}
 				});
 				row.add(avatarView);
@@ -116,7 +117,10 @@ function populateContactsInviteList (contactsWin, contacts, fashionBuddies, cont
 		return rows;
 	};
 	
-	tableview = Ti.UI.createTableView({});
+	tableview = Ti.UI.createTableView({
+		rowHeight: 50 
+		//separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE
+		});
 	
 	tableview.setData(makeTable());
 
