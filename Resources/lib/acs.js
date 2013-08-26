@@ -905,27 +905,52 @@
 		}, function (e) {
 			var i,
 				post,
-				numPosts;
+				numPosts = 0,
+				displayAllPosts, displayRemainingPosts;
 		    if (e.success) {
 				numPosts = e.posts.length;
-				Flurry.logEvent('Cloud.Posts.query', {'usersList': friendsList, 'type': 'friends'});			            
-				
-		        Ti.API.info('Success:\\n' +
-		            'Count: ' + numPosts);
-		         if (numPosts > 0) {
+				displayAllPosts = function () {
 					for (i = 0; i < numPosts ; i = i + 1) {
 					    post = e.posts[i];
 					    if (postAction) { postAction(post); }
-				   }
+				   }					
+				};
+				displayRemainingPosts = function () {
+					for (i = 4; i < numPosts ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+				   }					
+				};				
+				Flurry.logEvent('Cloud.Posts.query success', {'usersList': friendsList, 'type': 'friends'});			            
+				
+		        Ti.API.info('Success:\\n' + 'Count: ' + numPosts);
+		         if (numPosts > 4) {
+					//display first four post
+					for (i = 0; i < 4 ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+					}
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }
+					displayRemainingPosts();
+		         }
+		         else if (numPosts > 0 && numPosts <= 4) {
+					displayAllPosts();
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }
+		         }
+		         else { // handle empty friend feed and stop activity indicator
+					if (cleanupAction) { cleanupAction(); }	
 		         }  
 		    } else {
+				if (cleanupAction) { cleanupAction(); }
 		        Ti.API.info('Error: getFriendsPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
-				Flurry.logEvent('Cloud.Posts.query', {'errorMessage': e.message, 'error': e.error});			            
+				Flurry.logEvent('Cloud.Posts.query error', {'errorMessage': e.message, 'error': e.error});			            
 		            
 	            checkInternetConnection(e);
 		    }
-			if (cleanupAction) { cleanupAction(); }
+//			if (cleanupAction) { cleanupAction(); }
 		});	
 	}
 	
@@ -943,34 +968,51 @@
 		    where: {
 				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag')]}
 		    }
-/*		    
-		    where: {
-		        "$or": [{"tags_array": Ti.Locale.getString('findExactHashTag')}, 
-		                {"tags_array": Ti.Locale.getString('findSimilarHashTag')},
-		                {"tags_array": Ti.Locale.getString('publicHashTag')},
-		                {"$ne": {"tags_array": Ti.Locale.getString('friendsOnlyHashTag')}} ]
-		    }
-		    */
 		}, function (e) {
 			var i,
 				post,
-				numPosts;
+				numPosts = 0,
+				displayAllPosts, displayRemainingPosts;
 		    if (e.success) {
 				numPosts = e.posts.length;
-		        Ti.API.info('Success:\\n' +
-		            'Count: ' + numPosts);
-		         if (numPosts > 0) {
+				displayAllPosts = function () {
 					for (i = 0; i < numPosts ; i = i + 1) {
 					    post = e.posts[i];
 					    if (postAction) { postAction(post); }
-				   }
+				   }					
+				};
+				displayRemainingPosts = function () {
+					for (i = 4; i < numPosts ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+				   }					
+				};			            
+				
+		        Ti.API.info('Success:\\n' + 'Count: ' + numPosts);
+		         if (numPosts > 4) {
+					//display first four post
+					for (i = 0; i < 4 ; i = i + 1) {
+					    post = e.posts[i];
+					    if (postAction) { postAction(post); }
+					}
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }
+					displayRemainingPosts();
 		         }
-				Flurry.logEvent('Cloud.Posts.query', {'type': 'public'});			            
+		         else if (numPosts > 0 && numPosts <= 4) {
+					displayAllPosts();
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }
+		         }
+		         else { // handle empty friend feed and stop activity indicator
+					if (cleanupAction) { cleanupAction(); }	
+		         }
+		         Flurry.logEvent('Cloud.Posts.query success', {'type': 'public'});			            
 		           
 		    } else {
 		        Ti.API.info('Error: getPublicPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
-				Flurry.logEvent('Cloud.Posts.query', {'errorMessage': e.message, 'error': e.error});			            
+				Flurry.logEvent('Cloud.Posts.query error', {'errorMessage': e.message, 'error': e.error});			            
 		            
 	            checkInternetConnection(e);
 		    }

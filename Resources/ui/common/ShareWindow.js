@@ -84,7 +84,7 @@ function createShareWindow(postModel, shareAction) {
 	
 	
 	shareBtn.addEventListener('click', function(e) {
-		shareBtn.hide();
+		shareBtn.setEnabled(false);
 		shareWindow.setRightNavButton(activityIndicator);	
 		activityIndicator.show();	
 				

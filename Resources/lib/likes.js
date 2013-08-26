@@ -53,7 +53,7 @@
 		                'updated_at: ' + review.updated_at);
 		        }
 		        */
-		        callback(e.reviews);
+		        if (callback) {callback(e.reviews);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));

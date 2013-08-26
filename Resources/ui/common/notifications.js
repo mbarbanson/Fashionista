@@ -181,13 +181,13 @@
 			else {
 				Ti.API.info("notification handler called when appBadge is negative " + appBadge);
 			}				
-			//refresh comments count on local and friends' device
-			FeedWindow.showFriendsFeed();
+			//refresh comments count on friends' device
 			if (postId) {
 				if (acs.currentUser() && acs.currentUser().id === senderId) {
 					Ti.API.info("your comment " + message + " has been posted");
 				}
 				else {
+					FeedWindow.showFriendsFeed();
 					Ti.API.info("display post in details window on top of tab " + tab);
 					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(p, true);});						
 				}

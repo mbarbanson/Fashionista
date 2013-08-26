@@ -18,6 +18,9 @@
 	<string name="search">search</string>
 	<string name="post">post</string>
 	<string name="likes">likes</string>
+	<string name="viewAllComments" formatted="false">View all comments</string>	
+	<string name="viewNumComments" formatted="false">View all %1$s comments</string>
+	<string name="addComment" formatted="false">Add a comment</string>
 	<string name="profile">profile</string>
 	<string name="firstName">first name</string>
 	<string name="lastName">last name</string>	

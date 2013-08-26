@@ -8,6 +8,7 @@
 
 (function () {
 	'use strict';
+	Ti.App.maxCommentsInPostSummary = 3;
 	
 	var singleLineHeight = 20,
 		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
@@ -56,12 +57,19 @@
 	function updateCommentsCount (row, updatedPost) {
 		Ti.API.info('update CommentsCount');	
 		var commentsCount = row.commentsCount,
-			count =  (updatedPost.reviews_count || 0) - (updatedPost.ratings_count || 0);
+			count =  (updatedPost.reviews_count || 0) - (updatedPost.ratings_count || 0),
+			commentsCountText = Ti.Locale.getString('addComment');
 		row.post = updatedPost;
 		// Update comment count
-		commentsCount.text = count + ' comments';
-		// force the proxy to update the underlying native object
-		row.commentsCount = commentsCount;	
+		if (count > Ti.App.maxCommentsInPostSummary) {
+			commentsCountText = String.format(Ti.Locale.getString('viewNumComments'), count.toString());	
+		}
+		else {
+			Ti.API.error("no comments right after we added a comment. This shouldn't happen");	
+		}				
+		if (commentsCount) {
+			commentsCount.text = commentsCountText;
+		}	
 	}
 	
 	
@@ -102,9 +110,10 @@
 				    className:'fashionistPost', // used to improve table performance
 					color: 'black',
 					selectionStyle: Titanium.UI.iPhone.TableViewCellSelectionStyle.NONE,
-					backgroundColor: 'white',
-					selectedBackgroundColor:'white',
-				    width:Ti.UI.SIZE,
+					borderWidth: 2,
+					borderRadius: 5,
+					borderColor: '#888',
+				    width:Ti.UI.FILL,
 				    height: Ti.UI.SIZE,
 				    layout: 'vertical'
 					});
@@ -116,7 +125,7 @@
 	/*
 	 * displayPostDetailsView. Do not use this directly in a long lived closure!!! post objects are mutable!!!!!
 	 */
-	function displayPostDetailsFeedView (containingTab, post, newComment) {
+	function displayPostDetailsFeedView (containingTab, row, newComment) {
 		Ti.API.info('show post details');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			detailWindow = DetailWindow.createDetailWindow(containingTab),
@@ -128,27 +137,100 @@
 		else {
 			Ti.API.error("displayPostDetails: currentTab is null");
 		}
-		CommentsView.createPostCommentsTable(detailWindow, post, newComment);
+		CommentsView.createPostCommentsTable(containingTab, detailWindow, row, newComment);
 		return;	
 	}
 	
 	
 	
-	function displayPostDetailsView (containingTab, post, newComment) {
+	function displayPostDetailsView (containingTab, row, newComment) {
 		Ti.API.info('show post details');
-		var FeedWindow = require('ui/common/FeedWindow');
-		displayPostDetailsFeedView(containingTab, post, newComment);	
+		// display in new details window
+		displayPostDetailsFeedView(containingTab, row, newComment);			
 	}	
 
 
 	/*
 	 * displayRowDetails
 	 */
+	function displayLikesDetails (containingTab, row) {
+		Ti.API.info('show row details');
+		var Likes = require('lib/likes'),
+			post = row && row.post,
+			postId = post && post.id;
+		Likes.getPostLikes(postId);
+	}
+		
 	function displayRowDetails (containingTab, row, newComment) {
 		Ti.API.info('show row details');
-		displayPostDetailsView(containingTab, row.post, newComment);		
+		var CommentsView = require('ui/common/CommentsView'),
+			Likes = require('lib/likes');
+		if (newComment) {
+			displayPostDetailsView(containingTab, row, newComment);			
+		}
+		else {
+			CommentsView.displayCommentsInPostView(containingTab, row);
+			//Likes.getPostLikes(postId);	
+		}
 	}
 
+
+	function displayPicture(containingTab, row, photoBlob, numComments) {
+		var Flurry = require('sg.flurry'),
+			post = row && row.post,
+			photoUrls = post.photo && post.photo.urls,
+			img, imgW, imgH, imgView, imgClickHandler, loadHandler;
+			// if photoBlob is null, this was called to display a photo that's already uploaded
+			if (!photoBlob) {
+				if (photoUrls) {
+					if (photoUrls.iphone) {
+						img = photoUrls.iphone;
+						imgW = Ti.App.photoSizes[Ti.Platform.osname][0];
+						imgH = Ti.App.photoSizes[Ti.Platform.osname][1];
+					}
+					else {
+						img = photoUrls.medium_320;
+						imgW = 320;
+						imgH = 480;
+					}					
+				}
+				else {
+					Flurry.logEvent('noPhotoInPost', {'caption': post.content});
+					Ti.API.info("no photo in post!");
+					return false;
+				}
+			}
+			else {
+				img = photoBlob;
+				imgW = photoBlob.width;
+				imgH = photoBlob.height;
+			}
+
+			// images are square. make them fit
+			// first row
+			imgView = Ti.UI.createImageView({
+							image: img,						
+							width:Ti.UI.SIZE, 
+							height:Ti.UI.SIZE
+							});
+			row.add(imgView);
+			row.photo = img;
+			row.imgView = imgView;
+			
+			imgClickHandler = function (e) {
+								likePost(row);
+							};
+			loadHandler = function(e) {
+				if (numComments > 0) {
+					displayRowDetails(containingTab, row, false);
+				}
+				imgView.removeEventListener('postlayout', loadHandler);					
+			};
+			imgView.addEventListener('dblclick', imgClickHandler);
+			//imgView.addEventListener('load', loadHandler);
+			imgView.addEventListener('postlayout', loadHandler);				
+					
+	}
 		
 	/*
 	 * populatePostView
@@ -160,6 +242,7 @@
 			CommentsView = require('ui/common/CommentsView'),
 			ProfileView = require('ui/common/ProfileView'),
 			Facebook = require('lib/facebook'),
+			Likes = require('lib/likes'),
 			IMG_BASE = 'https://github.com/appcelerator/titanium_mobile/raw/master/demos/KitchenSink/Resources/images/',
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),		
 			author = row.post.user,
@@ -171,10 +254,10 @@
 			labelDetails,
 			imgView,
 			post = row.post, 
-			photoUrls = post.photo && post.photo.urls,
-			img, clickHandler,
-			imgW,
-			imgH,
+			//photoUrls = post.photo && post.photo.urls,
+			//img, clickHandler,
+			//imgW,
+			//imgH,
 			postW, postH, postL, postT,
 			labelDate,
 			createdAtDate,
@@ -182,59 +265,23 @@
 			likeBtn,
 			commentBtn,
 			moreBtn,
-			likeIcon, likesCount,
-			commentIcon, commentsCount;
+			likeIcon, 
+			likesCount,
+			commentIcon, commentsCount, 
+			commentsCountText = '',
+			numLikes = row.post.ratings_count || 0,
+			numComments = (post.reviews_count|| 0) - (post.ratings_count || 0);
 
 			if (currentUser.id === author.id) {
 				author = currentUser;
 			}
-
+			
+			// first, show the pic
 			if (!displayComments) {
-				// if photoBlob is null, this was called to display a photo that's already uploaded
-				if (!photoBlob) {
-					if (photoUrls) {
-						if (photoUrls.iphone) {
-							img = photoUrls.iphone;
-							imgW = Ti.App.photoSizes[Ti.Platform.osname][0];
-							imgH = Ti.App.photoSizes[Ti.Platform.osname][1];
-						}
-						else {
-							img = photoUrls.medium_320;
-							imgW = 320;
-							imgH = 480;
-						}					
-					}
-					else {
-						Flurry.logEvent('noPhotoInPost', {'caption': post.content});
-						Ti.API.info("no photo in post!");
-						return false;
-					}
-				}
-				else {
-					img = photoBlob;
-					imgW = photoBlob.width;
-					imgH = photoBlob.height;
-				}
-	
-				// images are square. make them fit
-				// first row
-				imgView = Ti.UI.createImageView({
-								image: img,						
-								width:Ti.UI.SIZE, 
-								height:Ti.UI.SIZE
-								});
-				row.add(imgView);
-				row.photo = img;
-				row.imgView = imgView;
-
-				clickHandler = function (e) {
-									likePost(row);
-								};
-				imgView.addEventListener('dblclick', clickHandler);
-
+				displayPicture(containingTab, row, photoBlob, numComments);				
 			}
-
-			//second row
+	
+			//second row: avatar and name of post athor, find, like, comment and more buttons
 			facebookUID = Facebook.getLinkedFBId(author);
 			
 			if (author.photo && author.photo.processed) {
@@ -311,7 +358,9 @@
 				row.add(moreBtn);
 				
 				findBtn.addEventListener('click', function(e) { findSource(containingTab, row);});
-				likeBtn.addEventListener('click', function(e) { likePost(row);});
+				likeBtn.addEventListener('click', function(e) { 
+					likePost(row);
+					});
 				
 				moreBtn.addEventListener('click', function(e) {
 														Flurry.logEvent('moreBtnClicked'); 
@@ -320,6 +369,8 @@
 	
 				commentBtn.addEventListener('click', 
 											function(e) {
+													// this should help prevent double clicks
+													commentBtn.setEnabled(false);
 													Flurry.logEvent('commentBtnClicked');
 													if (!displayComments) {
 														displayRowDetails(containingTab, row, true);
@@ -327,6 +378,7 @@
 													else {
 														CommentsView.inputComment(row);
 													}
+													commentBtn.setEnabled(true);
 											 }
 										 );
 			}
@@ -359,51 +411,62 @@
 								height: 20
 								});
 			labelDetails.height = singleLineHeight * (labelDetails.text.length / maxCharsPerLine + 1);
-			row.add(labelDetails);
+			row.add(labelDetails);			
 
-			// number of likes
-			likeIcon = Ti.UI.createImageView({
-							image: '/icons/light_heart.png',
-							left:5, top: 5,
-							width:15, height:15
-							});
-			row.add(likeIcon);			
-
-			
-			likesCount = Ti.UI.createLabel({
-								color:'#222',
-								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: (row.post.ratings_count || 0)  + ' likes',
-								left: 30, top: -15,
-								width: 200,
-								height: 15
+			if (!displayComments){
+				// number of likes
+				likeIcon = Ti.UI.createImageView({
+								image: '/icons/light_heart.png',
+								left:5, top: 5,
+								width:15, height:15
 								});
-			row.add(likesCount);
-			row.likesCount = likesCount;
-						
-			// number of comments
-			commentIcon = Ti.UI.createImageView({
-							image: '/icons/light_comment.png',
-							left:5, top: 5,
-							width:15, height:15
-							});
-			row.add(commentIcon);			
-		
-			commentsCount = Ti.UI.createLabel({
-								color:'#222',
-								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
-								text: ((row.post.reviews_count|| 0) - (row.post.ratings_count || 0)) + ' comments',
-								left: 30, top: -15,
-								width: 290,
-								height: 15
-								});
-			row.add(commentsCount);	
-			row.commentsCount = commentsCount;
-			
-			if (!displayComments) {
-				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});	
-			}
+				row.add(likeIcon);			
 	
+				
+				likesCount = Ti.UI.createLabel({
+									color:'#999999',
+									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
+									text: numLikes  + ' likes',
+									left: 30, top: -15,
+									width: 200,
+									height: 15
+									});
+				row.add(likesCount);
+				row.likesCount = likesCount;
+				//if (numLikes > 0) {
+					//displayLikesDetails(containingTab, row);
+				//}
+								
+				// number of comments
+				commentIcon = Ti.UI.createImageView({
+								image: '/icons/light_comment.png',
+								left:5, top: 5,
+								width:15, height:15
+								});
+				row.add(commentIcon);			
+							
+				
+				if (numComments > Ti.App.maxCommentsInPostSummary) {
+					commentsCountText = String.format(Ti.Locale.getString('viewNumComments'), numComments.toString());	
+				}
+				else {
+					commentsCountText = Ti.Locale.getString('addComment');					
+				}
+				
+				commentsCount = Ti.UI.createLabel({
+									color:'#999999',
+									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},
+									text:  commentsCountText, 
+									left: 30, top: -15,
+									width: 290,
+									height: 15
+									});
+				row.add(commentsCount);	
+				row.commentsCount = commentsCount;	
+				// comment add code currently assumes originRow in a post summary row
+				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});							
+			}
+				
 			return true;
 	}
 	

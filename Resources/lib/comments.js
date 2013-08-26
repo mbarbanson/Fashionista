@@ -32,36 +32,41 @@
 	}	
 	
 	
-	function getPostComments (postId, callback) {
-		Cloud.Reviews.query({
-			post_id: postId,
-//			where: {"$and": [{"content": {"$ne" : undefined}}, {"content": {"$ne" : ""}}]},   //, {"rating": {"$ne" : "1"}}
-			where: {"rating": {"$ne" : "1"}},
-		    order: 'created_at',
-		    response_json_depth: 2,			
-		    page: 1,
-		    per_page: 20
-		}, function (e) {
-		    if (e.success) {
-				var numReviews = e.reviews.length;
-		        Ti.API.info('Success getPostComments:\\n' +
-		            'Count: ' + numReviews);
-		        /*    
-		        for (var i = 0; i < e.reviews.length; i++) {
-		            var review = e.reviews[i];
-		            Ti.API.info('id: ' + review.id + '\\n' +
-		                'user: ' + review.user + '\\n' +
-		                'rating: ' + review.rating + '\\n' +
-		                'content: ' + review.content + '\\n' +
-		                'updated_at: ' + review.updated_at);
-		        }
-		        */
-		        callback(e.reviews);
-		    } else {
-		        Ti.API.info('Reviews query Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-		});		
+	function getPostComments (post, callback) {
+		var postId = post && post.id;
+		if (postId) {
+			Cloud.Reviews.query({
+				post_id: postId,
+	//			where: {"$and": [{"content": {"$ne" : undefined}}, {"content": {"$ne" : ""}}]},   //, {"rating": {"$ne" : "1"}}
+				where: {"rating": {"$ne" : "1"}},
+			    order: 'created_at',
+			    response_json_depth: 3,			
+			    page: 1,
+			    per_page: 20
+			}, function (e) {
+			    if (e.success) {
+					var numReviews = e.reviews.length;
+			        Ti.API.info('Success getPostComments:\\n' +
+			            'Count: ' + numReviews);
+			        /*    {}
+			        for (var i = 0; i < e.reviews.length; i++) {
+			            var review = e.reviews[i];
+			            Ti.API.info('id: ' + review.id + '\\n' +
+			                'user: ' + review.user + '\\n' +
+			                'rating: ' + review.rating + '\\n' +
+			                'content: ' + review.content + '\\n' +
+			                'updated_at: ' + review.updated_at);
+			        }
+			        */
+			        if (callback) {
+						callback(e.reviews);
+					}
+			    } else {
+			        Ti.API.info('Reviews query Error:\\n' +
+			            ((e.error && e.message) || JSON.stringify(e)));
+			    }
+			});								
+		}
 	}
 	
 	exports.createComment = createComment;

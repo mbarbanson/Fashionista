@@ -21,15 +21,17 @@
 	}
 	
 
-	// display list of comments for post
-	function showPostComments(containingTab, tableView, post, newComment, comments) {
+	// display detail view of post including picture and list of comments for post
+	function showPostComments(containingTab, tableView, originRow, newComment, comments) {
 		Ti.API.info("showPostComments");
 		var CommentsView = require('ui/common/CommentsView'),
 			PostView = require('ui/common/PostView'),
+			post = originRow.post,
 			row, success = false;
 		if (tableView) {
 			tableView.displayComments = true; 
 			row = PostView.createPostView (post);
+			row.originRow = originRow;
 			PostView.setPostViewEventHandlers (row);
 			success = PostView.populatePostView(containingTab, row, true);
 			if (success) {

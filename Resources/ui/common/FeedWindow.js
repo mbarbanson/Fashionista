@@ -42,14 +42,16 @@
 		var PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser(),
+			sections, section, rows,
 			row = PostView.displayPostSummaryView(fWin.containingTab, post),
 			tableView = fWin.table,
 			tabGroup = null;
 			
 		if (tableView && row) {
+			sections = tableView.getSections();
 			if (insertAtTop) {
 				Ti.API.info("insert row at top of feed window");
-				if (tableView.data && tableView.data.length > 0) {
+				if (sections.length > 0 && sections[0].getRows().length > 0) {
 					Ti.API.info("There's at least one post in the feed window. Insert Before 0");
 					tableView.insertRowBefore(0, row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});	
 				}
@@ -140,7 +142,7 @@
 					fontSize: '30'
 				},					
 				backgroundColor: 'transparent', //'#5D3879',
-				shadowColor: '#5D3879',
+				shadowColor: 'black',
 				shadowOffset: {x:2, y:2},				
 				color: '#FFFFFF',
 				borderRadius: 1,
@@ -263,7 +265,7 @@
 			mainTabGroup = Ti.App.mainTabGroup;
 		// check that we don't already show the getting started overlay
 		if (tableView && !findFeedWin.translucentOverlay) {
-			if (!tableView.data || tableView.data.length === 0) {
+			if (!tableView.data || tableView.data.length === 0 || tableView.data[0].getRows().length === 0) {
 				// no photos in friend feed, show public feed									
 				mainTabGroup.setActiveTab(1);
 				mainTabGroup.tabs[1].fireEvent('focus');									
@@ -336,9 +338,13 @@
 	}
 	
 	
-	Ti.App.addEventListener('refreshFeedWindow', function (e) { showFriendsFeed(false);});
+	Ti.App.addEventListener('refreshFeedWindow', function (e) { 
+		showFriendsFeed(false);
+		});
 	
-	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { showFindFeed(false);});
+	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { 
+		showFindFeed(false);
+		});
 	
 	
 	function createFinishingUpRow(postModel) {
@@ -367,7 +373,7 @@
 		var tableView = fWin.table,
 			fRow = createFinishingUpRow(postModel);
 		if (tableView && tableView.data) {		
-			if (tableView.data.length > 0) {
+			if (tableView.data.length > 0 && tableView.data[0].getRows().length > 0) {
 				Ti.API.info("Feed Window has at least one post already. Adding finishing up row at top");			
 				tableView.insertRowBefore(0, fRow, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});
 			}
@@ -408,7 +414,7 @@
 		var tableView = fWin.table,
 			section, rows, 
 			fRow, numRows, i;
-		if (tableView && tableView.data && tableView.data.length >= 0) {
+		if (tableView && tableView.data && tableView.data.length > 0) {
 			section = tableView.data[0];
 			rows = section && section.getRows();
 			numRows = (rows && rows.length) || 0;
@@ -434,13 +440,13 @@
 					return;					
 				}
 			}
-			Ti.API.info("couldn't find finishing up row in tableView");			
+			Ti.API.error("couldn't find finishing up row in tableView");			
 		}
 		else {
-			Ti.API.info("tableView is empty! ");
+			Ti.API.error("tableView is empty! ");
 		}
 		//something went wrong, refresh the window to clear it up
-		showFriendsFeed();
+		//showFriendsFeed();
 						
 	}
 	
@@ -472,9 +478,9 @@
 		var acs = require('lib/acs'),
 			style = Ti.App.spinnerStyle,
 			image = postModel.photo,
-			imgH = image.height,
-			imgW = image.width,
-			newSize = Ti.App.photoSizes[Ti.Platform.osname],
+			//imgH = image.height,
+			//imgW = image.width,
+			//newSize = Ti.App.photoSizes[Ti.Platform.osname],
 			numFriends = 0,
 			addPostSuccess = function (post) {
 									Ti.API.info("successfully added post " + post.content);
@@ -485,7 +491,7 @@
 									if (errorCallback) { errorCallback(post);}
 								};
 		//resize and fit to screen
-		postModel.photo = image; //resizeToPlatform(image);	image has already been scaled down to 640 * 480										
+		//postModel.photo = image; //resizeToPlatform(image);	image has already been scaled down to 640 * 480										
 		addFinishingUpRowFeedWin(fWin, postModel);
 		acs.addPost(postModel, image, addPostSuccess, addPostError);		
 	}
@@ -529,7 +535,8 @@
 		if (rowIdx !== -1) {
 			tableView.deleteRow(rowIdx, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.LEFT});
 			Ti.API.info("deleteRowforPost: rowIdx " + rowIdx);
-		} 
+		}
+		return rowIdx; 
 	}
 	
 		
@@ -548,15 +555,19 @@
 		}),
 		tableView =  Ti.UI.createTableView ({
 				objname: 'PostSummary',
-				separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE
+				separatorStyle: Titanium.UI.iPhone.TableViewSeparatorStyle.NONE,
+				layout: 'vertical'
 		});
 		
 		fWin.type = type;
 		// window should know how to update its posts
 		fWin.addEventListener('deletePost', function (e) {
-				deleteRowforPost(tableView, e.postId);
+			var rowIdx = deleteRowforPost(tableView, e.postId);
+			if (rowIdx === 0 && fWin.type === 'friendFeed') {
+				handleEmptyFriendsFeed();	
+			}
 		});
-		tableView.addEventListener('postlayout', function (e) {
+		fWin.addEventListener('postlayout', function (e) {
 				if (fWin.type === 'friendFeed') {
 					handleEmptyFriendsFeed();
 				}
