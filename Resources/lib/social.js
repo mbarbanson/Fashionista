@@ -6,12 +6,11 @@
 (function () {
 	'use strict';
 	var Contacts = require('lib/contacts'),
-		FB = require('lib/facebook'),
 		Cloud = require('ti.cloud'),
 		acs = require('lib/acs');
 	
 	function sharePhototoFB (photoBlob, message) {
-
+		var FB = require('lib/facebook');
 		//var message = "Checkout this cool iPhone app that makes shopping more fun";
 		//FIXME move this behind a button
 		//Contacts.fashionistContacts();
@@ -31,9 +30,9 @@
 	}
 	
 	
-	function newCommentNotification (post, commentText) {
+	function newCommentNotification (post, commentText, otherComments) {
 		Ti.API.info('social.newCommentNotification');
-		acs.newCommentNotification(post, commentText);
+		acs.newCommentNotification(post, commentText, otherComments);
 	}
 	
 	
@@ -44,12 +43,14 @@
 
 
 	function chooseFBFriends () {
+		var FB = require('lib/facebook');
 		FB.authorize(function (e) {FB.getAllFBFriends();});
 	}
 	
 	
 	function findFBFriends (successCallback, errorCallback) {
-		var Facebook = require('lib/facebook'),
+		var facebook = require('facebook'),
+			FB = require('lib/facebook'),
 			i;
 		Cloud.SocialIntegrations.searchFacebookFriends(function (e) {
 		    if (e.success) {
@@ -69,13 +70,15 @@
 		    } else {
 		        Ti.API.info('searchFacebookFriends error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
-				if (Facebook.hasLinkedFBAccount()) {
+				if (FB.hasLinkedFBAccount()) {
 					Ti.API.info("unlink facebook account and log out of Facebook to reset facebook token");			
-					Facebook.unlinkFBAccount(function () {if (fb.getLoggedIn()) {Facebook.logout();}});	
+					FB.unlinkFBAccount(function () {if (facebook.getLoggedIn()) {FB.logout();}});	
 				}
 				else {
-					if (fb.getLoggedIn()) { fb.logout(); }
-					fb.authorize();
+					if (facebook.getLoggedIn()) { 
+						facebook.logout(); 
+					}
+					facebook.authorize();
 				}			       
 		    }
 		});	

@@ -6,7 +6,6 @@
 (function () {
 	'use strict';
 	var Cloud = require('ti.cloud'),
-		fb = require('facebook'),
 		authAction = null,
 		loginListener = null,
 		logoutListener = null;
@@ -14,6 +13,7 @@
 	// Facebook graph API
 	function getLinkedFBId(author) {
 		var acs = require('lib/acs'),
+			fb = require('facebook'),		
 			user = author || acs.currentUser(),
 			extAccounts = user.external_accounts,
 			extAccount = null,
@@ -30,7 +30,8 @@
 	
 		
 	function postToWall(photoUrl, message) {
-		var name = Ti.Locale.getString('Fashionist for iPhone'), 
+		var fb = require('facebook'),
+			name = Ti.Locale.getString('Fashionist for iPhone'), 
 			data;
 
 		data = {
@@ -55,6 +56,7 @@
 	
 	
 	function getAllFBFriends() {
+		var fb = require('facebook');
 		fb.requestWithGraphPath('me/friends', {}, 'GET', function(e) {
 			var result = null;
 		    if (e.success) {
@@ -85,6 +87,7 @@
 }
 	 */	
 	function getFBProfilePic(successCallback, errorCallback) {
+		var fb = require('facebook');
 		fb.requestWithGraphPath('me?fields=picture', {}, 'GET', function(e) {
 			var result = null,
 				picData, isSilhouette,
@@ -117,6 +120,7 @@
 	
 	function hasLinkedFBAccount() {
 		var acs = require('lib/acs'),
+			fb = require('facebook'),
 			currentUser = acs.currentUser(),
 			extAccounts = currentUser.external_accounts,
 			extAccount = null,
@@ -133,6 +137,7 @@
 	function linktoFBAccount(successCallback, errorCallback) {
 		var acs = require('lib/acs'),
 			Flurry = require('sg.flurry'),
+			fb = require('facebook'),
 			token = fb.accessToken;
 		Cloud.SocialIntegrations.externalAccountLink({
 		    type: 'facebook',
@@ -169,6 +174,7 @@
 
 	
 	function logout() {
+		var fb = require('facebook');
 		if (fb.getLoggedIn()) {
 			fb.logout();
 			Ti.API.info("Logged out of facebook");
@@ -185,6 +191,7 @@
 	
 	function unlinkFBAccount(callback) {
 		var acs = require('lib/acs'),
+			fb = require('facebook'),
 			currentUser = acs.currentUser(),
 			externalAcct = currentUser.external_accounts[0];
 		Cloud.SocialIntegrations.externalAccountUnlink({
@@ -213,6 +220,7 @@
 	// FB account integration
 	function populateNameAndPicFromFB(fbData) {
 		var acs = require('lib/acs'),
+			fb = require('facebook'),
 			currentUser = acs.currentUser();
 			// if first name or last name is missing, get them from facebook
 		if (!currentUser.first_name || !currentUser.last_name || !currentUser.email) {
@@ -243,9 +251,12 @@
 					Ti.API.info("current user doesn't have a linked facebook account.");
 			        linktoFBAccount(function () { authAction(e.data); }, function () { fb.logout(); });
 				}
-				//else {
-				//	if (authAction) { authAction(e.data); }
-				//}
+				else {
+					Ti.API.info("user has a facebook external account linked, call authAction directly");
+					if (authAction) { 
+						authAction(e.data); 
+					}
+				}
 	            // e.data: { link, id, name, first_name, last_name, gender, timezone, locale, updated_time, username}
 	            // updating user photo seems to be broken
 	            populateNameAndPicFromFB(e.data);		              
@@ -282,6 +293,7 @@
 	// if the current user has a linked fb account already, logging into Fashionist will have already updated fb.accessToken
 	function authorize(actionCB, cleanupCB) {
 		var acs = require('lib/acs'),
+			fb = require('facebook'),
 			currentUser = acs.currentUser(),
 			facebookUID = getLinkedFBId(currentUser);
 
@@ -290,6 +302,7 @@
 			return;
 		}
 		if (!Ti.App.facebookInitialized) {
+			Ti.API.info("in lib/facebook.js, authorize: Ti.App.facebookInitialized is false. Calling initFBIntegration");
 			initFBIntegration(actionCB, cleanupCB);
 			Ti.App.facebookInitialized = true;
 		}
@@ -300,7 +313,7 @@
 		Ti.API.info("Facebook login status " + fb.loggedIn + " FB access token " + fb.accessToken);
 		// if user is not logged in to Facebook, call authorize
 		if (!fb.getAccessToken() || !facebookUID) {
-			Ti.API.info("Calling facebook authorize");
+			Ti.API.info("Calling facebook authorize with loginListener " + authAction);
 			fb.authorize();	
 		}
 		else {

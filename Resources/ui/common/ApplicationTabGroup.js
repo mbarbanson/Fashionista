@@ -21,7 +21,7 @@
 		tabGroup.addEventListener('newLoggedInUser', 
 			function () {
 							Ti.API.info("Received newLoggedInUser event. Rebuilding feedWindow");
-							FeedWindow.showFriendsFeed();					
+							FeedWindow.showFriendsFeed(false, null, null);					
 						});										
 		return tabGroup;
 	}	
@@ -72,7 +72,7 @@
 			}
 		});
 		
-		FeedWindow.showFriendsFeed();
+		FeedWindow.showFriendsFeed(false, null, null);
 		friendFeedWindow.initialized = true;
 
 				
@@ -93,7 +93,7 @@
 			Ti.API.info("Explore tab received a focus event");
 			Flurry.logEvent('focusTab', {'tab': 'publicFeed', 'username': currentUser.username, 'email': currentUser.email});
 			if (!findFeedWindow.initialized) {
-				FeedWindow.showFindFeed(findFeedWindow, FeedWindow.findFeedPostQuery, true); // do not force refresh every time we switch to explore tab	
+				FeedWindow.showFindFeed(true, null, null); // do not force refresh every time we switch to explore tab	
 			}																		
 			findFeedWindow.initialized = true;
 		});

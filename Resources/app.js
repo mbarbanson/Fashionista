@@ -86,12 +86,18 @@ if (Ti.version < 2.0 ) {
 	    Ti.App.isInForeground = false;
 	});
 	 
-	Ti.App.addEventListener('resumed', function() {
+
+	Ti.App.addEventListener('significanttimechange', function() {
+		Ti.App.fireEvent('refreshFeedWindow', {"reason": "significanttimechange"});
+		Ti.App.fireEvent('refreshFindFeedWindow', {"reason": "significanttimechange"});
+	});
+	
+	Ti.App.addEventListener('resume', function() {
 		var appBadge = Ti.UI.iPhone.getAppBadge();
 	    Ti.App.isInForeground = true;
 	    if (appBadge > 0 ) {
 			Ti.API.info("Fashionist resumed with appBadge " + appBadge);
-			//Ti.App.fireEvent('refreshFeedWindow', {});
+			Ti.UI.iPhone.setAppBadge(0);
 	    }
 	});
 	

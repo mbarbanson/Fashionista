@@ -19,7 +19,7 @@
 		Ti.API.info("Adding newPost handler");
 		Ti.App.addEventListener('newPost', function (e) {
 			var mainTabGroup = Ti.App.mainTabGroup,
-				tab = mainTabGroup.tabs[0], // friendfeed tab
+				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
 				postId = e.pid, message = e.message, senderId = e.uid,
 				currentUser = acs.currentUser();
 			Flurry.logEvent('newPost', { 'username': currentUser.username, message: message});
@@ -40,10 +40,14 @@
 		Ti.API.info("Adding newFriendPost handler");
 		Ti.App.addEventListener('newFriendPost', function (e) {
 			var mainTabGroup = Ti.App.mainTabGroup,
-				tab = mainTabGroup.tabs[0], // friendfeed tab
+				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
 				currentUser = acs.currentUser(), 
 				postId = e.pid, message = e.message, senderId = e.uid,
-				appBadge = e.badge;
+				appBadge = e.badge,
+				afterAction = function () { 
+					Ti.API.info("display post in details window on top of tab " + tab); 
+					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+				};
 			Flurry.logEvent('newFriendPost', { 'username': currentUser.username, message: message});				
 			if (tab) {
 				Ti.API.info("new post. " +  message + " Updating feed window ");				
@@ -65,7 +69,7 @@
 												FeedWindow.displayPostInFeed(p, true); 
 												});
 												*/					
-						FeedWindow.showFriendsFeed();													
+						FeedWindow.showFriendsFeed(false, postId, afterAction);													
 					}
 				}
 			}		
@@ -90,7 +94,7 @@
 			else {
 				Ti.API.info("notification handler called when appbadge is not positive " + appBadge);
 			}			
-			FeedWindow.showFriendsFeed();
+			FeedWindow.showFriendsFeed(false, null, null);
 	}
 	
 
@@ -102,7 +106,7 @@
 				currentUser = acs.currentUser(),
 				FeedWindow = require('ui/common/FeedWindow'),
 				approveRequestCallback = function(e) {
-					FeedWindow.showFriendsFeed();	
+					FeedWindow.showFriendsFeed(false, null, null);	
 				};
 			Flurry.logEvent('approveFriendRequestHandler', { 'username': currentUser.username, message: message});				
 				
@@ -127,7 +131,14 @@
 			var acs = require('/lib/acs'),
 				Flurry = require('sg.flurry'),			
 				FeedWindow = require('ui/common/FeedWindow'),
-				currentUser = acs.currentUser();
+				PostView = require('ui/common/PostView'),
+				currentUser = acs.currentUser(),
+				mainTabGroup = Ti.App.mainTabGroup,
+				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab				
+				afterAction = function () { 
+					Ti.API.info("display post in details window on top of tab " + tab); 
+					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+				};
 			Ti.API.info("handling new like " + message + " Updating likes count ");
 			// decrement the app badge
 			Ti.API.info("appBadge is " + appBadge);
@@ -147,9 +158,8 @@
 				else {
 					// update likes count on friends' devices
 					Ti.API.info("received a like " + message + " from user " + senderId);
-					FeedWindow.showFriendsFeed();
+					FeedWindow.showFriendsFeed(false, postId, afterAction);
 					//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
-					//acs.showPost(postId, function (p) { PostView.displayPostDetailsView(p);});
 				}
 			}
 			else {
@@ -163,12 +173,16 @@
 	
 	function newCommentHandler (postId, senderId, message, appBadge) {
 		var mainTabGroup = Ti.App.mainTabGroup,
-			tab = mainTabGroup.tabs[0], // friendfeed tab
+			tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
 			Flurry = require('sg.flurry'),		
 			FeedWindow = require('ui/common/FeedWindow'),
 			PostView = require('ui/common/PostView'),
 			acs = require('lib/acs'),
-			currentUser = acs.currentUser();
+			currentUser = acs.currentUser(),
+			afterAction = function () { 
+				Ti.API.info("display post in details window on top of tab " + tab); 
+				acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+			};
 		Ti.API.info("handling new comment " + message + " Updating feed window postId " + postId );
 		Flurry.logEvent('newCommentReceived', { 'username': currentUser.username, message: message});				
 		
@@ -187,9 +201,8 @@
 					Ti.API.info("your comment " + message + " has been posted");
 				}
 				else {
-					FeedWindow.showFriendsFeed();
-					Ti.API.info("display post in details window on top of tab " + tab);
-					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(p, true);});						
+					FeedWindow.showFriendsFeed(false, postId, afterAction);
+					FeedWindow.showFindFeed(false, postId, null);						
 				}
 			}
 			else {

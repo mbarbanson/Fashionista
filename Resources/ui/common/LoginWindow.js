@@ -4,7 +4,6 @@
  */
 
 
-
 (function () {
 	'use strict';
 	var acs,
@@ -101,9 +100,9 @@
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 			backgroundColor: '#5D3879',
 			color: 'white',
-			width: '30%',
+			width: '44%',
 			height: '8%',
-			left: '35%',
+			left: '28%',
 			top: 140 
 		});
 		

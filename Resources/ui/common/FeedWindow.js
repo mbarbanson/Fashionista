@@ -2,7 +2,6 @@
  * @author MONIQUE BARBANSON
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
-
 (function () {
 	'use strict';
 	
@@ -276,7 +275,7 @@
 	}
 	
 	
-	function showFeedWin(fWin, postQuery, noRefresh) {
+	function showFeedWin(fWin, postQuery, noRefresh, afterAction) {
 		Ti.API.info('Calling show feed window');
 		var DetailWindow = require('ui/common/DetailWindow'),
 			PostView = require('ui/common/PostView'),
@@ -307,7 +306,7 @@
 										tableView.flipped = true;
 									}	
 								}
-								
+								if (afterAction) { afterAction();}
 								activityIndicator.hide(); 
 								fWin.rightNavButton = fWin.savedRightNavButton;
 								inShowFeedWindow = false;
@@ -329,22 +328,30 @@
 		}
 	}
 	
-	function showFriendsFeed(noRefresh, selectedPostId) {
-		showFeedWin(privFeedWindow, friendFeedPostQuery, noRefresh);
+	function showFriendsFeed(noRefresh, selectedPostId, afterAction) {
+		showFeedWin(privFeedWindow, friendFeedPostQuery, noRefresh, afterAction);
 	}
 	
-	function showFindFeed(noRefresh, selectedPostId) {
-		showFeedWin(privFindFeedWindow, findFeedPostQuery, noRefresh);
+	function showFindFeed(noRefresh, selectedPostId, afterAction) {
+		showFeedWin(privFindFeedWindow, findFeedPostQuery, noRefresh, afterAction);
 	}
 	
 	
-	Ti.App.addEventListener('refreshFeedWindow', function (e) { 
-		showFriendsFeed(false);
-		});
+	Ti.App.addEventListener('refreshFeedWindow', function (e) {
+		if (e.reason === "significanttimechange" && !privFeedWindow.isInitialized) {
+			Ti.API.info("no need to refresh feed window");
+			return;
+		} 
+		showFriendsFeed(false, null, null);
+	});
 	
-	Ti.App.addEventListener('refreshFindFeedWindow', function (e) { 
-		showFindFeed(false);
-		});
+	Ti.App.addEventListener('refreshFindFeedWindow', function (e) {
+		if (e.reason === "significanttimechange" && !privFindFeedWindow.isInitialized) {
+			Ti.API.info("no need to refresh find feed window");
+			return;
+		}
+		showFindFeed(false, null, null);
+	});
 	
 	
 	function createFinishingUpRow(postModel) {
@@ -574,13 +581,13 @@
 		});			
 		if (type === 'friendFeed') {	
 			fWin.title = Ti.Locale.getString('fashionista') + ' ' + Ti.Locale.getString('friendsFeed');
-			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(); });
-			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(); });		
+			refreshBtn.addEventListener('click', function(e) { showFriendsFeed(false, null, null); });
+			fWin.addEventListener('refreshFeedWindow', function(e) {showFriendsFeed(false, null, null); });		
 		}
 		else {
 			fWin.title = Ti.Locale.getString('publicFeed') + ' ' + Ti.Locale.getString('fashionista');
-			refreshBtn.addEventListener('click', function(e) { showFindFeed(); });				
-			fWin.addEventListener('refreshFeedWindow', function(e) {showFindFeed(); });		
+			refreshBtn.addEventListener('click', function(e) { showFindFeed(false, null, null); });				
+			fWin.addEventListener('refreshFeedWindow', function(e) {showFindFeed(false, null, null); });		
 		}
 		tableView.flipped = false;
 		fWin.add(tableView);

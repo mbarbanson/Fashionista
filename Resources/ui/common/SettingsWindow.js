@@ -14,7 +14,10 @@
 			GuestWindow = require('ui/common/GuestWindow');
 			
 		Ti.API.info('Congratulations, you successfully logged out');
-		Ti.App.mainTabGroup.close();
+		if (Ti.App.mainTabGroup) {
+			Ti.App.mainTabGroup.close();			
+		}
+
 		Ti.App.mainTabGroup = null;
 		GuestWindow.createGuestWindow(Ti.App.rootWindow);
 	}

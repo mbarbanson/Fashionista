@@ -20,13 +20,14 @@
 	}
 	
 	
-	function showPreview (thumbView) {
-		var imgView = null,
+	function showPreview (tab, thumbView) {
+		var LoginToolbar = require('ui/common/LoginToolbar'),
+			imgView = null,
+			toolbar = LoginToolbar.createLoginToolbar(tab),
 			detailWindow = Ti.UI.createWindow({
 									title: "Fashionist Pick",
 							        backgroundColor: 'black',
-							        barColor: '#5D3879',
-							        tabBarHidden: true
+							        barColor: '#5D3879'
 							});
 
 		imgView = Ti.UI.createImageView({
@@ -35,6 +36,7 @@
 		});
 		detailWindow.imgView = imgView;
 		detailWindow.add(imgView);
+		detailWindow.add(toolbar);
 
 		// use small_240 if present, otherwise use the thumbnail itself or fallback image if neither has a value
 		imgView.image = thumbView.image || '/photos/IMG_0001.JPG';
@@ -47,8 +49,8 @@
 
 	function showDetail (image) {
 		//alert("showing Image detail" + image);
-		var detailWindow = showPreview(image),
-			tab = thumbnailsWindow().containingTab;
+		var tab = thumbnailsWindow().containingTab,
+			detailWindow = showPreview(tab, image);
 		if (tab) {
 			tab.open(detailWindow);
 		}

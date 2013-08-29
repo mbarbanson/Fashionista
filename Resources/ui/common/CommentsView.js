@@ -17,10 +17,10 @@
 			post = row.post,
 			senderId = acs.currentUser().id,
 			addCommentHandlerCallback = function (comment) {
-				social.newCommentNotification(post, commentText);
 				var commentsCount = row.commentsCount,
 					originRow = row.originRow,
 					comments = (originRow && originRow.comments) || [];
+				social.newCommentNotification(post, commentText, comments);					
 				if (displayComments) {
 					//FIXME also check that tableView is a child of win
 					CommentsView.displayComment(row, comment);
@@ -142,8 +142,8 @@
 	
 	function displayComment(row, comment) {
 		/*jslint regexp: true */
-		if (!comment) {
-			alert("null comment");
+		if (!comment || comment.rating === 1 || !comment.content) {
+			Ti.API.error("bad comment");
 			return;
 		}
 		var	PostView = require('ui/common/PostView'),
@@ -165,7 +165,7 @@
 						width: Ti.UI.FILL,
 						color: 'black',
 						visible: true,
-						scrollable: false,
+						scrollable: false
 						//borderWidth: 1,
 						//borderColor: 'black'	
 			}),
@@ -269,7 +269,7 @@
 			};							
 			if (tableView) {
 				containingView.add(tableView);	
-				containingView.commentsTable = tableView;
+				containingView.table = tableView;
 				// FIXME This should be attached to the tableView, not the window
 				//containingView.linkHandler = linkHandler;				
 				// retrieves comments for current post and display each post followed by its comments on separate rows

@@ -1,6 +1,10 @@
 (function () {
 	'use strict';
 
+	function shareToTwitter(post) {
+		alert("share this post to your twitter followers");
+	}
+
 	function flagPost(post) {
 		alert("This post has inappropriate content that violates app store policy");
 	}

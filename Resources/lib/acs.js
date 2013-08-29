@@ -598,22 +598,26 @@
 	}
 
 
-	function newCommentNotification (post, commentText) {
+	function newCommentNotification (post, commentText, otherComments) {
 		var caption = "",
+			otherCommenters,
+			getUser = function(comment) { return comment.user;},
 			atMentions,
 			stripLeadingAt = function(s) {return s.replace(/^@/, "");},
 			userNameQuery = function(uname) { return {"username": uname}; },
-			getUserId = function (user) { return user.id;},
+			getUserId = function (user) { return user ? user.id: null;},
 			mentionnedUsers,
 			whereClause,
 			successCallback = function (users) {
-				var userIdList = (users && users.length > 0) ? users.map(getUserId) : null,
+				var allUsers = users.concat(otherCommenters),
+					userIdList = (allUsers && allUsers.length > 0) ? allUsers.map(getUserId) : null,
 					userIds = userIdList ? userIdList.join() : null;
 				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);			
 			};
 		if (post.content !== Ti.Locale.getString('nocaption')) {
 			caption = unescape(post.content);
 		}
+		otherCommenters = otherComments.map(getUser).filter (function (user) { return user; });
 		atMentions = commentText.match(/[\b@][\w]*/gm);
 		mentionnedUsers = atMentions ? atMentions.map(stripLeadingAt) : null;
 		whereClause = mentionnedUsers? mentionnedUsers.map(userNameQuery) : null;
@@ -621,8 +625,10 @@
 			//Flurry.logEvent('notifyMentionnedInComment', {'message': commentText, 'to': atMentions, 'type': 'comment'});
 			queryUsers({"$or": whereClause}, successCallback, successCallback, 1);
 		}
-		else {
-			//.logEvent('newCommentNotification', {'message': commentText, 'type': 'comment'});			
+		else if (otherCommenters && otherCommenters.length > 0) {
+			successCallback([]);	
+		}
+		else {			
 			newNotification(post, "comment", ' commented: ' + unescape(commentText), false);		
 		}				
 	}

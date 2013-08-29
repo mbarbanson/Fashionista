@@ -131,23 +131,16 @@
 			detailWindow = DetailWindow.createDetailWindow(containingTab),
 			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 			CommentsView = require('ui/common/CommentsView'); 
-		if (containingTab) {
+		if (containingTab && detailWindow) {
 			containingTab.open(detailWindow);
+			CommentsView.createPostCommentsTable(containingTab, detailWindow, row, newComment);
 		}
 		else {
 			Ti.API.error("displayPostDetails: currentTab is null");
-		}
-		CommentsView.createPostCommentsTable(containingTab, detailWindow, row, newComment);
-		return;	
+		}	
 	}
 	
 	
-	
-	function displayPostDetailsView (containingTab, row, newComment) {
-		Ti.API.info('show post details');
-		// display in new details window
-		displayPostDetailsFeedView(containingTab, row, newComment);			
-	}	
 
 
 	/*
@@ -166,7 +159,7 @@
 		var CommentsView = require('ui/common/CommentsView'),
 			Likes = require('lib/likes');
 		if (newComment) {
-			displayPostDetailsView(containingTab, row, newComment);			
+			displayPostDetailsFeedView(containingTab, row, newComment);			
 		}
 		else {
 			CommentsView.displayCommentsInPostView(containingTab, row);
@@ -511,12 +504,35 @@
 		Ti.API.info('display post summary: create and populate a row from current post ');
 		success = populatePostView(containingTab, row, false);
 		if (success) {
-			setPostViewEventHandlers (row);			
-			return row;			
+			setPostViewEventHandlers (row);					
 		}
 		else {
-			return null;
+			row = null;
 		}
+		return row;
+	}
+	
+		
+	// call this to display post details when handling a new post or new comment notification
+	function displayPostDetailsView (containingTab, post) {
+		Ti.API.info('handle post detail post notification');
+		// display in new details window
+		var DetailWindow = require('ui/common/DetailWindow'),
+			detailWindow = DetailWindow.createDetailWindow(containingTab),
+			ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
+			CommentsView = require('ui/common/CommentsView'),
+			row = displayPostSummaryView(containingTab, post),
+			tableView = Ti.UI.createTableView({});
+		tableView.appendRow(row);
+		detailWindow.add(tableView);
+		detailWindow.table = tableView; 
+		if (containingTab && detailWindow) {
+			//CommentsView.displayCommentsInPostView(containingTab, row);
+			containingTab.open(detailWindow);
+		}
+		else {
+			Ti.API.error("displayPostDetailsView: containingTab or detailWindow is null");
+		}			
 	}
 
 
