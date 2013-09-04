@@ -5,6 +5,8 @@
 
 (function () {
 	'use strict';
+	var inAddingFriends = false,
+		inRemovingFriends = false;
 	
 	function getQueryType(query) {
 		var type = null, keys = Object.keys(query);
@@ -97,22 +99,30 @@
 						if (add) {
 							Ti.API.info("add contact as friend: " + contact.first_name + ' ' + contact.last_name);
 							//contactsList.push(contact.id);
+							inAddingFriends = true;
 							acs.addFriends(contactsToAdd, function (e) {
 															fashionBuddies.push (contact); 
 															notifyAddedFriends (contact.id.toString());
+															inAddingFriends = false;
 															});	
 						}
+						/*
 						else {
 							// if contact is in the list remove
-							Ti.API.info("remove contact as friend: " + contact.first_name + ' ' + contact.last_name);
+							// Ti.API.info("remove contact as friend: " + contact.first_name + ' ' + contact.last_name);
+							FIXME never remove friends since it's looking like there's a race condition in ACS. come back to this later
+							inRemovingFriends = true;
 							acs.removeFriends(contactsToAdd, function (e) {
 																var index = friendIndex(contact, fashionBuddies);
 																if (index > -1 && index < fashionBuddies.length) {
 																	fashionBuddies.splice(index, 1);
 																}
 																notifyRemovedFriends (contactsToAdd);
-															});	
+																inRemovingFriends = false;
+															});
+																
 						}
+						*/
 					},
 					// not used for now since we add/remove as contacts are selected/unselected								
 					addSelectedContacts = function () {

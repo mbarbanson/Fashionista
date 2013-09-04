@@ -8,6 +8,7 @@
 
 (function () {
 	'use strict';
+	
 	Ti.App.maxCommentsInPostSummary = 3;
 	
 	var singleLineHeight = 20,
@@ -17,16 +18,18 @@
 	function likePost(row) {
 		var post,
 			likeBtn = row.likeBtn,
+			acs = require('lib/acs'),
 			social = require('lib/social'),
 			Likes = require('lib/likes'),		
 			createLikeCallback;
-		if (row && row.post) {
+			
+		likeBtn.setEnabled(false);	
+				
+		// do not let users like their own posts
+		if (row && row.post && row.post.user && (acs.currentUserId() !== row.post.user.id)) {
 			post = row.post;
 			Ti.API.info("You liked a post: " + post.content);
-			// put code here to change the color of the like icon
-			//likeBtn.backgroundColor = '#5D3879';
 			likeBtn.image = '/icons/purple_heart.png';
-			likeBtn.setEnabled(false);			
 			createLikeCallback = function (like) {
 													social.newLikeNotification(post);
 													if (row.updateLikesCountHandler) {
@@ -300,7 +303,7 @@
 								ellipsize: false,
 								title: author.username,
 								left: 40, top: -30,
-								width:90, height: 20
+								width:100, height: 20
 								});
 			labelUserName.addEventListener('click', function (e) {
 														ProfileView.displayUserProfile(containingTab, author);
@@ -351,7 +354,7 @@
 				row.add(moreBtn);
 				
 				findBtn.addEventListener('click', function(e) { findSource(containingTab, row);});
-				likeBtn.addEventListener('click', function(e) { 
+				likeBtn.addEventListener('click', function(e) {
 					likePost(row);
 					});
 				

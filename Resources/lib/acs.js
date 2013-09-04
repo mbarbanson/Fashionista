@@ -4,11 +4,13 @@
  * @author: Monique Barbanson
  */
 
+
 (function () {
 	'use strict';
 	// a couple local variables to save state
 	//FIXME define a userModel with additional properties like hasRequestedFriends etc...
 	var privCurrentUser = null,
+		cachedFriendIds = null,
 		Cloud = require('ti.cloud');
 
 	function checkInternetConnection (e) {
@@ -25,6 +27,14 @@
 		return (privCurrentUser? privCurrentUser.id : null);
 	}
 	
+	function getSavedFriendIds () {
+		return cachedFriendIds;
+	}
+
+	function setSavedFriendIds (value) {
+		cachedFriendIds = value;
+	}
+		
 	function setCurrentUser (cu) {
 		privCurrentUser = cu;
 	}
@@ -45,7 +55,7 @@
 	}
 	
 
-	function subscribeNotifications (channelName) {
+	function subscribeNotifications (channelName, successCallback, errorCallback) {
 		var Flurry = require('sg.flurry');
 		
 		Ti.API.info("remoteDeviceUUID " + Ti.Network.remoteDeviceUUID);
@@ -57,12 +67,17 @@
 		    if (e.success) {
 		        Ti.API.info('Successfully subscribed current user to push notifications for channel ' + channelName);
 				Flurry.logEvent('Cloud.PushNotifications.subscribe', {'channel': channelName, 'device_token': Ti.Network.remoteDeviceUUID, 'result': 'success'});
-		        
+		        if (successCallback) {
+					successCallback();
+		        }
 		    } else {
 		        Ti.API.info('Error:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 				Flurry.logEvent('subscribeNotifications', {'message': e.message, 'error': e.error});			            
 	            checkInternetConnection(e);
+	            if (errorCallback) {
+					errorCallback();
+	            }
 		    }
 		});
 	}
@@ -156,6 +171,7 @@
 											
 								            checkInternetConnection(e);
 									    }
+									    cachedFriendIds = null;
 								}
 							);				
 					};
@@ -200,6 +216,7 @@
 		// ACS API requires password & confirm, but we do the checking elsewhere so use the same for both here
 		Cloud.Users.create({
 			username: username,
+			template: 'welcome',
 			email: email,
 			password: password,
 			password_confirmation: password,
@@ -462,7 +479,8 @@
 	
 
 	function notifyUsers (channel, message, userIds, customPayload, successCallback) {
-		var Flurry = require('sg.flurry');
+		var Flurry = require('sg.flurry'),
+			messages = require('lib/messages');
 		
 		// if not device is not registered for push notifications
 		// or running on simulator, bail
@@ -486,6 +504,7 @@
 				checkInternetConnection(e);
 		    }
 		});
+		messages.createMessage(userIds, message, JSON.stringify(customPayload.f));
 	}
 
 
@@ -534,8 +553,12 @@
 		Ti.API.info("sending push notification " + notificationContent + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
 		//always send notification from current user
 		var Flurry = require('sg.flurry'),
+			messages= require('lib/messages'),
 			username = '@' + privCurrentUser.username, //post.user.username,
 			message = username + notificationContent,
+			alertBody = message.substr(0,119),
+			messageBodyStart = alertBody.indexOf(':'),
+			messageBody = alertBody.slice(messageBodyStart + 1),
 			userId = currentUserId(),
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
 			fPayload = {
@@ -547,7 +570,7 @@
 			    "f": fPayload,
 				"badge": badge,
 				"sound": "default",							
-			    "alert" : message.substr(0,119)
+			    "alert" : alertBody
 			},
 			notifyCallback = function (e) {
 			    if (e.success) {
@@ -571,7 +594,8 @@
 				    channel: 'fashionist',
 				    friends: true,
 				    payload: customPayload
-			    };			
+			    };
+		    messages.SendMessageToAllFriends(messageBody, JSON.stringify(fPayload));			
 		}
 		else {
 			paramDict = {
@@ -579,7 +603,8 @@
 			    channel: 'fashionist',
 			    to_ids: user_ids || userId,    
 			    payload: customPayload
-		    };			
+		    };
+		    messages.createMessage(user_ids || userId, messageBody, JSON.stringify(fPayload));			
 		}
 		Ti.API.info('calling Cloud.PushNotifications.notify, notificationType: ' + notificationType);		
 		Cloud.PushNotifications.notify(paramDict, notifyCallback);
@@ -600,24 +625,33 @@
 
 	function newCommentNotification (post, commentText, otherComments) {
 		var caption = "",
+			posterId = post && post.user && post.user.id,
+			selfId = currentUserId(),
 			otherCommenters,
 			getUser = function(comment) { return comment.user;},
 			atMentions,
 			stripLeadingAt = function(s) {return s.replace(/^@/, "");},
 			userNameQuery = function(uname) { return {"username": uname}; },
 			getUserId = function (user) { return user ? user.id: null;},
+			excludeSelf = function (id) { return id !== selfId;},			
 			mentionnedUsers,
 			whereClause,
 			successCallback = function (users) {
 				var allUsers = users.concat(otherCommenters),
 					userIdList = (allUsers && allUsers.length > 0) ? allUsers.map(getUserId) : null,
-					userIds = userIdList ? userIdList.join() : null;
+					userIds;
+					
+				userIdList = userIdList ? userIdList.filter(excludeSelf) : null;
+				userIds = userIdList ? userIdList.join() : null;
+					
 				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);			
 			};
 		if (post.content !== Ti.Locale.getString('nocaption')) {
 			caption = unescape(post.content);
 		}
-		otherCommenters = otherComments.map(getUser).filter (function (user) { return user; });
+		
+		otherCommenters = otherComments.map(getUser);
+		otherCommenters = otherCommenters.filter (function (user) { return user;});  //remove null users if any
 		atMentions = commentText.match(/[\b@][\w]*/gm);
 		mentionnedUsers = atMentions ? atMentions.map(stripLeadingAt) : null;
 		whereClause = mentionnedUsers? mentionnedUsers.map(userNameQuery) : null;
@@ -629,20 +663,21 @@
 			successCallback([]);	
 		}
 		else {			
-			newNotification(post, "comment", ' commented: ' + unescape(commentText), false);		
+			newNotification(post, "comment", ' commented: ' + unescape(commentText), false, posterId ? posterId.toString() : null);		
 		}				
 	}
 	
 	
 	function newLikeNotification (post) {
-		var caption = "";
+		var caption = "",
+			authorId = post && post.user && post.user.id;
 		if (post.content === Ti.Locale.getString('nocaption')) {
 			caption = "";
 		}
 		else {
 			caption = unescape(post.content);
 		}
-		newNotification(post, "newLike", ' liked your post ' + caption, false);
+		newNotification(post, "newLike", ' liked your post ' + caption, false, authorId ? authorId.toString() : null);
 	}
 
 
@@ -711,9 +746,10 @@
 				Flurry.logEvent('Cloud.Friends.approve', {'friends': userIdList, 'result': 'success'});			                 
 				approvedRequestNotification(userIdList);
 				Ti.API.info('callback called ' + approvedRequestNotification.toString());
+				cachedFriendIds = cachedFriendIds.concat(friends);
 				if (successCallback) { successCallback(e); }
 		    } else {
-		        Ti.API.info('Error in approveFriends: ' + e.message);
+		        Ti.API.error('Error in approveFriends: ' + e.message);
 				Flurry.logEvent('approveFriendRequest', {'errorMessage': e.message, 'error': e.error});			            
 		        
 	            checkInternetConnection(e);
@@ -733,7 +769,7 @@
 		        Ti.API.info('Friend(s) requests ' + friendRequests);
 				callback(friendRequests);
 		    } else {
-		        Ti.API.info('Error in getFriendRequests:\\n' +
+		        Ti.API.error('Error in getFriendRequests:\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 				Flurry.logEvent('getFriendRequests', {'errorMessage': e.message, 'error': e.error});			            
 		            
@@ -745,8 +781,8 @@
 
 	function getFriendsList (successCallback, cleanupAction) {
 		var userId = currentUserId(),
-			Flurry = require('sg.flurry');
-		
+			Flurry = require('sg.flurry'),
+			getUserId = function(user) {return user.id; };		
 		Cloud.Friends.search({
 		    user_id: userId,
 		    response_json_depth: 2
@@ -754,16 +790,14 @@
 		    if (e.success) {
 		        Ti.API.info('Success:\\n' +
 		            'Count: ' + e.users.length);
-				Flurry.logEvent('Cloud.Friends.search', {'userId': userId, 'result': 'success'});			            
-
-		       if (successCallback) {
-					successCallback(e.users, cleanupAction);
-					//privCurrentUser.savedFriends = e.users;		
+				Flurry.logEvent('Cloud.Friends.search', {'userId': userId, 'result': 'success'});
+				cachedFriendIds = e.users.map(getUserId);			            
+				if (successCallback) {
+					successCallback(e.users, cleanupAction);	
 				}
 		    } else {
 				if (cleanupAction) { cleanupAction(); }
-		        Ti.API.info('getFriendsList Error:\\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
+				Ti.API.info('getFriendsList Error:\\n' + ((e.error && e.message) || JSON.stringify(e)));
 				Flurry.logEvent('Cloud.Friends.search', {'errorMessage': e.message, 'error': e.error});			            
 	            checkInternetConnection(e);
 		    }
@@ -1072,7 +1106,7 @@ function sendResetPasswordLink(email, successCallback, errorCallback) {
 	Cloud.Users.requestResetPassword({
 	    //template: 'resetPassword',
 		email: email
-		//dynamic_fields: { Fashionist: Ti.Locale.getString('fashionista') }
+		//dynamic_fields: {'username': email}
 	}, function (e) {
 	    if (e.success) {
 	        if (successCallback) { 
@@ -1132,6 +1166,8 @@ function sendResetPasswordLink(email, successCallback, errorCallback) {
 	exports.getUserAvatar = getUserAvatar;
 	exports.sendResetPasswordLink = sendResetPasswordLink;
 	exports.sendWelcome = sendWelcome;
+	exports.getSavedFriendIds = getSavedFriendIds;
+	exports.setSavedFriendIds = setSavedFriendIds;
 
 
 } ());

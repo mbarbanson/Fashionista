@@ -338,7 +338,7 @@
 	
 	
 	Ti.App.addEventListener('refreshFeedWindow', function (e) {
-		if (e.reason === "significanttimechange" && !privFeedWindow.isInitialized) {
+		if (e.reason === "significanttimechange" && privFeedWindow && !privFeedWindow.isInitialized) {
 			Ti.API.info("no need to refresh feed window");
 			return;
 		} 
@@ -346,7 +346,7 @@
 	});
 	
 	Ti.App.addEventListener('refreshFindFeedWindow', function (e) {
-		if (e.reason === "significanttimechange" && !privFindFeedWindow.isInitialized) {
+		if (e.reason === "significanttimechange" && privFindFeedWindow && !privFindFeedWindow.isInitialized) {
 			Ti.API.info("no need to refresh find feed window");
 			return;
 		}

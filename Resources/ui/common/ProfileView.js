@@ -3,6 +3,7 @@
  * copyright 2012, 2013 by Monique Barbanson. All rights reserved.
  */
 
+
 (function () {
 	'use strict';
 	var privProfileInfo = {
@@ -189,7 +190,7 @@
 		avatarView = Ti.UI.createImageView({
 						image: image,
 						bubbleParent: false,
-						left: 0, top:5,
+						left: 5, top:0,
 						width:100, height:100
 						});
 		avatarView.addEventListener('click', function (e) {
@@ -216,12 +217,12 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 105,
-			top: 5,
+			left: 110,
+			top: 0,
 			height: 100,
 			visible: true
 			});
-		bioLabel.setWidth(Ti.App.SCREEN_WIDTH*0.96- 105);
+		bioLabel.setWidth(Ti.App.SCREEN_WIDTH*0.96 - 110);
 		bioLabel.setEditable(canEdit);
 		photoBioRow.add(bioLabel);
 		profileView.appendRow(photoBioRow);
@@ -262,7 +263,7 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 0,
+			left: 5,
 			top: '10%',
 			height: '80%',
 			width: 100,
@@ -282,10 +283,10 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 105,
+			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 105,
+			width: Ti.App.SCREEN_WIDTH*0.96- 110,
 			visible: true
 			});
 		// username shouldn't be editable without checking the new username is available			
@@ -313,7 +314,7 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 0,
+			left: 5,
 			top: '10%',
 			height: '80%',
 			width: 100,
@@ -334,10 +335,10 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 105,
+			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 105,
+			width: Ti.App.SCREEN_WIDTH*0.96- 110,
 			visible: true
 			});
 			
@@ -370,7 +371,7 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 0,
+			left: 5,
 			top: '10%',
 			height: '80%',
 			width: 100,
@@ -391,10 +392,10 @@
 				fontWeight : 'normal',
 				fontSize : '17'
 			},						
-			left: 105,
+			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 105,
+			width: Ti.App.SCREEN_WIDTH*0.96- 110,
 			visible: true
 			});
 
@@ -417,11 +418,11 @@
 		var profileTable;
 
 		profileTable = Ti.UI.createTableView({
-			top: '2%',
-			height : '90%',
+			top: 10,
+			height : '96%',
 			rowHeight : 50,
-			width : '96%',
-			left : '2%',
+			width : '100%',
+			left : 2,
 			borderRadius : 0,
 			paddingLeft : 0,
 			paddingRight : 0,

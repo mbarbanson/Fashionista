@@ -24,24 +24,32 @@
 
 		
 	function displayNews (win) {
-		var acs = require('lib/acs'),
-			Flurry = require('sg.flurry'),
-			currentUser = acs.currentUser();
+		var //acs = require('lib/acs'),
+			InboxView = require('ui/common/InboxView'),
+			//currentUser = acs.currentUser(),
+			inboxView;
+
 		Ti.API.info("displaying all notifications received by current user");
-		Flurry.logEvent('displayNews', {'username': currentUser.username, 'email': currentUser.email});	
-		Ti.UI.createAlertDialog({
-			title: Ti.Locale.getString(),
-			message: "Thanks for letting us know that you would like to be able to browse through notifications you've received from fashionist. We are working on it and it will be available soon. The fashionist team."
-			});
+		// do the work after we've set up the spinner
+		inboxView = InboxView.displayInbox(win.containingTab, win);		
+		win.add(inboxView);	
+		win.inboxView = inboxView;
 	}
 
 	
 	function hideNews (win) {
 		var acs = require('lib/acs'),
 			Flurry = require('sg.flurry'),
-			currentUser = acs.currentUser();
-		Ti.API.info("displaying all notifications received by current user");
-		Flurry.logEvent('hideNews', {'username': currentUser.username, 'email': currentUser.email});	
+			currentUser = acs.currentUser(),
+			inboxView = win.inboxView;
+		Ti.API.info("hiding messages received by current user");
+		if (inboxView) {
+			win.remove(inboxView);			
+			inboxView.visible = false;
+			inboxView.hide(); 
+		}		
+		Flurry.logEvent('hideNews', {'username': currentUser.username, 'email': currentUser.email});
+		win.inboxView = null;	
 	}
 
 	
@@ -50,7 +58,7 @@
 			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser();		
 		if (win.profileView) {
-			win.profileView.vsible = false;
+			win.profileView.visible = false;
 			win.profileView.hide(); 
 			win.remove(win.profileView);
 		}
@@ -65,10 +73,12 @@
 			ProfileView = require('ui/common/ProfileView'),
 			currentUser = acs.currentUser(),
 		    profileView,
+		    activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
 			logoutBtn = Ti.UI.createButton({
 							        title: Ti.Locale.getString('logout') + " " + acs.currentUser().username,
 							        bottom: '5%',
-									width: '100%',
+							        left: 7,
+									width: Ti.App.SCREEN_WIDTH*0.96,
 									height: 40,
 									font: {
 										fontWeight: 'normal',
@@ -80,55 +90,42 @@
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 									backgroundColor: '#FFF'
 							    });
-							    
+		
+		win.setRightNavButton(activityIndicator); 
+		activityIndicator.show();
+					    
 		// event listeners
 		logoutBtn.addEventListener('click', function() {
 			acs.logout(logoutCallback);
 			//do not logout of FB. Should only have to relink accounts if accessToken expires
 		});
 								    
-	    profileView = ProfileView.createProfileView(currentUser, win);
+	    profileView = ProfileView.createProfileView(currentUser);
 		profileView.add(logoutBtn);	
 
 		win.add(profileView);
 		win.profileView = profileView;
-		profileView.show();
+		
+		win.setRightNavButton(null); 
+		activityIndicator.hide();
+
 		Flurry.logEvent('displayProfile', {'username': currentUser.username, 'email': currentUser.email});	
 	}
 
 	
 	function hideFriends(win) {
 		var acs = require('lib/acs'),
-			Flurry = require('sg.flurry'),
+			Flurry = require('sg.flurry'),		
 			currentUser = acs.currentUser(),
 			friendsView = win.friendsView;		
-		/*
-		if (win.privacyLabel) {
-			win.privacyLabel.visible = false;
-			win.privacyLabel.hide(); 
-			win.remove(win.privacyLabel); 
-		}
-		win.privacyLabel = null;
-		if (win.findFriendsLabel) {
-			win.findFriendsLabel.visible = false;
-			win.findFriendsLabel.hide();
-			win.remove(win.findFriendsLabel);
-		}
-		win.findFriendsLabel = null;
-		if (win.inviteTable) {
-			win.inviteTable.visible = false;
-			win.inviteTable.hide(); 
-			win.remove(win.inviteTable); 
-		}
-		win.inviteTable = null;
-		*/
 
 		if (friendsView) {
+			win.friendsView.visible = false;
 			friendsView.hide();
-			win.remove(friendsView);
-			win.friendsView = null;	
+			win.remove(friendsView);				
 		}
 		Flurry.logEvent('hideFriends', {'username': currentUser.username, 'email': currentUser.email});								
+		win.friendsView = null;		
 	}
 	
 	
@@ -145,7 +142,7 @@
 		    inviteTable,
 		    privacyLabel;
 		    
-	    friendsView = Ti.UI.createView({backgroundColor: '#DDD'});
+	    friendsView = Ti.UI.createView({backgroundColor: '#DDD', width: Ti.UI.FILL, height: Ti.UI.FILL});
 	
 		// add remaining of the objects on the page
 		findFriendsLabel = Ti.UI.createLabel({
@@ -208,7 +205,7 @@
 			settingsWin = privSettingsWindow,
 		    titleTabBar = settingsWin.titleControl,
 		    newIndex = index || titleTabBar.index;
-		    
+		
 	    if (savedTabIndex === 2 && newIndex !== 2) {
 			ProfileView.saveProfileChanges(currentUser);
 			hideMe(settingsWin);					
@@ -265,9 +262,11 @@
 								backgroundColor: '#5D3879'
 							}),
 			newIndex = titleTabBar.index;
+		    //activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
 			
 		privSettingsWindow = settingsWin;
 		settingsWin.setTitleControl(titleTabBar);
+		//settingsWin.activityIndicator = activityIndicator;
 		// defaults to showing the current user profile
 		titleTabBar.setIndex(2);
 		titleTabBar.addEventListener('click', function(e)
@@ -306,5 +305,6 @@
 	exports.getSettingsWindow = getSettingsWindow;
 	exports.showSettingsWindow = showSettingsWindow;
 	exports.displayMe = displayMe;
-	exports.displayFriends = displayFriends;	
+	exports.displayFriends = displayFriends;
+	exports.displayNews = displayNews;	
 } ());

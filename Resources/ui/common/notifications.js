@@ -6,6 +6,8 @@
 
 (function () {
 	'use strict';
+	var newPostHandler = null,
+		newFriendPostHandler = null; 
 	
 	// call this before initNotification so that the event handlers are defined before the events are fired
 	function initNotificationHandlers () {
@@ -17,63 +19,69 @@
 		
 		// handle new post notifications. Define event listener before the event is ever fired
 		Ti.API.info("Adding newPost handler");
-		Ti.App.addEventListener('newPost', function (e) {
-			var mainTabGroup = Ti.App.mainTabGroup,
-				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
-				postId = e.pid, message = e.message, senderId = e.uid,
-				currentUser = acs.currentUser();
-			Flurry.logEvent('newPost', { 'username': currentUser.username, message: message});
-			if (tab) {		
-				if (postId && currentUser && acs.currentUserId() === senderId) {
-						Ti.API.info(message);
-						acs.showPost(postId, function (p) {
-													FeedWindow.afterSharePost(p);
-												});							
-				}
-				else {
-					Ti.API.info("something went wrong while posting postId " + postId + " message " + message + " tab " + tab);
-				}
-			}		
-		});
-						
-		// handle new friend post notifications. Define event listener before the event is ever fired
-		Ti.API.info("Adding newFriendPost handler");
-		Ti.App.addEventListener('newFriendPost', function (e) {
-			var mainTabGroup = Ti.App.mainTabGroup,
-				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
-				currentUser = acs.currentUser(), 
-				postId = e.pid, message = e.message, senderId = e.uid,
-				appBadge = e.badge,
-				afterAction = function () { 
-					Ti.API.info("display post in details window on top of tab " + tab); 
-					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
-				};
-			Flurry.logEvent('newFriendPost', { 'username': currentUser.username, message: message});				
-			if (tab) {
-				Ti.API.info("new post. " +  message + " Updating feed window ");				
-				// decrement the app badge
-				Ti.API.info("appBadge is " + appBadge);
-				if (appBadge > 0) {
-					Ti.UI.iPhone.setAppBadge(appBadge - 1);
-				}
-				else {
-					Ti.API.info("notification handler called when appbadge is negative " + appBadge);
-				}				
-				if (postId) {
-					if (acs.currentUser() && acs.currentUser().id === senderId) {
-						Ti.API.info("your picture " + message + " has been posted");
+		if (!newPostHandler) {
+			newPostHandler = function (e) {
+				var mainTabGroup = Ti.App.mainTabGroup,
+					tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
+					postId = e.pid, message = e.message, senderId = e.uid,
+					currentUser = acs.currentUser();
+				Flurry.logEvent('newPost', { 'username': currentUser.username, message: message});
+				if (tab) {		
+					if (postId && currentUser && acs.currentUserId() === senderId) {
+							Ti.API.info(message);
+							acs.showPost(postId, function (p) {
+														FeedWindow.afterSharePost(p);
+													});							
 					}
 					else {
-						/* race condition can cause this to display a post twice
-						acs.showPost(postId, function (p) {
-												FeedWindow.displayPostInFeed(p, true); 
-												});
-												*/					
-						FeedWindow.showFriendsFeed(false, postId, afterAction);													
+						Ti.API.info("something went wrong while posting postId " + postId + " message " + message + " tab " + tab);
 					}
-				}
-			}		
-		});	
+				}		
+			};	
+		
+			Ti.App.addEventListener('newPost', newPostHandler);
+		}				
+		// handle new friend post notifications. Define event listener before the event is ever fired
+		Ti.API.info("Adding newFriendPost handler");
+		if (!newFriendPostHandler) {
+			newFriendPostHandler = function (e) {
+				var mainTabGroup = Ti.App.mainTabGroup,
+					tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
+					currentUser = acs.currentUser(),
+					postId = e.pid, message = e.message, senderId = e.uid,
+					appBadge = e.badge,
+					afterAction = function () { 
+						Ti.API.info("display post in details window on top of tab " + tab); 
+						acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+					};
+				Flurry.logEvent('newFriendPostHandler', { 'username': currentUser.username, message: message});				
+				if (tab) {
+					Ti.API.info("new post. " +  message + " Updating feed window ");				
+					// decrement the app badge
+					Ti.API.info("appBadge is " + appBadge);
+					if (appBadge > 0) {
+						Ti.UI.iPhone.setAppBadge(appBadge - 1);
+					}
+					else {
+						Ti.API.info("notification handler called when appbadge is negative " + appBadge);
+					}				
+					if (postId) {
+						if (acs.currentUser() && acs.currentUser().id === senderId) {
+							Ti.API.info("your picture " + message + " has been posted");
+						}
+						else {
+							/* race condition can cause this to display a post twice
+							acs.showPost(postId, function (p) {
+													FeedWindow.displayPostInFeed(p, true); 
+													});
+													*/					
+							FeedWindow.showFriendsFeed(false, postId, afterAction);													
+						}
+					}
+				}		
+			};
+			Ti.App.addEventListener('newFriendPost', newFriendPostHandler);				
+		}
 	}
 
 
@@ -137,7 +145,7 @@
 				tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab				
 				afterAction = function () { 
 					Ti.API.info("display post in details window on top of tab " + tab); 
-					acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+					//acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
 				};
 			Ti.API.info("handling new like " + message + " Updating likes count ");
 			// decrement the app badge
@@ -181,7 +189,7 @@
 			currentUser = acs.currentUser(),
 			afterAction = function () { 
 				Ti.API.info("display post in details window on top of tab " + tab); 
-				acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
+				//acs.showPost(postId, function (p) { PostView.displayPostDetailsView(tab, p);});
 			};
 		Ti.API.info("handling new comment " + message + " Updating feed window postId " + postId );
 		Flurry.logEvent('newCommentReceived', { 'username': currentUser.username, message: message});				
@@ -219,12 +227,13 @@
 	function initSubscriptions() {
 		var acs = require('lib/acs');		
 		// subscribe to notifications
-		acs.subscribeNotifications('fashionist');	
+		acs.subscribeNotifications('fashionist', function () {initNotificationHandlers();});	
 	}
 	
 	
 	function registerNotificationCallback (e) {
 		var acs = require('lib/acs'),
+			InboxView = require('ui/common/InboxView'),
 			Flurry = require('sg.flurry'),		
 			appBadge = Titanium.UI.iPhone.getAppBadge(),
 			badge = e.data.badge,
@@ -238,10 +247,10 @@
 			notificationAlert = Ti.UI.createAlertDialog({
 	            title : Ti.Locale.getString('fashionista'),
 	            message : message
-	        });
+	        }),
+	        containingTab;
 			//alert("Received push notification " + message + " type " + notificationType + " in background " + inBackground);
-			Flurry.logEvent('registerForPushNotificationsCallback', { 'username': currentUser.username, message: message});				
-									
+			Flurry.logEvent('registerForPushNotificationsCallback', { 'username': currentUser.username, message: message, notificationType: notificationType});				
 			Ti.API.info('\nPUSH NOTIFICATION: Fashionist received a push notification w/ type: ' + notificationType + ' \nmsg:' + message + ' \nappBadge ' + appBadge);
 			if (!currentUser) {
 				Ti.API.info("No logged in user. No further action");	
@@ -255,22 +264,22 @@
 					case 'newPost':
 						Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
 						Ti.App.fireEvent('newFriendPost', {"uid": senderId, "pid": postId, "message": message, "badge": badge});
-						Flurry.logEvent('newPostNotificationReceived', { 'username': currentUser.username, message: message});				
+						//Flurry.logEvent('newPostNotificationReceived', { 'username': currentUser.username, message: message});				
 					break;
 					case 'comment':
 						Ti.API.info("Handling: NEW COMMENT from " + senderId);
-						Flurry.logEvent('newCommentNotificationReceived', { 'username': currentUser.username, message: message});										
+						//Flurry.logEvent('newCommentNotificationReceived', { 'username': currentUser.username, message: message});										
 						newCommentHandler(postId, senderId, message, badge);
 					break;		
 					case 'newLike':
 						Ti.API.info("Handling: NEW LIKE from " + senderId);
-						Flurry.logEvent('newLikeNotificationReceived', { 'username': currentUser.username, message: message});										
+						//Flurry.logEvent('newLikeNotificationReceived', { 'username': currentUser.username, message: message});										
 						newLikeHandler(postId, senderId, message, badge);
 					break;								
 					case 'friend_request':
 						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
-						Flurry.logEvent('friend_requestNotificationReceived', { 'username': currentUser.username, message: message});										
-						approveFriendRequest (senderId, badge, message);
+						//Flurry.logEvent('friend_requestNotificationReceived', { 'username': currentUser.username, message: message});										
+						//approveFriendRequest (senderId, badge, message);
 					break;
 					case 'friend_approved':
 						Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);
@@ -293,7 +302,7 @@
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser();		
 
-		initNotificationHandlers();
+		//initNotificationHandlers();
 		//register for push notifications every time the app launches, as prescribed by Apple's
 		// Local and Push Notifications Programming Guide
 		Ti.API.info("calling registerForPushNotifications");		
@@ -308,7 +317,7 @@
 		    // there was an error during push registration
 		    error : function(e) {
 						Ti.API.info("failed to register push notifications: " + e.error + " error code " + e.code);
-						Flurry.logEvent('registerForPushNotificationsError', { 'username': currentUser.username, message: message});										
+						Flurry.logEvent('registerForPushNotificationsError', { 'username': currentUser.username, message: e.message});										
 						alert("failed to register push notifications: " + e.error + " error code " + e.code);
 		    },
 		    // called when app receives a push notification
