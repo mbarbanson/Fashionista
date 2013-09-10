@@ -285,6 +285,7 @@
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
 			//window = inviteTable.window,
 			rightButton,
+			cachedFriends = acs.getSavedFriendIds(),
 			hasFriends = function (fList) { return fList.length > 0; },
 			getFriendsSuccessCallback = function (fList) {
 				// no friends yet! prompt to select and add friends
@@ -333,7 +334,9 @@
 				activityIndicator.show();
 			}
 			
-			acs.getFriendsList(getFriendsSuccessCallback);
+			//acs.getFriendsList(getFriendsSuccessCallback);
+			// use cachedFriends instead of making another round trip to the server
+			getFriendsSuccessCallback(cachedFriends);
 	}
 
 	function createInviteView(parentWin, offsetTop) {

@@ -9,7 +9,7 @@
 	function createMessage(toIds, messageBody, messageSubject, successCallback, errorCallback) {
 		Cloud.Messages.create({
 		    to_ids: toIds,
-		    body: messageBody,
+		    body: escape(messageBody),
 		    subject: messageSubject
 		}, function (e) {
 		    if (e.success) {
@@ -50,7 +50,7 @@
 						else if (friends.length > 1) {
 							friends = friends.map(getUserId);
 							friends = friends.filter(excludeSelf);
-							friends.join(',');	
+							toIds = friends.join(',');	
 						}
 						else {
 							// no ids to send a message to, bail

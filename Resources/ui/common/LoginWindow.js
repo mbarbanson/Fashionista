@@ -221,6 +221,7 @@
 				// avoid repeat click on done
 				done.setEnabled(false);
 				acs.createUser(username.value, email.value, password.value, postActionCallback, errorCallback);
+				//acs.sendWelcome(email.value, successCallback, errorCallback);
 			}
 			lWin.add(spinner);
 			spinner.show();						

@@ -38,7 +38,7 @@
 					}
 				}		
 			};	
-		
+			//Ti.App.removeEventListener('newPost', newPostHandler);
 			Ti.App.addEventListener('newPost', newPostHandler);
 		}				
 		// handle new friend post notifications. Define event listener before the event is ever fired
@@ -302,7 +302,7 @@
 			acs = require('lib/acs'),
 			currentUser = acs.currentUser();		
 
-		//initNotificationHandlers();
+		initNotificationHandlers();
 		//register for push notifications every time the app launches, as prescribed by Apple's
 		// Local and Push Notifications Programming Guide
 		Ti.API.info("calling registerForPushNotifications");		
@@ -330,6 +330,7 @@
 	exports.initNotifications = initNotifications;
 	exports.registerNotificationCallback = registerNotificationCallback;
 	exports.newCommentHandler = newCommentHandler;
+	exports.initNotificationHandlers = initNotificationHandlers;
 	
 	
 } ());

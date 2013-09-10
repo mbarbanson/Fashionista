@@ -7,6 +7,7 @@
 
 (function () {
 	'use strict';
+	
 	// a couple local variables to save state
 	//FIXME define a userModel with additional properties like hasRequestedFriends etc...
 	var privCurrentUser = null,
@@ -476,8 +477,10 @@
 	}
 	
 
-	
 
+
+	
+// notifications
 	function notifyUsers (channel, message, userIds, customPayload, successCallback) {
 		var Flurry = require('sg.flurry'),
 			messages = require('lib/messages');
@@ -624,27 +627,32 @@
 
 
 	function newCommentNotification (post, commentText, otherComments) {
-		var caption = "",
+		var emails = require('lib/emails'),
+			caption = "",
+			poster = post && post.user,
 			posterId = post && post.user && post.user.id,
 			selfId = currentUserId(),
-			otherCommenters,
+			otherCommenters = [],
 			getUser = function(comment) { return comment.user;},
 			atMentions,
 			stripLeadingAt = function(s) {return s.replace(/^@/, "");},
 			userNameQuery = function(uname) { return {"username": uname}; },
 			getUserId = function (user) { return user ? user.id: null;},
-			excludeSelf = function (id) { return id !== selfId;},			
+			excludeSelf = function (user) { if (user && user.id !== selfId) { return user;}},			
 			mentionnedUsers,
 			whereClause,
 			successCallback = function (users) {
-				var allUsers = users.concat(otherCommenters),
-					userIdList = (allUsers && allUsers.length > 0) ? allUsers.map(getUserId) : null,
+				var allRecipients = users.concat(otherCommenters),					
+					userIdList,
 					userIds;
 					
-				userIdList = userIdList ? userIdList.filter(excludeSelf) : null;
+				allRecipients = allRecipients.filter(excludeSelf);
+				allRecipients.push(poster);
+				userIdList = (allRecipients && allRecipients.length > 0) ? allRecipients.map(getUserId) : null;	
 				userIds = userIdList ? userIdList.join() : null;
 					
-				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);			
+				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);
+				//emails.sendNewActivityEmail('newComment', allRecipients, caption);			
 			};
 		if (post.content !== Ti.Locale.getString('nocaption')) {
 			caption = unescape(post.content);
@@ -663,13 +671,16 @@
 			successCallback([]);	
 		}
 		else {			
-			newNotification(post, "comment", ' commented: ' + unescape(commentText), false, posterId ? posterId.toString() : null);		
+			newNotification(post, "comment", ' commented: ' + unescape(commentText), false, posterId ? posterId.toString() : null);
+			//emails.sendNewActivityEmail('newComment', [poster], caption);				
 		}				
 	}
 	
 	
 	function newLikeNotification (post) {
-		var caption = "",
+		var emails = require('lib/emails'),
+			caption = "",
+			author = post && post.user,
 			authorId = post && post.user && post.user.id;
 		if (post.content === Ti.Locale.getString('nocaption')) {
 			caption = "";
@@ -678,6 +689,7 @@
 			caption = unescape(post.content);
 		}
 		newNotification(post, "newLike", ' liked your post ' + caption, false, authorId ? authorId.toString() : null);
+		//emails.sendNewActivityEmail('new', [author], caption);				
 	}
 
 
@@ -814,7 +826,7 @@
 		    tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
 		Cloud.Posts.create({
-		    response_json_depth: 2,
+		    response_json_depth: 3,
 		    content: pBody,
 		    photo: pPhoto,
 		    tags: tags_list,
@@ -854,7 +866,7 @@
 		
 		Cloud.Posts.show({
 		    post_id: savedPostId,
-		    response_json_depth: 2
+		    response_json_depth: 3
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
@@ -936,9 +948,9 @@
 		usersList.splice(usersList.length, 0, privCurrentUser);
 		Cloud.Posts.query({
 		    page: 1,
-		    per_page: Ti.App.maxNumPosts,
+		    limit: Ti.App.maxNumPosts,
 		    order: '-created_at',
-		    response_json_depth: 2,
+		    response_json_depth: 4,
 		    where: {
 		        "user_id": { '$in': usersList.map(getID)  }
 		    }
@@ -1074,55 +1086,6 @@
 		return avatar;
 	}
 
-// email
-
-function sendWelcome(email, successCallback, errorCallback) {
-	var Flurry = require('sg.flurry');
-	
-	Flurry.logEvent('Cloud.Emails.send', { 'email': email.value });		
-	Cloud.Emails.send({
-	    template: 'welcome',
-		recipients: email
-	}, function (e) {
-	    if (e.success) {
-	        if (successCallback) { successCallback(e); }
-			Flurry.logEvent('welcomeEmailSuccess', { 'email': email.value});						
-		} else {
-		    Ti.API.info('Error:\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-		    }
-			Flurry.logEvent('welcomeEmailError', { 'email': email.value });
-			if (errorCallback) { 
-				errorCallback(e); 
-			}
-		});
-}
-
-
-function sendResetPasswordLink(email, successCallback, errorCallback) {
-	var Flurry = require('sg.flurry');
-	
-	Flurry.logEvent('Cloud.Users.sendResetPasswordLink', { 'email': email });
-	Cloud.Users.requestResetPassword({
-	    //template: 'resetPassword',
-		email: email
-		//dynamic_fields: {'username': email}
-	}, function (e) {
-	    if (e.success) {
-	        if (successCallback) { 
-				successCallback(e);
-			}
-			Flurry.logEvent('resetPasswordSuccess', { 'email': email});						
-		} else {
-		    Ti.API.info('Error:\n' +
-		            ((e.error && e.message) || JSON.stringify(e)));
-			Flurry.logEvent('resetPasswordError', { 'email': email });
-			if (errorCallback) { 
-				errorCallback(e); 
-			}
-		}
-	});
-}
 
 
 
@@ -1164,8 +1127,6 @@ function sendResetPasswordLink(email, successCallback, errorCallback) {
 	exports.getFriendsPosts = getFriendsPosts;
 	exports.getPublicPosts = getPublicPosts;
 	exports.getUserAvatar = getUserAvatar;
-	exports.sendResetPasswordLink = sendResetPasswordLink;
-	exports.sendWelcome = sendWelcome;
 	exports.getSavedFriendIds = getSavedFriendIds;
 	exports.setSavedFriendIds = setSavedFriendIds;
 

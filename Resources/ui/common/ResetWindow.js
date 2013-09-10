@@ -22,9 +22,11 @@ function checkemail(emailAddress) {
 (function () {
 	'use strict';
 	var acs,
+		emails,
 		Notifications,
 		Flurry;
 	acs = require('lib/acs');
+	emails = require('lib/emails');
 	Notifications = require('ui/common/notifications');
 	Flurry = require('sg.flurry');		
 						
@@ -120,8 +122,7 @@ function checkemail(emailAddress) {
 			}
 			// avoid repeat click on done
 			resetBtn.setEnabled(false);
-			acs.sendResetPasswordLink(emailAddy, successCallback, errorCallback);
-			//acs.sendWelcome(email.value, successCallback, errorCallback);
+			emails.sendResetPasswordLink(emailAddy, successCallback, errorCallback);
 			win.add(spinner);
 			spinner.show();						
 		});
