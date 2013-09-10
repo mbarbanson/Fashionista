@@ -826,7 +826,6 @@
 		    tags_list = postModel.tags.length > 0 ? postModel.tags.join() : null;
 		Ti.API.info("Posting..." + pBody + " photo " + pPhoto + " callback " + successCallback);
 		Cloud.Posts.create({
-		    response_json_depth: 3,
 		    content: pBody,
 		    photo: pPhoto,
 		    tags: tags_list,
@@ -865,8 +864,7 @@
 		var Flurry = require('sg.flurry');
 		
 		Cloud.Posts.show({
-		    post_id: savedPostId,
-		    response_json_depth: 3
+		    post_id: savedPostId
 		}, function (e) {
 		    if (e.success) {
 		        var post = e.posts[0];
@@ -950,7 +948,6 @@
 		    page: 1,
 		    limit: Ti.App.maxNumPosts,
 		    order: '-created_at',
-		    response_json_depth: 4,
 		    where: {
 		        "user_id": { '$in': usersList.map(getID)  }
 		    }
@@ -1016,7 +1013,6 @@
 		    page: 1,
 		    per_page: Ti.App.maxNumPosts,
 		    order: '-created_at',
-		    response_json_depth: 2,
 		    where: {
 				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag')]}
 		    }
