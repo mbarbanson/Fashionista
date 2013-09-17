@@ -107,6 +107,7 @@ if (Ti.version < 2.0 ) {
 	
 	// max number of posts in feed
 	Ti.App.maxNumPosts = 100;
+	Ti.App.maxNumCachedComments = 3;
 	
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
@@ -132,7 +133,16 @@ if (Ti.version < 2.0 ) {
 	}
 	
 	Ti.API.info("should be hello, was = " + String.format('%s','hello'));
-			
+	
+	//these acl objects were created using curl on the command line
+	/*
+	if (Ti.App.deployType === 'production') {
+		Ti.App.postACLId = "52377acea7a0670b0f02c6c0";
+	}
+	else {
+		Ti.App.postACLId = "5233ba89e126880b21004b74";
+	}
+	*/		
 	showGuestWindow = function () {
 		// no user logged in previously, prompt user to login or sign up
 		GuestWindow.createGuestWindow(Ti.App.rootWindow);

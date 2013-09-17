@@ -558,10 +558,8 @@
 		var Flurry = require('sg.flurry'),
 			messages= require('lib/messages'),
 			username = '@' + privCurrentUser.username, //post.user.username,
-			message = username + notificationContent,
-			alertBody = message.substr(0,119),
-			messageBodyStart = alertBody.indexOf(':'),
-			messageBody = alertBody.slice(messageBodyStart + 1),
+			messageBody = String.format(Ti.Locale.getString('commentNotificationBody'), notificationContent),
+			alertBody,
 			userId = currentUserId(),
 			badge = 1, //Ti.UI.iPhone.getAppBadge() + 1,
 			fPayload = {
@@ -569,12 +567,7 @@
 						"uid": userId, //post.user.id, 
 						"type": notificationType
 					},
-			customPayload = {
-			    "f": fPayload,
-				"badge": badge,
-				"sound": "default",							
-			    "alert" : alertBody
-			},
+			customPayload,
 			notifyCallback = function (e) {
 			    if (e.success) {
 			        Ti.API.debug('Successfully notified friends ' + (notifyAllFriends ? 'all' : user_ids || userId) + ' remoteUUID ' + Ti.Network.remoteDeviceUUID);
@@ -587,6 +580,17 @@
 			    }
 			},
 			paramDict;
+		
+		if (notificationType === 'newLike') {
+			messageBody = String.format(Ti.Locale.getString('likeNotificationBody'), username, notificationContent);		
+		}
+		alertBody = (username + " " + messageBody).substr(0,119); // limit notification to 120 chars due to IOS push notification limitation to 255 chars
+		customPayload = {
+		    "f": fPayload,
+			"badge": badge,
+			"sound": "default",							
+		    "alert" : alertBody
+		};
 			
 		if (!fPayload) {
 			alert("noPayload");
@@ -651,7 +655,7 @@
 				userIdList = (allRecipients && allRecipients.length > 0) ? allRecipients.map(getUserId) : null;	
 				userIds = userIdList ? userIdList.join() : null;
 					
-				newNotification(post, "comment", ' commented: ' + unescape(commentText), false, userIds);
+				newNotification(post, "comment", unescape(commentText), false, userIds);
 				//emails.sendNewActivityEmail('newComment', allRecipients, caption);			
 			};
 		if (post.content !== Ti.Locale.getString('nocaption')) {
@@ -671,7 +675,7 @@
 			successCallback([]);	
 		}
 		else {			
-			newNotification(post, "comment", ' commented: ' + unescape(commentText), false, posterId ? posterId.toString() : null);
+			newNotification(post, "comment", unescape(commentText), false, posterId ? posterId.toString() : null);
 			//emails.sendNewActivityEmail('newComment', [poster], caption);				
 		}				
 	}
@@ -688,7 +692,7 @@
 		else {
 			caption = unescape(post.content);
 		}
-		newNotification(post, "newLike", ' liked your post ' + caption, false, authorId ? authorId.toString() : null);
+		newNotification(post, "newLike", caption, false, authorId ? authorId.toString() : null);
 		//emails.sendNewActivityEmail('new', [author], caption);				
 	}
 
@@ -807,7 +811,7 @@
 				if (successCallback) {
 					successCallback(e.users, cleanupAction);	
 				}
-		    } else {
+			} else {
 				if (cleanupAction) { cleanupAction(); }
 				Ti.API.info('getFriendsList Error:\\n' + ((e.error && e.message) || JSON.stringify(e)));
 				Flurry.logEvent('Cloud.Friends.search', {'errorMessage': e.message, 'error': e.error});			            
@@ -828,6 +832,7 @@
 		Cloud.Posts.create({
 		    content: pBody,
 		    photo: pPhoto,
+			acl_name: Ti.Locale.getString('publicPostACLName'),		    
 		    tags: tags_list,
 		    'photo_sizes[avatar]':'50x50#',
 		    'photo_sizes[preview]': '75x75#',
