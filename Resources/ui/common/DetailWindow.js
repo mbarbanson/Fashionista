@@ -32,14 +32,16 @@
 			tableView.displayComments = true; 
 			row = PostView.createPostView (post);
 			row.originRow = originRow;
+			// full list of comments is needed to notify other commenters when a comment is added
+			row.comments = comments;
 			PostView.setPostViewEventHandlers (row);
 			success = PostView.populatePostView(containingTab, row, true);
 			if (success) {
-				tableView.appendRow(row);
 				CommentsView.createCommentsView(row, comments);
 				if (newComment) {
 					CommentsView.inputComment(row);
-				}				
+				}
+				tableView.appendRow(row);				
 			}			
 		}
 	}

@@ -112,12 +112,7 @@
 				avatarView.addEventListener('click', function (e) {
 															ProfileView.displayUserProfile(containingTab, fromUser);
 															});	
-
-
-				if (type === 'comment') {
-					commentStart = messageBody && messageBody.indexOf(':');
-					messageBody = messageBody && messageBody.slice(commentStart + 1);
-				}																									
+																									
 				label.add(authorBtn);
 				label.text = preSpaces + messageBody;
 				if (type === 'friend_request') {

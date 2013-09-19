@@ -17,22 +17,28 @@
 			post = row.post,
 			senderId = acs.currentUser().id,
 			addCommentHandlerCallback = function (comment) {
-				var commentsCount = row.commentsCount,
-					originRow = row.originRow,
-					comments = (originRow && originRow.comments) || [];
+				var comments = row.comments || [],
+					commentsCount = comments.length,
+					originRow = row.originRow;
+					//originComments = (originRow && originRow.comments) || [],
 				social.newCommentNotification(post, commentText, comments);					
 				if (displayComments) {
 					//FIXME also check that tableView is a child of win
+					// keep the list of comments updated so we can notify all other commenters when a new comment is added 
+					comments.push(comment);
+					row.comments = comments;
+					// add new comment to comment/detail window
 					CommentsView.displayComment(row, comment);
-					//add new comment to originRow and display it
-					if (originRow && comments) {
-						comments.push(comment);
-						originRow.comments = comments;
+					//add new comment to originRow if we haven't already displayed the max num of comments
+					if (commentsCount < Ti.App.maxCommentsInPostSummary) {
 						CommentsView.displayComment(originRow, comment, Ti.App.maxCommentsInPostSummary);
 					}
 				}
-				originRow.addEventListener('update_commentsCount', originRow.updateCommentsCountHandler);
-				originRow.fireEvent('update_commentsCount');
+				if (originRow.updateCommentsCountHandler) {
+					originRow.updateCommentsCountHandler();					
+				}
+				//originRow.addEventListener('update_commentsCount', originRow.updateCommentsCountHandler);
+				//originRow.fireEvent('update_commentsCount');
 				notifications.newCommentHandler(post.id, senderId, commentText);
 				//Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
 				//Ti.App.fireEvent('newComment', {"uid": senderId, "pid": post.id, "message": commentText});
@@ -41,7 +47,7 @@
 			alert(Ti.Locale.getString('emptyComment'));
 		}
 		else {
-			Comments.createComment(post.id, commentText, addCommentHandlerCallback);
+			Comments.createComment(post, commentText, addCommentHandlerCallback);
 			cleanup();					
 		}
 	}
@@ -146,6 +152,9 @@
 			Ti.API.error("bad comment");
 			return;
 		}
+		else if (!comment.user) {
+			Ti.API.error("null user");
+		}
 		var	PostView = require('ui/common/PostView'),
 			ProfileView = require('ui/common/ProfileView'),		
 			commenter = comment.user ? comment.user.username : null,
@@ -246,9 +255,6 @@
 						}),
 			successCallback = function (comments) {
 								var post = row && row.post;
-								if (row) {
-									row.comments = comments;
-								}
 								createCommentsView(row, comments, Ti.App.maxCommentsInPostSummary);
 							};
 		// retrieves comments for current post and display each post followed by its comments on separate rows
@@ -273,12 +279,7 @@
 				// FIXME This should be attached to the tableView, not the window
 				//containingView.linkHandler = linkHandler;				
 				// retrieves comments for current post and display each post followed by its comments on separate rows
-				if (originRow.comments) {
-					successCallback(originRow.comments);	
-				}
-				else {
-					Comments.getPostComments(originRow.post, successCallback);					
-				}
+				Comments.getPostComments(originRow.post, successCallback, true);
 			}							
 	}
 	

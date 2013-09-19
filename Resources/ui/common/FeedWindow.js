@@ -60,7 +60,7 @@
 				}
 			}
 			else {
-				tableView.appendRow(row, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});				
+				tableView.appendRow(row);  //, {animated: true, animatedStyle: Titanium.UI.iPhone.RowAnimationStyle.RIGHT});				
 			}
 			// this code can be executed twice with no problems in case we have a race condition
 			if (!tableView.flipped) {

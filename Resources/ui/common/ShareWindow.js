@@ -6,6 +6,7 @@
 
 function parseHashTags(postModel, caption) {
 	'use strict';
+	
 	/*jslint regexp: true */
 	var hashTagIdx = -1, endHashIdx = -1, text = caption, hashStr = '', re = /[^\w]/;
 	while ((hashTagIdx = text.indexOf('#')) > -1) {
@@ -38,7 +39,8 @@ function parseHashTags(postModel, caption) {
 
 function createShareWindow(postModel, shareAction) {
 	'use strict';
-	var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'), 
+	
+	var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		FeedWindow = require('ui/common/FeedWindow'),
 		InviteView = require('ui/common/InviteView'), 
 		shareBtn, cancelBtn,
@@ -49,8 +51,8 @@ function createShareWindow(postModel, shareAction) {
 		thumbnail, 
 		tab, 
 		caption,
-		captionHintText = 'Add a caption or tag your photo e.g.: #findsimilar, #shorts, #public...',
-		defaultCaption = Ti.Locale.getString('nocaption'), 
+		defaultCaption = Ti.Locale.getString('nocaption'),
+		captionHintText = Ti.Locale.getString('captionHint'), 
 		shareLabel, 
 		inviteTable, 
 		tableData, 
@@ -135,6 +137,8 @@ function createShareWindow(postModel, shareAction) {
 	});
 	
 	cancelBtn.addEventListener('click', function(e) {
+		//Ti.App.mainTabGroup.show();
+		Ti.App.mainTabGroup.setActiveTab(0);
 		shareTabGroup.close();
 	});
 	//  crate a tab group with a single tab to hold the share window stack
@@ -153,6 +157,19 @@ function createShareWindow(postModel, shareAction) {
 	activityIndicator.show();
 	shareTabGroup.open();
 	
+	// show pic thumbnail
+	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
+	thumbnail = Ti.UI.createImageView({
+		image: postModel.thumbnail_75, 
+		top: 10, 
+		left: '5%',
+		borderWidth: 1,
+		borderColor: '#707070',
+		//width: 75
+		height: 75
+	});	
+	shareWindow.add(thumbnail);
+	
 	// create share window elements
 	caption = Ti.UI.createTextArea({
 		autolink: Ti.UI.AUTOLINK_URLS,
@@ -165,10 +182,11 @@ function createShareWindow(postModel, shareAction) {
 		height : 75,
 		font : {
 			fontWeight : 'normal',
-			fontSize : '17'
+			fontSize : '16'
 		},
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-		borderRadius : 1,
+		borderWidth : 1,
+		borderColor:'#707070',
 		paddingLeft : 2,
 		paddingRight : 2,
 		backgroundColor : 'white'
@@ -197,14 +215,14 @@ function createShareWindow(postModel, shareAction) {
 		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
 		color : 'black',
-		top : 100,
+		top : 140,
 		left : '5%',
 		height : 20,
 		width : '90%',
 		paddingLeft : 2,
 		paddingRight : 2,
 		font : {
-			fontWeight : 'bold',
+			fontWeight : 'normal',
 			fontSize : '18'
 		}
 	});
@@ -217,7 +235,7 @@ function createShareWindow(postModel, shareAction) {
 		backgroundColor: '#5D3879',
 		borderRadius: 1,
 		borderWidth: 1,		
-		top: 130, left: '5%',
+		top: 175, left: '5%',
 		height: 30, width: '30%'
 	});
 	findSimilarBtn = Titanium.UI.createButton({
@@ -227,8 +245,8 @@ function createShareWindow(postModel, shareAction) {
 		backgroundColor: '#5D3879',
 		borderRadius: 1,
 		borderWidth: 1,				
-		top: 130, left: '37%',
-		height: 30, width: '30%'
+		top: 175, left: '37%',
+		height: 30, width: '33%'
 	});
 	friendsOnlyBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
@@ -237,8 +255,8 @@ function createShareWindow(postModel, shareAction) {
 		backgroundColor: '#5D3879',
 		borderRadius: 1,
 		borderWidth: 1,				
-		top: 175, left: '5%',
-		height: 30, width: '40%'
+		top: 100, left: '5%',
+		height: 30, width: '35%'
 	});	
 	
 	shareWindow.add(findExactBtn);
@@ -305,10 +323,6 @@ function createShareWindow(postModel, shareAction) {
 	inviteTable = InviteView.createInviteView(shareWindow, 220);
 	shareWindow.add(inviteTable);
 */
-	// show pic thumbnail
-	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
-	thumbnail = Ti.UI.createImageView({image: postModel.thumbnail_75, top: 10, left: '5%'});	
-	shareWindow.add(thumbnail);
 	
 	activityIndicator.hide();
 	shareWindow.setRightNavButton(shareBtn);

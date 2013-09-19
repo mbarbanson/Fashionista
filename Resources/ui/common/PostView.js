@@ -33,8 +33,9 @@
 			createLikeCallback = function (like) {
 													social.newLikeNotification(post);
 													if (row.updateLikesCountHandler) {
-														row.addEventListener('update_likesCount', row.updateLikesCountHandler);	
-														row.fireEvent('update_likesCount');														
+														row.updateLikesCountHandler();
+														//row.addEventListener('update_likesCount', row.updateLikesCountHandler);	
+														//row.fireEvent('update_likesCount');														
 													}
 													else {
 														Ti.API.error("likePost: row.updateLikesCountHandler is null. This just shouldn't happen!!!!");
@@ -224,7 +225,7 @@
 			};
 			imgView.addEventListener('dblclick', imgClickHandler);
 			//imgView.addEventListener('load', loadHandler);
-			imgView.addEventListener('postlayout', loadHandler);				
+			//imgView.addEventListener('postlayout', loadHandler);				
 					
 	}
 		
@@ -460,7 +461,12 @@
 				row.add(commentsCount);	
 				row.commentsCount = commentsCount;	
 				// comment add code currently assumes originRow in a post summary row
-				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});							
+				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});
+				
+				if (numComments > 0) {
+					displayRowDetails(containingTab, row, false);
+				}
+							
 			}
 				
 			return true;
@@ -475,7 +481,7 @@
 		var CommentsView = require('ui/common/CommentsView'),
 			acs = require('lib/acs');
 		//row.action = displayPostDetails;
-		row.updateCommentsCountHandler = function(e) {	
+		row.updateCommentsCountHandler = function() {	
 										var post = row.post;
 										// update post then the commentsCount in row from the new post values
 										acs.showPost(post.id, function (updatedPost) {
@@ -485,7 +491,7 @@
 																});
 									};
 
-		row.updateLikesCountHandler = function(e) {
+		row.updateLikesCountHandler = function() {
 										Ti.API.info('updateLikesCount');	
 										var post = row.post;
 										// update post then the likesCount in row from the new post values
