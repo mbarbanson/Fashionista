@@ -15,7 +15,8 @@ function createContactsWindow(doneHandler) {
 		win = Ti.UI.createWindow({
 			backgroundColor: '#ddd',
 			color: 'black',
-			barColor: '#5D3879',
+	        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+	        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],			
 			title: Ti.Locale.getString('contactsWindow'),
 			rightNavButton: done
 		});

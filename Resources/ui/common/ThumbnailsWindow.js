@@ -25,9 +25,11 @@
 			imgView = null,
 			toolbar = LoginToolbar.createLoginToolbar(tab),
 			detailWindow = Ti.UI.createWindow({
-									title: "Fashionist Pick",
-							        backgroundColor: 'black',
-							        barColor: '#5D3879'
+									title: Ti.Locale.getString('fashionista'),
+							        backgroundColor: 'transparent',
+							        //navTintColor: Ti.Locale.getString('themeColor'),
+							        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+							        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
 							});
 
 		imgView = Ti.UI.createImageView({
@@ -212,6 +214,7 @@
 		}			
 	}
 	
+	
 	function createThumbnailsWindow () {
 		var tableView = null, 
 			refreshBtn = null;
@@ -220,8 +223,10 @@
 			// this code is never currently called
 			if (!privThumbnailsWindow) {
 				privThumbnailsWindow = Ti.UI.createWindow({
-								        backgroundColor: 'transparent',
-								        barColor: '#5D3879'
+										//translucent:false,
+								        backgroundColor: 'black', //'transparent',
+								        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+								        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
 										});
 			 
 				tableView = Ti.UI.createTableView ({
@@ -242,7 +247,7 @@
 				refreshBtn.addEventListener('click', function(e) {
 					refreshThumbnails(true);
 					});
-			}
+				}
 			else { //thumbnailsWindow already exists 
 			
 				clearThumbnails();
@@ -253,7 +258,9 @@
 					guestThumbnailsWindow = Ti.UI.createWindow({
 											title: Ti.Locale.getString('fashionista'),
 									        backgroundColor: 'transparent',
-									        barColor: '#5D3879'
+									        //navTintColor: Ti.Locale.getString('themeColor'),
+									        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+									        extendEdges: [Ti.UI.EXTEND_EDGES_ALL]
 											});
 			 
 					tableView = Ti.UI.createTableView ({

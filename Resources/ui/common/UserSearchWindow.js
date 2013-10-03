@@ -69,8 +69,9 @@
 					});
 		
 		win = Ti.UI.createWindow({
+	        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+	        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],			
 			backgroundColor: 'white',
-			barColor: '#5D3879',
 			rightNavButton: searchBtn,
 			title: Ti.Locale.getString('userSearchTitle'),
 			tabBarHidden: true

@@ -8,16 +8,16 @@
     <property name="acs-api-key-development" type="string">VtBOemkWS2i8oF8ky5Zw72RlLnRaRRov</property>
     <deployment-targets>
         <target device="tizen">false</target>
-        <target device="mobileweb">false</target>
+        <target device="mobileweb">true</target>
         <target device="iphone">true</target>
         <target device="ipad">true</target>
         <target device="android">true</target>
         <target device="blackberry">false</target>
     </deployment-targets>
-    <sdk-version>3.1.2.GA</sdk-version>
+    <sdk-version>3.1.3.GA</sdk-version>
     <id>com.3pmrevolution.fashionist</id>
     <name>Fashionist</name>
-    <version>1.0014</version>
+    <version>1.0015</version>
     <publisher>monique</publisher>
     <url>http://3pmrevolution.com</url>
     <description>social shopping</description>
@@ -25,7 +25,6 @@
     <icon>appicon.png</icon>
     <persistent-wifi>false</persistent-wifi>
     <prerendered-icon>false</prerendered-icon>
-    <statusbar-style>opaque</statusbar-style>
     <statusbar-hidden>false</statusbar-hidden>
     <fullscreen>false</fullscreen>
     <navbar-hidden>false</navbar-hidden>

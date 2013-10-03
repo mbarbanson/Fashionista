@@ -6,6 +6,7 @@
 (function () {
 	'use strict';
 	
+
 	var acs = require('lib/acs'),
 		Flurry = require('sg.flurry'),	
 		CameraView = require('/ui/common/CameraView'),
@@ -38,8 +39,16 @@
 		Ti.API.info("populating tabs");
 		var	friendFeedWindow = FeedWindow.createFeedWindow('friendFeed'),
 			findFeedWindow = FeedWindow.createFeedWindow('findFeed'),
-			win3 = Ti.UI.createWindow(),
-			win4 = Ti.UI.createWindow(),
+			win3 = Ti.UI.createWindow({
+										backgroundColor: 'white',
+										statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+								        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]
+								        }),
+			win4 = Ti.UI.createWindow({
+										backgroundColor: 'white',
+										statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+								        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]
+								        }),
 			settingsWindow,
 			currentUser = acs.currentUser(),
 			tab1, tab2, tab3, tab4, tab5, 

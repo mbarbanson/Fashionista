@@ -48,10 +48,13 @@ if (Ti.version < 2.0 ) {
 	Flurry.setUseHttps(true);
 	Flurry.setCaptureUncaughtExceptions(true);		
 	Flurry.reportOnClose = true;
+
+	Ti.API.info("Titanium version " + Ti.version);
+	Ti.API.info("App version " + Ti.App.version + "\n");
+	Ti.App.itunesLink = "https://itunes.apple.com/us/app/fashionist/id603194546";
 	
-		
 	// test out logging to developer console, formatting and localization
-	Ti.API.info(String.format("%s%s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));
+	Ti.API.info(String.format("%s %s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));
 	Ti.API.debug(String.format("%s %s", Ti.Locale.getString("user_agent_message","default_not_set"),Titanium.userAgent));
 	
 	Ti.API.debug(String.format("locale specific date is %s",String.formatDate(new Date()))); // default is short
@@ -106,8 +109,10 @@ if (Ti.version < 2.0 ) {
 	});
 	
 	// max number of posts in feed
-	Ti.App.maxNumPosts = 100;
+	Ti.App.maxNumPosts = 75;
 	Ti.App.maxNumCachedComments = 3;
+	Ti.App.maxCommentsInPostSummary = 3;
+
 	
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
@@ -156,7 +161,7 @@ if (Ti.version < 2.0 ) {
 	else {
 		AppWindow = require('ui/handheld/ApplicationWindow');
 		if (Ti.Platform.name === 'iPhone OS') { 
-			Ti.UI.iPhone.setStatusBarStyle(Titanium.UI.iPhone.StatusBar.GREY); 
+			Ti.UI.iPhone.setStatusBarStyle(Titanium.UI.iPhone.StatusBar.DEFAULT); 
 			Ti.App.spinnerStyle = Ti.UI.iPhone.ActivityIndicatorStyle.PLAIN;
 		}
 	}

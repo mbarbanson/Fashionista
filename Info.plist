@@ -11,7 +11,6 @@
 	<key>CFBundleIconFile</key>
 	<string>appicon.png</string>
 	<key>CFBundleURLTypes</key>
-	<!-- uncomment to enable facebook SSO -->
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
@@ -20,6 +19,14 @@
 			<array>
 				<string>fashionist</string>
 				<string>fb355242507898610</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.3pmrevolution.fashionist</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fashionist</string>
 			</array>
 		</dict>
 	</array>
@@ -63,18 +70,6 @@
 		<string>appicon.png</string>
 		<string>appicon@2x.png</string>
 		<string>appicon-72.png</string>
-	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.3pmrevolution.fashionist</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>fashionist</string>
-				<string>fb355242507898610</string>
-			</array>
-		</dict>
 	</array>
 </dict>
 </plist>

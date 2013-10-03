@@ -9,7 +9,6 @@
 (function () {
 	'use strict';
 	
-	Ti.App.maxCommentsInPostSummary = 3;
 	
 	var singleLineHeight = 20,
 		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
@@ -44,7 +43,7 @@
 			Likes.createLike(post.id, createLikeCallback);
 		}
 		else {
-			Ti.API.error("This shouldn't happen!!!! likePost: row or post is null " + row);			
+			Ti.API.error("This shouldn't happen!!!! likePost: row or post is null OR USER IS LIKING THEIR OWN POST " + row);			
 		}		
 	}
 	
@@ -69,7 +68,7 @@
 			commentsCountText = String.format(Ti.Locale.getString('viewNumComments'), count.toString());	
 		}
 		else {
-			Ti.API.error("no comments right after we added a comment. This shouldn't happen");	
+			Ti.API.info("there are less than maxCommentsinPostSummary comments in this post");	
 		}				
 		if (commentsCount) {
 			commentsCount.text = commentsCountText;
@@ -92,7 +91,10 @@
 			imageUrl = row.photo.slice(7),
 			suffix = "&btnG=Search+by+image",
 			webview = Titanium.UI.createWebView({url:baseUrl + imageUrl}),
-			window = Titanium.UI.createWindow(),
+			window = Titanium.UI.createWindow({
+				        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+				        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
+					}),
 			Flurry = require('sg.flurry');
 		Flurry.logEvent('priceTagBtnClicked');
 	    window.add(webview);
@@ -224,8 +226,7 @@
 				imgView.removeEventListener('postlayout', loadHandler);					
 			};
 			imgView.addEventListener('dblclick', imgClickHandler);
-			//imgView.addEventListener('load', loadHandler);
-			//imgView.addEventListener('postlayout', loadHandler);				
+			return imgView;				
 					
 	}
 		
@@ -251,10 +252,6 @@
 			labelDetails,
 			imgView,
 			post = row.post, 
-			//photoUrls = post.photo && post.photo.urls,
-			//img, clickHandler,
-			//imgW,
-			//imgH,
 			postW, postH, postL, postT,
 			labelDate,
 			createdAtDate,
@@ -275,7 +272,7 @@
 			
 			// first, show the pic
 			if (!displayComments) {
-				displayPicture(containingTab, row, photoBlob, numComments);				
+				imgView = displayPicture(containingTab, row, photoBlob, numComments);				
 			}
 	
 			//second row: avatar and name of post athor, find, like, comment and more buttons
@@ -291,13 +288,17 @@
 			avatarView = Ti.UI.createImageView({
 							image: avatarImg,
 							left: 5, top:5,
-							width:30, height:30
+							width:30, height:30,
+							borderWidth: 1, borderColor: 'blue'
 							});
 			row.add(avatarView);
+			avatarView.addEventListener('click', function (e) {
+														ProfileView.displayUserProfile(containingTab, author);
+														});									
 								
 								
 			labelUserName = Ti.UI.createButton({
-								color: '#576996',
+								color: 'blue',
 								backgroundColor: 'white',
 								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
@@ -317,7 +318,7 @@
 									image: '/icons/172-pricetag.png',
 									//title: Ti.Locale.getString('find'),
 									//color: 'white',
-									backgroundColor: '#5D3879',
+									backgroundColor: Ti.Locale.getString('themeColor'),
 									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,								
 									left: 150, top:-20,
 									width:30,
@@ -443,13 +444,13 @@
 				row.add(commentIcon);			
 							
 				
-				if (numComments > Ti.App.maxCommentsInPostSummary) {
+				if (numComments > 0) {  //Ti.App.maxCommentsInPostSummary) {
 					commentsCountText = String.format(Ti.Locale.getString('viewNumComments'), numComments.toString());	
 				}
 				else {
 					commentsCountText = Ti.Locale.getString('addComment');					
 				}
-				
+
 				commentsCount = Ti.UI.createLabel({
 									color:'#999999',
 									font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'normal'},

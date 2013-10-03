@@ -26,13 +26,14 @@
 			cropRect = event.cropRect,
 			user = acs.currentUser(),
 			curWin = FeedWindow.currentFeedWindow(),
-			photoBlob,
 			postModel;
 		Titanium.API.info('PHOTO SUCCESS cropRect.x ' + cropRect.x + ' cropRect.y ' + cropRect.y  + ' cropRect.height ' + cropRect.height + ' cropRect.width ' + cropRect.width);
 
-		Ti.Media.hideCamera();	
+		Ti.Media.hideCamera();
+		Ti.App.mainTabGroup.setActiveTab(0);	
 		postModel = PostModel.createPostModel(user, image);
 		goToShareWindow(postModel);
+		postModel.photo = FeedWindow.resizeToPlatform(image);		
 	}
 
 	 

@@ -41,8 +41,8 @@
 		
 		lWin = Ti.UI.createWindow({
 			backgroundColor: '#DDD',
-			barColor: '#5D3879',
-			//rightNavButton: done,
+	        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+	        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],				
 			title: Ti.Locale.getString(action + 'WinTitle'),
 			tabBarHidden: true
 		});
@@ -98,8 +98,8 @@
 		signInBtn = Titanium.UI.createButton({
 			title: Ti.Locale.getString(action),
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-			backgroundColor: '#5D3879',
-			color: 'white',
+			//backgroundColor: Ti.Locale.getString('themeColor'),
+			color: 'blue', //Ti.Locale.getString('themeColor'),
 			width: '44%',
 			height: '8%',
 			left: '28%',
@@ -146,7 +146,7 @@
 				title: Ti.Locale.getString('forgotPassword'),
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				backgroundColor: 'transparent',
-				color: '#3366BB',
+				color: 'blue',
 				textAlign: 'right',
 				font: {
 					fontWeight: 'normal',
@@ -155,7 +155,7 @@
 				width: '40%',
 				height: 12,
 				left: '55%',
-				top: 115 
+				top: 118 
 			});	
 			lWin.add(forgotPwdBtn);
 			

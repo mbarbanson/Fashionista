@@ -140,7 +140,7 @@
 					fontWeight: 'bold',
 					fontSize: '30'
 				},					
-				backgroundColor: 'transparent', //'#5D3879',
+				backgroundColor: 'transparent',
 				shadowColor: 'black',
 				shadowOffset: {x:2, y:2},				
 				color: '#FFFFFF',
@@ -155,13 +155,16 @@
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
-				},				
-				backgroundColor: '#5D3879',
-				color: 'white',
+				},
+				textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,			
+				//backgroundColor: Ti.Locale.getString('themeColor'),
+				color: 'blue',
+				shadowColor: 'white',
+				shadowOffset: {x:2, y:2},				
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				borderRadius: 1,
 				top: '30%',
-				height: '6%',
+				height: Ti.UI.SIZE, //'6%',
 				left: '10%',
 				width: '80%'
 			}),
@@ -170,11 +173,13 @@
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
-				},				
-				backgroundColor: '#5D3879',
-				color: 'white',
-				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-				borderRadius: 1,				
+				},
+				textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,										
+				//backgroundColor: Ti.Locale.getString('themeColor'),
+				color: 'blue',
+				shadowColor: 'white',
+				shadowOffset: {x:2, y:2},				
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,				
 				top: '46%',
 				height: '6%',
 				left: '10%',
@@ -185,11 +190,13 @@
 				font: {
 					fontWeight: 'bold',
 					fontSize: '20'
-				},				
-				backgroundColor: '#5D3879',
-				color: 'white',
-				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-				borderRadius: 1,				
+				},
+				textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,								
+				//backgroundColor: Ti.Locale.getString('themeColor'),
+				color: 'blue',
+				shadowColor: 'white',
+				shadowOffset: {x:2, y:2},				
+				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,				
 				top: '62%',
 				height: '6%',
 				left: '10%',
@@ -314,7 +321,7 @@
 							};
 			tableView.displayComments = false;	
 			Ti.API.info("showFeedWin. Refreshing Feed window");
-			showPost = function (post) { 
+			showPost = function (post) {
 							displayPostInFeedWin(fWin, post, false);
 						};
 			fWin.savedRightNavButton = fWin.rightNavButton;
@@ -557,8 +564,8 @@
 		}),
 		fWin = Ti.UI.createWindow({
 				title: Ti.Locale.getString('fashionista'),
-		        barColor: '#5D3879',
-		        navBarHidden: false				
+		        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+		        extendEdges: [Ti.UI.EXTEND_EDGES_ALL]								
 		}),
 		tableView =  Ti.UI.createTableView ({
 				objname: 'PostSummary',

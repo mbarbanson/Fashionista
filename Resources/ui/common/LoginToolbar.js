@@ -15,7 +15,7 @@ function loginCallback() {
 	if (acs.currentUser()) {	
 		try {
 			Ti.API.info("loginCallback");
-			Flurry.logEvent('SucessfulSignupOrLogin');				
+			//Flurry.logEvent('SucessfulSignupOrLogin');				
 			if (!Ti.App.mainTabGroup) {
 				ApplicationTabGroup.initAppUI();					
 			}
@@ -43,20 +43,22 @@ function createLoginToolbar(containingTab) {
 	signup = Ti.UI.createButton({
         title: Ti.Locale.getString('signup'),
         style: Ti.UI.iPhone.SystemButtonStyle.DONE,
-        backgroundColor: '#5D3879'
+        color: Ti.Locale.getString('themeColor')
+        //backgroundColor: Ti.Locale.getString('themeColor')
     });
     
     login = Ti.UI.createButton({
         title: Ti.Locale.getString('login'),
         style: Ti.UI.iPhone.SystemButtonStyle.DONE,
-        backgroundColor: '#5D3879'
+        color: Ti.Locale.getString('themeColor')
+        //backgroundColor: Ti.Locale.getString('themeColor')
     });
     
     toolbar = Titanium.UI.iOS.createToolbar({
         items:[flexSpace, login, flexSpace, signup, flexSpace],
         bottom:0,
         borderTop:true,
-        barColor: '#5D3879',
+		//barTintColor: Ti.Locale.getString('themeColor'),
         borderBottom:false
     });
     

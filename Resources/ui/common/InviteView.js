@@ -5,6 +5,7 @@
 
 (function () {
 	'use strict';
+	
 	var inAddingFriends = false,
 		inRemovingFriends = false;
 	
@@ -81,7 +82,7 @@
 										buddy;
 									for (i = 0; i < numBuddies; i = i + 1) {
 										buddy = buddies[i];
-										if ((email && email === buddy.email)	||
+										if ((email && (email === buddy.email))	||
 											(fName && lName && fName === buddy.first_name && lName === buddy.last_name)) {
 												//found = true;
 												break;
@@ -279,7 +280,8 @@
 			SettingsWindow = require('ui/common/SettingsWindow'),
 			window = Ti.UI.createWindow({
 								backgroundColor: '#DDD',
-								barColor: '#5D3879'				
+						        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+						        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
 			}),
 			//inviteFBFriendsRow = inviteTable ? inviteTable.fbFriendsRow : null,
 			activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
@@ -341,7 +343,10 @@
 
 	function createInviteView(parentWin, offsetTop) {
 	
-		var inviteTable, inviteFBFriendsRow, inviteContactsRow, userSearchRow;
+		var inviteTable, 
+			inviteFBFriendsRow, fbImage,
+			inviteContactsRow, contactsImage, 
+			userSearchRow, userImage;
 		
 		inviteTable = Ti.UI.createTableView({
 			top: offsetTop || 140,
@@ -360,57 +365,57 @@
 		});
 		
 		inviteTable.window = parentWin;
-	
+		
+		fbImage = Ti.UI.createImageView({image: '/images/f_logo_small.png', left:0, height: 50, width: 50});
 		inviteFBFriendsRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
 			title : Ti.Locale.getString('useFacebook'),
 			color : 'black',
+			indentionLevel: 4,			
 			backgroundColor : '#fff',
 			top: 10,
-			height : Ti.UI.FILL,
+			height : 50,
 			left : 0,
 			font: {fontSize: 16, fontWeight: 'bold'},
-			leftImage: '/images/f_logo_small.png',
 			hasChild : true
-		});
-	
+			});
+		inviteFBFriendsRow.add(fbImage);	
 		inviteFBFriendsRow.addEventListener('click', 
 						function (e) { 
 											inviteFBFriendsHandler (parentWin);
 									}
 						);
 	
+		contactsImage = Ti.UI.createImageView({image: '/images/contacts-small.png', left:0, height: 50, width: 50});
 		inviteContactsRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
 			title : Ti.Locale.getString('useContacts'),
 			color : 'black',
+			indentionLevel: 4,			
 			backgroundColor : '#FFF',
 			top : 10,
-			height : Ti.UI.FILL,
+			height : 50,
 			left : 0,
-			font: {fontSize: 16, fontWeight: 'bold'},			
-			//borderWidth: 1,
-			//borderColor: 'black',
-			leftImage: '/images/contacts-small.png',
+			font: {fontSize: 16, fontWeight: 'bold'},
 			hasChild : true
-		});
-		
+			});
+		inviteContactsRow.add(contactsImage);
 		inviteContactsRow.addEventListener('click', function(e) { inviteContactsClickHandler (parentWin); });
 		
-			
+		userImage = Ti.UI.createImageView({image: '/icons/111-user.png', left:10, height: Ti.UI.SIZE, width: Ti.UI.SIZE});	
 		userSearchRow = Ti.UI.createTableViewRow({
 			className : 'shareSource',
 			title : Ti.Locale.getString('userSearch'),
 			color : 'black',
 			backgroundColor : '#FFF',
+			indentionLevel: 4,			
 			top : 10,
-			height : Ti.UI.FILL,
+			height : 50,
 			left : 0,
 			font: {fontSize: 16, fontWeight: 'bold'},			
-			leftImage: '/icons/111-user@2x.png',
 			hasChild : true
 		});
-		
+		userSearchRow.add(userImage);
 		userSearchRow.addEventListener('click', function(e) { goToUserSearch (parentWin); });
 	
 		inviteTable.appendRow(inviteFBFriendsRow);

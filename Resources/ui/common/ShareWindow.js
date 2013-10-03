@@ -18,7 +18,7 @@ function parseHashTags(postModel, caption) {
 				hashStr = '#' + text.slice(0, endHashIdx);
 				Ti.API.info("found new hashtag " + hashStr);
 				if (postModel.tags.indexOf(hashStr) === -1) {
-					postModel.tags.push(hashStr);	
+					postModel.tags.push(hashStr.toLowerCase());	
 				}				
 				text = text.slice(endHashIdx);	
 			}
@@ -26,11 +26,11 @@ function parseHashTags(postModel, caption) {
 				hashStr = '#' + text;
 				Ti.API.info("found new hashtag " + hashStr);
 				if (postModel.tags.indexOf(hashStr) === -1) {
-					postModel.tags.push(hashStr);	
+					postModel.tags.push(hashStr.toLowerCase());	
 				}	
 				break;			
 			}
-			if (hashStr === '#friendsOnly')	{
+			if (hashStr.toLowerCase() === Ti.Locale.getString('friendsOnlyHashTag').toLowerCase())	{
 				Ti.App.newPublicPost = false;
 			}		
 		}	
@@ -60,7 +60,7 @@ function createShareWindow(postModel, shareAction) {
 		fashionistaFriends = [],
 		newSize = Ti.App.photoSizes[Ti.Platform.osname],
 		photoBlob = postModel.photo,
-		activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
+		activityIndicator;
 
 	
 	// right nav button is Share
@@ -78,7 +78,8 @@ function createShareWindow(postModel, shareAction) {
 	shareWindow = Ti.UI.createWindow({
 		backgroundColor : '#ddd',
 		color : 'black',
-		barColor : '#5D3879',
+        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],			
 		tabBarHidden: 'true',
 		leftNavButton : cancelBtn,
 		title : Ti.Locale.getString('shareWindow')
@@ -124,16 +125,11 @@ function createShareWindow(postModel, shareAction) {
 			FeedWindow.beforeSharePost(postModel, newPostNotify, FeedWindow.afterSharePost);
 			
 		};
-				
-				
 		activityIndicator.hide();
 		shareWindow.setRightNavButton(shareBtn);
 		shareBtn.show();				
 				
-		//InviteView.inviteFBFriendsPromptBeforeAction(shareWindow, doShare);
-		InviteView.inviteFriendsBeforeShare(shareWindow.containingTab, doShare);
-		
-			
+		InviteView.inviteFriendsBeforeShare(shareWindow.containingTab, doShare);		
 	});
 	
 	cancelBtn.addEventListener('click', function(e) {
@@ -151,12 +147,13 @@ function createShareWindow(postModel, shareAction) {
 	
 	shareTabGroup.addTab(tab);
 	shareTabGroup.setActiveTab(0);
-	
-	Ti.API.info("open shareTabGroup with spinner");
-	shareWindow.setRightNavButton(activityIndicator);
-	activityIndicator.show();
 	shareTabGroup.open();
 	
+	Ti.API.info("open shareTabGroup with spinner");
+	activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});
+	shareWindow.setRightNavButton(activityIndicator);
+	activityIndicator.show();
+		
 	// show pic thumbnail
 	postModel.thumbnail_75 = photoBlob.imageAsThumbnail(75);
 	thumbnail = Ti.UI.createImageView({
@@ -231,30 +228,33 @@ function createShareWindow(postModel, shareAction) {
 	findExactBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('findExactHashTag'),
-		color: 'white',
-		backgroundColor: '#5D3879',
+		color: 'blue',
+		//backgroundColor: Ti.Locale.getString('themeColor'),
 		borderRadius: 1,
-		borderWidth: 1,		
+		borderWidth: 1,
+		borderColor: Ti.Locale.getString('themeColor'),				
 		top: 175, left: '5%',
 		height: 30, width: '30%'
 	});
 	findSimilarBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('findSimilarHashTag'),
-		color: 'white',
-		backgroundColor: '#5D3879',
+		color: 'blue',
+		//backgroundColor: Ti.Locale.getString('themeColor'),
 		borderRadius: 1,
-		borderWidth: 1,				
+		borderWidth: 1,
+		borderColor: Ti.Locale.getString('themeColor'),						
 		top: 175, left: '37%',
 		height: 30, width: '33%'
 	});
 	friendsOnlyBtn = Titanium.UI.createButton({
 		style : Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 		title : Ti.Locale.getString('friendsOnlyHashTag'),
-		color: 'white',
-		backgroundColor: '#5D3879',
+		color: 'blue',
+		//backgroundColor: Ti.Locale.getString('themeColor'),
 		borderRadius: 1,
-		borderWidth: 1,				
+		borderWidth: 1,
+		borderColor: Ti.Locale.getString('themeColor'),				
 		top: 100, left: '5%',
 		height: 30, width: '35%'
 	});	
@@ -272,7 +272,7 @@ function createShareWindow(postModel, shareAction) {
 		else {
 			caption.value = caption.value + ' ' + hashTag;			
 		}
-		postModel.tags.push(hashTag);	
+		postModel.tags.push(hashTag.toLowerCase());	
 	});
 	
 	findSimilarBtn.addEventListener('click', function(e) {
@@ -284,7 +284,7 @@ function createShareWindow(postModel, shareAction) {
 		else {
 			caption.value = caption.value + ' ' + hashTag;			
 		}
-		postModel.tags.push(hashTag);
+		postModel.tags.push(hashTag.toLowerCase());
 	});
 	
     friendsOnlyBtn.addEventListener('click', function(e) {
@@ -296,39 +296,12 @@ function createShareWindow(postModel, shareAction) {
 		else {
 			caption.value = caption.value + ' ' + hashTag;			
 		}
-		postModel.tags.push(hashTag);
+		postModel.tags.push(hashTag.toLowerCase());
 	});
-	
-/*	
-	// Find friends who are already using Fashionist and invite friends to start using it
-	shareLabel = Ti.UI.createLabel({
-		text : Ti.Locale.getString('findFriendsOnFashionist'),
-		textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
-		verticalAlign : Ti.UI.TEXT_VERTICAL_ALIGNMENT_TOP,
-		wordWrap : true,
-		color : 'black',
-		top : 180,
-		left : '5%',
-		height : 30,
-		width : '90%',
-		paddingLeft : 2,
-		paddingRight : 2,
-		font : {
-			fontWeight : 'bold',
-			fontSize : '18'
-		}
-	});
-	shareWindow.add(shareLabel);
-
-	inviteTable = InviteView.createInviteView(shareWindow, 220);
-	shareWindow.add(inviteTable);
-*/
 	
 	activityIndicator.hide();
 	shareWindow.setRightNavButton(shareBtn);
 	Ti.API.info("Stop spinner, show share button");
-	
-	postModel.photo = FeedWindow.resizeToPlatform(photoBlob);
 	return shareWindow;
 }
 

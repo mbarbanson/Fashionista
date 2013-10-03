@@ -164,8 +164,10 @@
 			win = Ti.UI.createWindow({
 				backgroundColor: '#ddd',
 				color: 'black',
-				barColor: '#5D3879',
-				title: Ti.Locale.getString('searchResultsTitle')
+				//barTintColor: Ti.Locale.getString('themeColor'),
+				title: Ti.Locale.getString('searchResultsTitle'),
+		        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+		        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]								
 			}),
 			tab = parentWin.containingTab;
 			

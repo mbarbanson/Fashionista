@@ -12,8 +12,8 @@
 	function createDetailWindow(tab) {
 		var detailWindow = Ti.UI.createWindow({
 							title: "Comments",
-					        backgroundColor: 'white',
-							barColor: '#5D3879',
+					        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+					        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],			
 							tabBarHidden: true
 							});
 		detailWindow.containingTab = tab;

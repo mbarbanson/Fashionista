@@ -9,14 +9,14 @@
 	
 	function createInboxView () {
 		var inboxView = Ti.UI.createTableView({
-			top: 10,
-			height : '94%',
-			rowHeight : 50,
-			width : '94%',
-			left : 7,
-			borderRadius : 5,
+			top: 0,
+			height : '100%',
+			//rowHeight : Ti.UI.SIZE,
+			width : '100%',
+			left : 0,
+			//borderRadius : 5,
 			separatorColor: '#DDD',
-			backgroundColor: '#FFF'			
+			backgroundColor: 'grey'			
 		});
 		return inboxView;	
 	}
@@ -37,8 +37,11 @@
 			defaultFontSize = (Ti.Platform.name === 'android' ? 16 : 14),
 			avatar, avatarView, clickHandler, pid, uid, payload, type,
 			preSpaces = "", i, numSpaces = 0,
-			label = Ti.UI.createLabel({
-						font:{fontFamily:'Arial', fontSize:defaultFontSize + 2, fontWeight:'normal'},
+			label = Ti.UI.createTextArea({
+				        autoLink: Ti.UI.AUTOLINK_URLS,
+				        editable: false,
+				        scrollable: false,
+				        font:{fontFamily:'Arial', fontSize:defaultFontSize, fontWeight:'normal'},
 						textAlign: Ti.UI.TEXT_ALIGNMENT_LEFT,
 						wordWrap : true,
 						top: 0,
@@ -46,7 +49,8 @@
 						height: Ti.UI.SIZE,
 						width: Ti.UI.FILL,
 						color: 'black',
-						ellipsize: true
+						ellipsize: true,
+						visible: true
 						//borderWidth: 1,
 						//borderColor: 'black'	
 			}),
@@ -81,11 +85,11 @@
 				avatar = acs.getUserAvatar(fromUser);
 				avatarView = Ti.UI.createImageView({
 					image: avatar, 
-					left: 0, 
+					left: 5, top: 5,
 					height: 40, width: 40,
 					borderRadius: 0,
 					borderWidth: 1,
-					borderColor: 'black'
+					borderColor: 'blue'
 				});			
 				row.add(avatarView);
 				
@@ -94,27 +98,29 @@
 					preSpaces += " ";
 				}				
 				authorBtn = Ti.UI.createButton({
-								color: '#576996',
+								color: 'blue',
 								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
-								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
+								font:{fontFamily:'Arial', fontSize:defaultFontSize, fontWeight:'normal'},
 								ellipsize: false,
 								title: fromUser.username,
 								left: 0, 
-								top: 0, //(defaultFontSize + 2)/2,
+								top: (defaultFontSize + 2)/8,
 								width:Ti.UI.SIZE, 
 								height: Ti.UI.SIZE
 								});
-				authorBtn.addEventListener('click', function (e) {
+				authorBtn.addEventListener('singletap', function (e) {
 															e.cancelBubble = true;
 															e.bubbles = false;
 															ProfileView.displayUserProfile(containingTab, fromUser);
 															});
 				avatarView.addEventListener('click', function (e) {
+															e.cancelBubble = true;
+															e.bubbles = false;					
 															ProfileView.displayUserProfile(containingTab, fromUser);
 															});	
 																									
 				label.add(authorBtn);
-				label.text = preSpaces + messageBody;
+				label.value = preSpaces + messageBody;
 				if (type === 'friend_request') {
 					addApproveBtn = Ti.UI.createButton({
 						title: Ti.Locale.getString('approveFriend'),
@@ -122,12 +128,12 @@
 						width: '23%',
 						height: 30,
 						font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
-						backgroundColor: Ti.Locale.getString('complementaryColor'),
+						//backgroundColor: Ti.Locale.getString('complementaryColor'),
 						style: 'Titanium.UI.iPhone.SystemButtonStyle.BORDERED',
-						color: 'white',
+						color: Ti.Locale.getString('themeColor'),
 						borderRadius: 0,
 						borderWidth: 1,
-						borderColor: 'black'						
+						borderColor: Ti.Locale.getString('themeColor')						
 					});
 					label.width = '55%';
 					label.text = preSpaces + Ti.Locale.getString('friendRequestMessage');
@@ -164,8 +170,8 @@
 								parentWin.setRightNavButton(null);
 								});	
 					};
-					row.addEventListener('click', clickHandler);
-					//label.addEventListener('singletap', clickHandler);										
+					row.addEventListener('singletap', clickHandler);
+					label.addEventListener('singletap', clickHandler);										
 				}												
 			}
 			row.add(label);	
@@ -181,16 +187,15 @@
 			//friendRequestView = createInboxView(),
 			doDisplayInbox = function (messages) {
 				var numMessages = (messages && messages.length) || 0,
-					i, row, message, unread = false,					
+					i, row, message,					
 					fromUser;
 					for (i = 0; i < numMessages ; i += 1) {
 						message = messages[i];
-						unread = (message && message.status === 'unread');
 						fromUser = (message && message.from);						
 						row = Ti.UI.createTableViewRow({
 							className: 'messageRow',
 							indentationLevel: 4,
-							backgroundColor: unread ? 'white' : 'grey'
+							height: Ti.UI.SIZE
 						});
 						displayMessage(containingTab, parentWin, row, message);						
 						inboxView.appendRow(row);
@@ -205,8 +210,8 @@
 		messages.showInbox(doDisplayInbox, errorCallback);
 		activityIndicator.hide();
 		if (parentWin) {parentWin.setRightNavButton(null);}
-		return inboxView;	
-	}
+		return inboxView;
+		}
 
 
 
@@ -215,7 +220,12 @@
 		var acs = require('lib/acs'),
 			Flurry = require('sg.flurry'),
 			currentUser = acs.currentUser(),
-			inboxWin = Ti.UI.createWindow({title: currentUser.username + '\'s Inbox ', backgroundColor: '#DDD'}),
+			inboxWin = Ti.UI.createWindow({
+				//title: currentUser.username + "\'s Inbox", 
+				backgroundColor: "grey",
+		        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+		        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
+				}),
 			inboxView = displayInbox(containingTab, parentWin),
 			notifyAddedFriends, notificationSuccess;
 		inboxWin.add(inboxView);

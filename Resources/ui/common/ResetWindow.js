@@ -45,7 +45,8 @@ function checkemail(emailAddress) {
 		
 		win = Ti.UI.createWindow({
 			backgroundColor: '#DDD',
-			barColor: '#5D3879',
+	        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+	        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],			
 			title: Ti.Locale.getString('resetPasswordWinTitle'),
 			tabBarHidden: true
 		});
@@ -72,8 +73,8 @@ function checkemail(emailAddress) {
 		resetBtn = Titanium.UI.createButton({
 			title: Ti.Locale.getString('reset'),
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-			backgroundColor: '#5D3879',
-			color: 'white',
+			//backgroundColor: Ti.Locale.getString('themeColor'),
+			color: Ti.Locale.getString('themeColor'),
 			width: '30%',
 			height: '8%',
 			left: '35%',

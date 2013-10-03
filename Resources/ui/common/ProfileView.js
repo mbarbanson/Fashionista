@@ -169,6 +169,7 @@
 			backgroundColor : '#DDD',
 			height : 110,
 			left : 0,
+			top: 10,
 			width: '100%'			
 		});
 		
@@ -180,7 +181,7 @@
 		if (image) {
 			privProfileInfo.savedPhoto = image;
 		}
-		else if (!image && user.external_accounts.length > 0) {
+		else if (!image && user.external_accounts && user.external_accounts.length > 0) {
 			facebookUID = FB.getLinkedFBId(user);
 			image = 'https://graph.facebook.com/' + facebookUID + '/picture?height=160&width=160';
 		}
@@ -190,7 +191,7 @@
 		avatarView = Ti.UI.createImageView({
 						image: image,
 						bubbleParent: false,
-						left: 5, top:0,
+						left: 5, top:5,
 						width:100, height:100
 						});
 		avatarView.addEventListener('click', function (e) {
@@ -218,11 +219,11 @@
 				fontSize : '17'
 			},						
 			left: 110,
-			top: 0,
+			top: 5,
 			height: 100,
 			visible: true
 			});
-		bioLabel.setWidth(Ti.App.SCREEN_WIDTH*0.96 - 110);
+		bioLabel.setWidth(Ti.App.SCREEN_WIDTH*0.98 - 110);
 		bioLabel.setEditable(canEdit);
 		photoBioRow.add(bioLabel);
 		profileView.appendRow(photoBioRow);
@@ -286,7 +287,7 @@
 			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 110,
+			width: Ti.App.SCREEN_WIDTH*0.98- 110,
 			visible: true
 			});
 		// username shouldn't be editable without checking the new username is available			
@@ -338,7 +339,7 @@
 			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 110,
+			width: Ti.App.SCREEN_WIDTH*0.98- 110,
 			visible: true
 			});
 			
@@ -395,7 +396,7 @@
 			left: 110,
 			top: '10%',
 			height: '80%',
-			width: Ti.App.SCREEN_WIDTH*0.96- 110,
+			width: Ti.App.SCREEN_WIDTH*0.98- 110,
 			visible: true
 			});
 
@@ -418,11 +419,11 @@
 		var profileTable;
 
 		profileTable = Ti.UI.createTableView({
-			top: 10,
-			height : '96%',
+			top: 0,
+			height : '100%',
 			rowHeight : 50,
 			width : '100%',
-			left : 2,
+			left : 0,
 			borderRadius : 0,
 			paddingLeft : 0,
 			paddingRight : 0,
@@ -442,7 +443,12 @@
 			currentUser = acs.currentUser(),
 			isSameUser = (user.id === currentUser.id),
 			addFriendBtn,
-			profileWin = Ti.UI.createWindow({title: user.username, backgroundColor: '#DDD'}),
+			profileWin = Ti.UI.createWindow({
+				title: user.username, 
+				backgroundColor: 'grey',
+				statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+				extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT] 
+				}),
 			profileView = createProfileView(user),
 			notifyAddedFriends, notificationSuccess;
 		profileWin.add(profileView);
@@ -501,10 +507,27 @@
 	}
 	
 	
+	function displayUserProfileFromId(containingTab, userId) {
+		var acs = require('lib/acs'),
+			Flurry = require('sg.flurry'),
+			ProfileView = require('ui/common/ProfileView'),
+			profileWin,
+			currentUser = acs.currentUser(),
+			user;
+		if (currentUser.id === userId) {
+			displayUserProfile(containingTab, currentUser);
+		}
+		else {
+			acs.getUserDetails(userId, function (user) { displayUserProfile (containingTab, user);});	
+		}
+	}	
+	
+	
 	exports.createProfileView = createProfileView;
 	exports.createProfileWindow = createProfileWindow;	
 	exports.saveProfileChanges = saveProfileChanges;
 	exports.resetProfileChanges	= resetProfileChanges;
 	exports.displayUserProfile= displayUserProfile;
+	exports.displayUserProfileFromId = displayUserProfileFromId;
 	
 } ());

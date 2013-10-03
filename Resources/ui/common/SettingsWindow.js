@@ -86,9 +86,9 @@
 									},
 									textAlign: 'center',
 									borderRadius: 0,
-									color: 'black',
-									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
-									backgroundColor: '#FFF'
+									color: 'blue',
+									style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN
+									//backgroundColor: '#FFF'
 							    });
 		
 		win.setRightNavButton(activityIndicator); 
@@ -247,9 +247,10 @@
 		    friendsTitle = Ti.Locale.getString('friends'),
 			meTitle = Ti.Locale.getString('profileSettings'),
 			settingsWin = Ti.UI.createWindow({
-								backgroundColor: '#DDD',
-								barColor: '#5D3879'
-							}),
+								backgroundColor: 'grey',
+						        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+								extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]
+								}),
 			titleTabBar = Titanium.UI.iOS.createTabbedBar({
 								labels:[newsTitle, friendsTitle, meTitle],
 								index: 0,
@@ -258,8 +259,8 @@
 								//borderWidth: 1,
 								//borderColor: '#333',
 								top: 7,
-								height: 30,
-								backgroundColor: '#5D3879'
+								height: 30
+								//backgroundColor: Ti.Locale.getString('themeColor')
 							}),
 			newIndex = titleTabBar.index;
 		    //activityIndicator = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle});

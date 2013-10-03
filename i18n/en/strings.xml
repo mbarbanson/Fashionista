@@ -37,7 +37,7 @@
 	<string name="shareWindow">Share</string>
 	<string name="listWindow">Select Friends</string>
 	<string name="contactsWindow">Select Contacts</string>
-	<string name="welcome_message">Let's get fashionistic!</string>
+	<string name="welcome_message">You have no posts or friends yet</string>
 	<string name="findFriendsMessage">Would you like to find which of your facebook friends are also using Fashionist? We will not share your information with anyone.</string>
 	<string name="findFriendsTitle">Fashionist is more fun with friends.</string>
 	<string name="noPhotosTitle">You haven't posted any photos yet</string>
@@ -47,6 +47,7 @@
 	<string name="firstuser">You are the first of your friends to use Fashionist. Kudos! Tell your friends to download Fashionist now.</string>
 	<string name="firstContact">We didn't find any fashionist users in your contacts. If you know the name, email or username of a user, look them up directly instead.</string>	
 	<string name="nocaption">no caption</string>
+	<string name="captionHint">Add a caption, tags or @mention e.g. @fashionist, #denim, #h&m</string>
 	<string name="contactsDisallowed">"Please go to your iPhone Privacy Settings and allow Fashionist to access your Contacts. We will not email anyone without your prior approval."</string>
 	<string name="news">Inbox</string>
 	<string name="meSettings">Me</string>
@@ -80,9 +81,9 @@
 	<string name="privateHashTag">#Private</string>
 	<string name="emptyComment">Your comment is empty. Please enter a comment or go back to the previous window.</string>
 	<string name="commentProTip">\nPro tip: reply to comments to get even more viewer interaction with your posts.</string>
-	<string name="commentNotificationBody" formatted="false">commented: %1$s</string>	
-	<string name="likeNotificationBody" formatted="false">liked your post %1$s</string>	
-	<string name="findTags">Ask other fashionistas for help</string>
+	<string name="commentNotificationBody" formatted="false">commented %1$s</string>	
+	<string name="likeNotificationBody" formatted="false"> liked your post %1$s</string>	
+	<string name="findTags">Get help finding an item online</string>
 	<string name="postSuccess">Your new post has been published</string>
 	<string name="user_agent_message">user agent set to</string>
 	<string name="format_fashionist">Your name is %s</string>
@@ -91,7 +92,7 @@
 	<string name="publicFeed">Explore</string>
 	<string name="explorePublicFeed">Explore public posts</string>
 	<string name="fillProfile">Fill out your profile</string>	
-	<string name="createPost">Post your latest find</string>		 
+	<string name="createPost">Share your latest find</string>		 
 	<string name="camera">Camera</string>
 	<string name="gallery">Gallery</string>
 	<string name="userProfile">Profile</string>

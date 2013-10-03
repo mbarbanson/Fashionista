@@ -37,11 +37,7 @@
 				if (originRow.updateCommentsCountHandler) {
 					originRow.updateCommentsCountHandler();					
 				}
-				//originRow.addEventListener('update_commentsCount', originRow.updateCommentsCountHandler);
-				//originRow.fireEvent('update_commentsCount');
 				notifications.newCommentHandler(post.id, senderId, commentText);
-				//Ti.API.info("FIRE EVENT: NEW Comment from " + senderId);
-				//Ti.App.fireEvent('newComment', {"uid": senderId, "pid": post.id, "message": commentText});
 			};
 		if (commentText === "") {
 			alert(Ti.Locale.getString('emptyComment'));
@@ -79,6 +75,7 @@
 			contentTextInput = Ti.UI.createTextArea({
 				autolink: Ti.UI.AUTOLINK_URLS,
 				editable: true,
+				maxLength: 160,
 		        value: 'Add a comment...',
 				color: '#aaa',
 		        top: 5, //postH + 140, 
@@ -87,10 +84,7 @@
 		        height: 60,
 				textAlign : Ti.UI.TEXT_ALIGNMENT_LEFT,
 				autocapitalization : Titanium.UI.TEXT_AUTOCAPITALIZATION_SENTENCES,	
-				//keyboardToolbar : [cancelBtn, flexSpace, sendBtn],
-				//keyboardType: Ti.UI.KEYBOARD_EMAIL,
 				returnKeyType: Ti.UI.RETURNKEY_SEND,			
-		        //borderStyle: Ti.UI.INPUT_BORDERSTYLE_ROUNDED,
 		        borderColor: 'black',
 		        borderWidth: 1,
 				borderRadius : 1,
@@ -138,7 +132,10 @@
 
 	function openInWebView(containingTab, url) {
 		var webview = Titanium.UI.createWebView({url: url}),
-			window = Titanium.UI.createWindow();
+			window = Titanium.UI.createWindow({
+				        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+				        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
+					});
 	    window.add(webview);
 	    window.containingTab = containingTab;
 	    containingTab.open(window);
@@ -199,7 +196,7 @@
 					preSpaces += " ";
 				}				
 				authorBtn = Ti.UI.createButton({
-								color: '#576996',
+								color: 'blue',
 								style: 'Titanium.UI.iPhone.SystemButtonStyle.PLAIN',
 								font:{fontFamily:'Arial', fontSize:defaultFontSize+2, fontWeight:'bold'},
 								ellipsize: false,
@@ -209,12 +206,12 @@
 								width:Ti.UI.SIZE, 
 								height: Ti.UI.SIZE
 								});
-				authorBtn.top = (defaultFontSize + 2)/2;
+				authorBtn.top = (defaultFontSize + 2)/8;
 				authorBtn.addEventListener('click', function (e) {
 															var containingTab = Ti.App.mainTabGroup.getActiveTab();
-															ProfileView.displayUserProfile(containingTab, comment.user);
+															ProfileView.displayUserProfileFromId(containingTab, comment.user.id);
 															});				
-				label.add(authorBtn);								
+				label.add(authorBtn);							
 			}
 
 			url = comment.content.match(urlRe);
@@ -224,7 +221,9 @@
 			}
 			
 			label.value = preSpaces + unescape(comment.content);
-			row.add(label);	
+			row.add(label);
+			//row.add(authorBtn);
+			Ti.API.info("displaying comment " + label.value);	
 			label.addEventListener('singletap', clickHandler);
 			label.addEventListener ('click', clickHandler);								
 	}
@@ -258,7 +257,7 @@
 								createCommentsView(row, comments, Ti.App.maxCommentsInPostSummary);
 							};
 		// retrieves comments for current post and display each post followed by its comments on separate rows
-		Comments.getPostComments(post, successCallback);		
+		Comments.getPostComments(post, successCallback, false);		
 	}
 
 	function createPostCommentsTable (containingTab, containingView, originRow, newComment) {
