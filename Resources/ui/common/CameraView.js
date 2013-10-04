@@ -33,9 +33,8 @@
 		Ti.App.mainTabGroup.setActiveTab(0);	
 		postModel = PostModel.createPostModel(user, image);
 		goToShareWindow(postModel);
-		postModel.photo = FeedWindow.resizeToPlatform(image);		
+		postModel.photo = FeedWindow.resizeToPlatform(image);
 	}
-
 	 
 	function createCameraView (successCallback, cancelCallback, mode) {
 		if (Ti.Media.isCameraSupported && mode === 'camera') {

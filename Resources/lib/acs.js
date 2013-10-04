@@ -7,7 +7,8 @@
 
 (function () {
 	'use strict';
-	
+
+
 	// a couple local variables to save state
 	//FIXME define a userModel with additional properties like hasRequestedFriends etc...
 	var privCurrentUser = null,
@@ -270,7 +271,9 @@
 	            setCurrentUser(user);
 	            Flurry.setUserID(user.username);
 				setHasRequestedFriends(false);
-				Notifications.initNotifications();					
+				if (!Ti.Network.getRemoteNotificationsEnabled()) {
+					Notifications.initNotifications();										
+				}
 				if (successCallback) { successCallback();}
 				Flurry.logEvent('Cloud.Users.showMe', {'username': user.username, 'email': user.email, 'result': 'success'});
 				
@@ -282,6 +285,25 @@
 	            checkInternetConnection(e);
 	            Ti.App.Properties.setString('sessionId', null);
 	    
+	            if (errorCallback) { errorCallback(); }
+	        }
+		});		
+	}
+	
+	
+	function getUserDetails(userId, successCallback, errorCallback) {
+		var Flurry = require('sg.flurry');
+		Cloud.Users.show({user_id: userId}, function (e) {
+	        if (e.success) {
+	            var user = e.users[0],
+					Notifications = require("ui/common/notifications");
+	            Ti.API.info('Retrieved user:\\n' + 'id: ' + userId + '\\n');				
+				if (successCallback) { successCallback(user);}
+	        } else {
+	            Ti.API.info('Error:\\n' +
+	                ((e.error && e.message) || JSON.stringify(e)) + " Please exit and start up again");
+				Flurry.logEvent('showUserError', {'errorMessage': e.message, 'error': e.error});			                        
+	            checkInternetConnection(e);
 	            if (errorCallback) { errorCallback(); }
 	        }
 		});		
@@ -582,7 +604,10 @@
 			paramDict;
 		
 		if (notificationType === 'newLike') {
-			messageBody = String.format(Ti.Locale.getString('likeNotificationBody'), username, notificationContent);		
+			messageBody = String.format(Ti.Locale.getString('likeNotificationBody'), notificationContent);		
+		}
+		else if (notificationType === 'newPost') {
+			messageBody = String.format(Ti.Locale.getString('newPostNotificationBody'), notificationContent);					
 		}
 		alertBody = (username + " " + messageBody).substr(0,119); // limit notification to 120 chars due to IOS push notification limitation to 255 chars
 		customPayload = {
@@ -621,12 +646,12 @@
 	function newPostNotification (post) {
 		var caption = "";
 		if (post.content === Ti.Locale.getString('nocaption')) {
-			caption = "";
+			caption = ""; 
 		}
 		else {
 			caption = unescape(post.content);
 		}
-		newNotification(post, "newPost", ' posted a new picture ' + caption, true);
+		newNotification(post, "newPost", caption, true);
 	}
 
 
@@ -984,9 +1009,10 @@
 					    post = e.posts[i];
 					    if (postAction) { postAction(post); }
 					}
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }
 					displayRemainingPosts();
+					
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }					
 		         }
 		         else if (numPosts > 0 && numPosts <= 4) {
 					displayAllPosts();
@@ -1004,7 +1030,6 @@
 		            
 	            checkInternetConnection(e);
 		    }
-//			if (cleanupAction) { cleanupAction(); }
 		});	
 	}
 	
@@ -1019,7 +1044,7 @@
 		    per_page: Ti.App.maxNumPosts,
 		    order: '-created_at',
 		    where: {
-				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag')]}
+				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag').toLowerCase()]}
 		    }
 		}, function (e) {
 			var i,
@@ -1048,9 +1073,11 @@
 					    post = e.posts[i];
 					    if (postAction) { postAction(post); }
 					}
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }
+
 					displayRemainingPosts();
+					
+					// stop activity indicator
+					if (cleanupAction) { cleanupAction(); }					
 		         }
 		         else if (numPosts > 0 && numPosts <= 4) {
 					displayAllPosts();
@@ -1101,6 +1128,7 @@
 	exports.createUser = createUser;
 	exports.queryUsers = queryUsers;
 	exports.getCurrentUserDetails = getCurrentUserDetails;
+	exports.getUserDetails = getUserDetails;
 	exports.createUserPhotoCollection = createUserPhotoCollection;
 	exports.getUserCollectionIdPhotos = getUserCollectionIdPhotos;
 	exports.getUserPhotoCollection = getUserPhotoCollection;

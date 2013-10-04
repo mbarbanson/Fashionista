@@ -168,7 +168,7 @@
 				cancelCallback = function () {
 									Ti.API.info("Pick photo cancel callback");
 									Flurry.logEvent('cancelPickPhoto', {'username': currentUser.username, 'email': currentUser.email});									
-									Ti.Media.hideCamera();
+									Ti.Media.hideCamera();									
 									tabGroup.setActiveTab(0);
 							},
 				successCallback = function (e) {
@@ -178,7 +178,7 @@
 									//tabGroup.setActiveTab(0);
 							};
 			if (currentUser) {
-				Flurry.logEvent('openCameraTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
+				Flurry.logEvent('focusTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
 				CameraView.pickPhoto(successCallback, cancelCallback);
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
 				//tabGroup.setActiveTab(0);

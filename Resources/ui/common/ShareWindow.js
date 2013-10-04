@@ -42,7 +42,8 @@ function createShareWindow(postModel, shareAction) {
 	
 	var ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		FeedWindow = require('ui/common/FeedWindow'),
-		InviteView = require('ui/common/InviteView'), 
+		InviteView = require('ui/common/InviteView'),
+		Flurry = require('sg.flurry'),		 
 		shareBtn, cancelBtn,
 		findExactBtn, findSimilarBtn, friendsOnlyBtn,
 		tagsLabel, 
@@ -123,7 +124,7 @@ function createShareWindow(postModel, shareAction) {
 			}
 
 			FeedWindow.beforeSharePost(postModel, newPostNotify, FeedWindow.afterSharePost);
-			
+			Flurry.logEvent('sharePost', { 'username': acs.currentUser().username, message: message});			
 		};
 		activityIndicator.hide();
 		shareWindow.setRightNavButton(shareBtn);

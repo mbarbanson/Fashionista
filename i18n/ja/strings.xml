@@ -81,6 +81,7 @@
 	<string name="privateHashTag">#Private</string>
 	<string name="emptyComment">Your comment is empty. Please enter a comment or go back to the previous window.</string>
 	<string name="commentProTip">\nPro tip: reply to comments to get even more viewer interaction with your posts.</string>
+	<string name="newPostNotificationBody" formatted="false">posted a new picture %1$s</string>	
 	<string name="commentNotificationBody" formatted="false">commented %1$s</string>	
 	<string name="likeNotificationBody" formatted="false"> liked your post %1$s</string>	
 	<string name="findTags">Get help finding an item online</string>
