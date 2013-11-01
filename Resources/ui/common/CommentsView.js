@@ -223,7 +223,7 @@
 			label.value = preSpaces + unescape(comment.content);
 			row.add(label);
 			//row.add(authorBtn);
-			Ti.API.info("displaying comment " + label.value);	
+			//Ti.API.info("displaying comment " + label.value);	
 			label.addEventListener('singletap', clickHandler);
 			label.addEventListener ('click', clickHandler);								
 	}
@@ -239,7 +239,7 @@
 	
 
 	function displayCommentsInPostView(containingTab, row) {
-		Ti.API.info("createPostCommentsTable");
+		//Ti.API.info("createPostCommentsTable");
 		var	Comments = require('lib/comments'),
 			PostView = require('ui/common/PostView'),
 			post = row && row.post,

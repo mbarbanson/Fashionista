@@ -272,6 +272,7 @@
 	            Flurry.setUserID(user.username);
 				setHasRequestedFriends(false);
 				if (!Ti.Network.getRemoteNotificationsEnabled()) {
+					Ti.API.info("remote notifications not enabled, alling initNotifications");
 					Notifications.initNotifications();										
 				}
 				if (successCallback) { successCallback();}
@@ -433,7 +434,7 @@
 	}
 	
 	
-	
+/*	
 	function uploadPhoto (image, collectionId, callback) {
 		var Flurry = require('sg.flurry');
 		
@@ -464,7 +465,7 @@
 	        }
 	    });
 	}
-	
+*/	
 	
 	function getUrlForPhotoId(photoId, callback) {
 		Cloud.Photos.show({
@@ -859,8 +860,8 @@
 		    photo: pPhoto,
 			acl_name: Ti.Locale.getString('publicPostACLName'),		    
 		    tags: tags_list,
-		    'photo_sizes[avatar]':'50x50#',
-		    'photo_sizes[preview]': '75x75#',
+		    //'photo_sizes[avatar]':'50x50#',
+		    //'photo_sizes[preview]': '75x75#',
 			'photo_sizes[android]': ((pPhoto.width*480)/640).toString() + 'x' + ((pPhoto.height*480)/640).toString(),  //'480x480#',
 			'photo_sizes[iphone]':pPhoto.width.toString() + 'x' + pPhoto.height.toString(), //'640x640#',
 			'photo_sync_sizes[]': 'iphone',
@@ -899,13 +900,6 @@
 		    if (e.success) {
 		        var post = e.posts[0];
 				Flurry.logEvent('Cloud.Posts.show', {'postId': savedPostId, 'result': 'success'});			            
-		        /*
-		        Ti.API.info('showPost success:\\n' +
-		            'id: ' + post.id + '\\n' +
-		            'title: ' + post.title + '\\n' +
-		            'content: ' + post.content + '\\n' +
-		            'updated_at: ' + post.updated_at);
-		            */
 				if (successCallback) {successCallback(post);}
 		    } else {
 		        Ti.API.info('Error:\\n' +
@@ -976,52 +970,16 @@
 		usersList.splice(usersList.length, 0, privCurrentUser);
 		Cloud.Posts.query({
 		    page: 1,
-		    limit: Ti.App.maxNumPosts,
+		    per_page: Ti.App.maxNumPosts,
+		    response_json_depth: 2,
 		    order: '-created_at',
 		    where: {
 		        "user_id": { '$in': usersList.map(getID)  }
 		    }
 		}, function (e) {
-			var i,
-				post,
-				numPosts = 0,
-				displayAllPosts, displayRemainingPosts;
 		    if (e.success) {
-				numPosts = e.posts.length;
-				displayAllPosts = function () {
-					for (i = 0; i < numPosts ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-				   }					
-				};
-				displayRemainingPosts = function () {
-					for (i = 4; i < numPosts ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-				   }					
-				};				
-				Flurry.logEvent('Cloud.Posts.query success', {'usersList': friendsList, 'type': 'friends'});			            
-				
-		        Ti.API.info('Success:\\n' + 'Count: ' + numPosts);
-		         if (numPosts > 4) {
-					//display first four post
-					for (i = 0; i < 4 ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-					}
-					displayRemainingPosts();
-					
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }					
-		         }
-		         else if (numPosts > 0 && numPosts <= 4) {
-					displayAllPosts();
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }
-		         }
-		         else { // handle empty friend feed and stop activity indicator
-					if (cleanupAction) { cleanupAction(); }	
-		         }  
+				Flurry.logEvent('Cloud.Posts.query success', {'type': 'friends'});			            
+				if (postAction) { postAction (e.posts);}
 		    } else {
 				if (cleanupAction) { cleanupAction(); }
 		        Ti.API.info('Error: getFriendsPosts\\n' +
@@ -1042,54 +1000,16 @@
 		Cloud.Posts.query({
 		    page: 1,
 		    per_page: Ti.App.maxNumPosts,
+		    response_json_depth: 2,
 		    order: '-created_at',
 		    where: {
 				"tags_array": {"$nin": [Ti.Locale.getString('friendsOnlyHashTag').toLowerCase()]}
 		    }
 		}, function (e) {
-			var i,
-				post,
-				numPosts = 0,
-				displayAllPosts, displayRemainingPosts;
 		    if (e.success) {
-				numPosts = e.posts.length;
-				displayAllPosts = function () {
-					for (i = 0; i < numPosts ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-				   }					
-				};
-				displayRemainingPosts = function () {
-					for (i = 4; i < numPosts ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-				   }					
-				};			            
-				
-		        Ti.API.info('Success:\\n' + 'Count: ' + numPosts);
-		         if (numPosts > 4) {
-					//display first four post
-					for (i = 0; i < 4 ; i = i + 1) {
-					    post = e.posts[i];
-					    if (postAction) { postAction(post); }
-					}
-
-					displayRemainingPosts();
-					
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }					
-		         }
-		         else if (numPosts > 0 && numPosts <= 4) {
-					displayAllPosts();
-					// stop activity indicator
-					if (cleanupAction) { cleanupAction(); }
-		         }
-		         else { // handle empty friend feed and stop activity indicator
-					if (cleanupAction) { cleanupAction(); }	
-		         }
-		         Flurry.logEvent('Cloud.Posts.query success', {'type': 'public'});			            
-		           
-		    } else {
+				if (postAction) { postAction (e.posts);}
+				Flurry.logEvent('Cloud.Posts.query success', {'type': 'public'});
+			} else {
 		        Ti.API.info('Error: getPublicPosts\\n' +
 		            ((e.error && e.message) || JSON.stringify(e)));
 				Flurry.logEvent('Cloud.Posts.query error', {'errorMessage': e.message, 'error': e.error});			            
@@ -1123,7 +1043,7 @@
 	exports.setPhotoCollectionId = setPhotoCollectionId;
 	exports.login = login;
 	exports.logout = logout;
-	exports.uploadPhoto = uploadPhoto;
+	//exports.uploadPhoto = uploadPhoto;
 	exports.updateUser = updateUser;
 	exports.createUser = createUser;
 	exports.queryUsers = queryUsers;

@@ -9,16 +9,15 @@
 
 	var acs = require('lib/acs'),
 		Flurry = require('sg.flurry'),	
-		CameraView = require('/ui/common/CameraView'),
 		SettingsWindow = require('/ui/common/SettingsWindow'),
-		ThumbnailsWindow = require('ui/common/ThumbnailsWindow'),
 		FeedWindow = require('ui/common/FeedWindow');
 
 	// no need to add the tab group to the rootwindow
 	// just create and return the tabgroup
 	// open it later on	
 	function createApplicationTabGroup() {
-		var tabGroup =	Ti.UI.createTabGroup();	
+		var tabGroup =	Ti.UI.createTabGroup({tabsTintColor: Ti.Locale.getString('themeColor')});
+		Ti.App.mainTabGroup = tabGroup;	
 		tabGroup.addEventListener('newLoggedInUser', 
 			function () {
 							Ti.API.info("Received newLoggedInUser event. Rebuilding feedWindow");
@@ -52,10 +51,24 @@
 			settingsWindow,
 			currentUser = acs.currentUser(),
 			tab1, tab2, tab3, tab4, tab5, 
-			cameraBtn, galleryBtn;
+			cameraBtn, galleryBtn,
+			cleanup = function (e) {
+				friendFeedWindow.containingTab = null;
+				findFeedWindow.containingTab = null;
+				win3.containingTab = null;
+				win4.containingTab = null;
+				settingsWindow.containingTab = null;
+				tab1 = tab2 = tab3 = tab4 = tab5 = null;
+			},
+			blurHandler = function(e) {
+								if (FeedWindow.dismissGettingStartedOverlay(findFeedWindow)) {
+									tab2.removeEventHandler('blur', blurHandler);
+								}
+							};
 	
 		// tabgroup containing main Fashionist Tabs ie: feed, featured, camera, gallery, settings
-		Ti.App.mainTabGroup = tabGroup;																	
+		
+		tabGroup.addEventListener('close', cleanup);																
 		// left most tab is the feed
 		FeedWindow.setCurrentFriendFeedWindow(friendFeedWindow);
 		tab1 = Ti.UI.createTab({
@@ -65,13 +78,13 @@
 								width: '20%',	
 								window: friendFeedWindow
 							});
-		tab1.tabGroup = tabGroup;
+
 		tabGroup.addTab(tab1);
 		friendFeedWindow.containingTab = tab1;
 		
 		// this tab requires a logged in user
 		tab1.addEventListener('focus', function (e) {
-			if (acs.currentUser()) {
+			if (currentUser) {
 				Ti.API.info("Friend Feed tab received a focus event");
 				Flurry.logEvent('focusTab', {'tab': 'friendsFeed', 'username': currentUser.username, 'email': currentUser.email});
 				FeedWindow.handleEmptyFriendsFeed();																										
@@ -94,7 +107,7 @@
 			width: '20%',				
 			window: findFeedWindow
 		});
-		tab2.tabGroup = tabGroup;
+
 		findFeedWindow.containingTab = tab2;
 		tabGroup.addTab(tab2);
 		
@@ -107,10 +120,6 @@
 			findFeedWindow.initialized = true;
 		});
 		
-		tab2.addEventListener('blur', function(e) {
-			FeedWindow.dismissGettingStartedOverlay(findFeedWindow);
-		});
-		
 		// camera tab
 		tab3 = Ti.UI.createTab({
 			title: Ti.Locale.getString('camera'),			
@@ -120,12 +129,12 @@
 			window: win3
 		});
 		win3.containingTab = tab3;
-		tab3.tabGroup = tabGroup;
+		//tab3.tabGroup = tabGroup;
 		tabGroup.addTab(tab3);
 		
 		tab3.addEventListener('focus', function(e){
 			Ti.API.info("cameraBtn click handler");
-			var win,
+			var CameraView = require('/ui/common/CameraView'),
 				cancelCallback = function () {
 									Ti.API.info("Take photo cancel callback");
 									Flurry.logEvent('takePhotoCancel', {'username': currentUser.username, 'email': currentUser.email});																											
@@ -143,7 +152,7 @@
 				Flurry.logEvent('focusTab', {'tab': 'camera', 'username': currentUser.username, 'email': currentUser.email});									
 				
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery				
-				//tabGroup.setActiveTab(0);		
+				tabGroup.setActiveTab(0);		
 			}			
 			else {
 				alert("Please log in or sign up first");
@@ -159,12 +168,12 @@
 			window: win4
 			});
 		win4.containingTab = tab4;
-		tab4.tabGroup = tabGroup;
+		//tab4.tabGroup = tabGroup;
 		tabGroup.addTab(tab4);
 		
 		tab4.addEventListener('focus', function(e){
 			Ti.API.info("Gallery click handler");
-			var win,
+			var CameraView = require('/ui/common/CameraView'),
 				cancelCallback = function () {
 									Ti.API.info("Pick photo cancel callback");
 									Flurry.logEvent('cancelPickPhoto', {'username': currentUser.username, 'email': currentUser.email});									
@@ -181,7 +190,7 @@
 				Flurry.logEvent('focusTab', {'tab': 'photoGallery', 'username': currentUser.username, 'email': currentUser.email});
 				CameraView.pickPhoto(successCallback, cancelCallback);
 				// switch over to feed window and open camera or photo gallery on top so we know what will be visible when we close the camera/photo gallery
-				//tabGroup.setActiveTab(0);
+				tabGroup.setActiveTab(0);
 			}			
 			else {
 				alert("Please log in or sign up first");
@@ -206,6 +215,9 @@
 			SettingsWindow.showSettingsWindow();
 			Ti.API.info("handle focus on settings page");
 		});
+		
+		FeedWindow.addFeedEventListeners(friendFeedWindow);
+		FeedWindow.addFeedEventListeners(findFeedWindow);
 			
 	}
 	

@@ -25,7 +25,7 @@
 			email, 
 			password, 
 			confirm,
-			spinner = Ti.UI.createActivityIndicator({top:'50%', left: '50%'}),
+			spinner = Ti.UI.createActivityIndicator({style: Ti.App.spinnerStyle}),
 			style;
 			
 		//setup spinny activity indicator
@@ -45,6 +45,12 @@
 	        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT],				
 			title: Ti.Locale.getString(action + 'WinTitle'),
 			tabBarHidden: true
+		});
+		
+		lWin.addEventListener('close', function (e) {
+			spinner.hide();
+			spinner = null;
+			lWin = null;	
 		});
 			
 		username = Ti.UI.createTextField({
@@ -98,12 +104,17 @@
 		signInBtn = Titanium.UI.createButton({
 			title: Ti.Locale.getString(action),
 			style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
+			font: {
+				fontFamily: Ti.App.defaultFontFamily,
+				fontWeight: 'normal',
+				fontSize: '24'
+			},			
 			//backgroundColor: Ti.Locale.getString('themeColor'),
 			color: 'blue', //Ti.Locale.getString('themeColor'),
-			width: '44%',
-			height: '8%',
-			left: '28%',
-			top: 140 
+			width: '90%',
+			textAlign: 'center',			
+			height: Ti.UI.SIZE,
+			top: 150 
 		});
 		
 
@@ -147,15 +158,15 @@
 				style: Titanium.UI.iPhone.SystemButtonStyle.PLAIN,
 				backgroundColor: 'transparent',
 				color: 'blue',
-				textAlign: 'right',
+				textAlign: 'center',
 				font: {
+					fontFamily: Ti.App.defaultFontFamily,
 					fontWeight: 'normal',
-					fontSize: '10'
+					fontSize: '17'
 				},				
-				width: '40%',
-				height: 12,
-				left: '55%',
-				top: 118 
+				width: '90%',
+				height: Ti.UI.SIZE,
+				top: 110 
 			});	
 			lWin.add(forgotPwdBtn);
 			
@@ -195,15 +206,14 @@
 				Flurry.logEvent('signupOrloginSuccess', { 'username': currentUser.username});						
 				cb();
 				spinner.hide();
-				lWin.remove(spinner);
 				lWin.close();
+				lWin = null;
 			}
 		}
 		
 		function errorCallback(e) {
 			Ti.API.info('login or createUser failed:' + e.message);
 			spinner.hide();
-			lWin.remove(spinner);
 			done.setEnabled(true);
 			Flurry.logEvent('signupOrloginError', { 'username': username.text });						
 		}
@@ -223,7 +233,7 @@
 				acs.createUser(username.value, email.value, password.value, postActionCallback, errorCallback);
 				//acs.sendWelcome(email.value, successCallback, errorCallback);
 			}
-			lWin.add(spinner);
+			lWin.setRightNavButton(spinner);
 			spinner.show();						
 		});
 		

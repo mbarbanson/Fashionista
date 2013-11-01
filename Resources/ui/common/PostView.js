@@ -9,7 +9,6 @@
 (function () {
 	'use strict';
 	
-	
 	var singleLineHeight = 20,
 		maxCharsPerLine = 45; // bogus, but use this for quick and dirty layout
 
@@ -153,7 +152,7 @@
 	 * displayRowDetails
 	 */
 	function displayLikesDetails (containingTab, row) {
-		Ti.API.info('show row details');
+		//Ti.API.info('show row details');
 		var Likes = require('lib/likes'),
 			post = row && row.post,
 			postId = post && post.id;
@@ -161,15 +160,14 @@
 	}
 		
 	function displayRowDetails (containingTab, row, newComment) {
-		Ti.API.info('show row details');
+		//Ti.API.info('show row details');
 		var CommentsView = require('ui/common/CommentsView'),
 			Likes = require('lib/likes');
 		if (newComment) {
 			displayPostDetailsFeedView(containingTab, row, newComment);			
 		}
 		else {
-			CommentsView.displayCommentsInPostView(containingTab, row);
-			//Likes.getPostLikes(postId);	
+			CommentsView.displayCommentsInPostView(containingTab, row);	
 		}
 	}
 
@@ -178,17 +176,17 @@
 		var Flurry = require('sg.flurry'),
 			post = row && row.post,
 			photoUrls = post.photo && post.photo.urls,
-			img, imgW, imgH, imgView, imgClickHandler, loadHandler;
+			img, imgW, imgH, imgView, imgClickHandler;
 			// if photoBlob is null, this was called to display a photo that's already uploaded
 			if (!photoBlob) {
 				if (photoUrls) {
 					if (photoUrls.iphone) {
-						img = photoUrls.iphone;
+						photoBlob = photoUrls.iphone;
 						imgW = Ti.App.photoSizes[Ti.Platform.osname][0];
 						imgH = Ti.App.photoSizes[Ti.Platform.osname][1];
 					}
 					else {
-						img = photoUrls.medium_320;
+						photoBlob = photoUrls.medium_320;
 						imgW = 320;
 						imgH = 480;
 					}					
@@ -200,7 +198,6 @@
 				}
 			}
 			else {
-				img = photoBlob;
 				imgW = photoBlob.width;
 				imgH = photoBlob.height;
 			}
@@ -208,23 +205,18 @@
 			// images are square. make them fit
 			// first row
 			imgView = Ti.UI.createImageView({
-							image: img,						
+							//image: '/images/defaultPhoto.png',
+							image: photoBlob,
+							defaultImage: "/images/defaultPhoto.png",						
 							width:Ti.UI.SIZE, 
 							height:Ti.UI.SIZE
 							});
 			row.add(imgView);
-			row.photo = img;
-			row.imgView = imgView;
+			row.photo = photoBlob;
 			
 			imgClickHandler = function (e) {
 								likePost(row);
 							};
-			loadHandler = function(e) {
-				if (numComments > 0) {
-					displayRowDetails(containingTab, row, false);
-				}
-				imgView.removeEventListener('postlayout', loadHandler);					
-			};
 			imgView.addEventListener('dblclick', imgClickHandler);
 			return imgView;				
 					
@@ -282,20 +274,21 @@
 				avatarImg = author.photo.urls.small_240;				
 			}				
 			else if (facebookUID) {
-				avatarImg = 'https://graph.facebook.com/' + facebookUID + '/picture';	
+				avatarImg = 'https://graph.facebook.com/' + facebookUID + '/picture?width=30&height=30';	
 			}
 							 
 			avatarView = Ti.UI.createImageView({
 							image: avatarImg,
 							left: 5, top:5,
-							width:30, height:30,
-							borderWidth: 1, borderColor: 'blue'
+							width:30, height:30
+							//borderWidth: 1, borderColor: 'blue'
 							});
 			row.add(avatarView);
+			/*
 			avatarView.addEventListener('click', function (e) {
 														ProfileView.displayUserProfile(containingTab, author);
 														});									
-								
+			*/					
 								
 			labelUserName = Ti.UI.createButton({
 								color: 'blue',
@@ -380,7 +373,7 @@
 											 }
 										 );
 			}
-
+/*
 			createdAtDate = row.post.created_at;
 
 			//third row
@@ -393,7 +386,7 @@
 							});
 			// tumblr is not showing the date. let's not show it until we have better formatting
 			//row.add(labelDate);
-				
+*/				
 						
 			// photo caption
 			labelDetails = Ti.UI.createLabel({
@@ -463,11 +456,11 @@
 				row.commentsCount = commentsCount;	
 				// comment add code currently assumes originRow in a post summary row
 				commentsCount.addEventListener('click', function (e) {displayRowDetails(containingTab, row, true);});
-				
+				/*
 				if (numComments > 0) {
 					displayRowDetails(containingTab, row, false);
 				}
-							
+				*/			
 			}
 				
 			return true;
@@ -511,7 +504,7 @@
 	function displayPostSummaryView (containingTab, post) {
 		var row = createPostView(post), success = false;
 		
-		Ti.API.info('display post summary: create and populate a row from current post ');
+		//Ti.API.info('display post summary: create and populate a row from current post ');
 		success = populatePostView(containingTab, row, false);
 		if (success) {
 			setPostViewEventHandlers (row);					

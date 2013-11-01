@@ -10,7 +10,6 @@
  *  
  */
 
-
 //bootstrap and check dependencies
 if (Ti.version < 2.0 ) {
 	alert('Sorry - this application template requires Titanium Mobile SDK 2.0 or later');
@@ -26,7 +25,8 @@ if (Ti.version < 2.0 ) {
 		FB = require('lib/facebook'),
 		ApplicationTabGroup = require('ui/common/ApplicationTabGroup'),
 		osname = Ti.Platform.osname,
-		version = Ti.Platform.version,
+		//version = Ti.Platform.version,
+		//model = Ti.Platform.model,
 		height = Ti.Platform.displayCaps.platformHeight,
 		width = Ti.Platform.displayCaps.platformWidth,
 		isTablet = false,
@@ -37,7 +37,9 @@ if (Ti.version < 2.0 ) {
 		AppWindow,
 		appKey = 'D82FTRKTYMS9SJKWHT6P';
 
-
+	// new relic initialization
+	require('ti.newrelic').start("AA8416ee1ec3cc6670dbf2be64791a3e7da1252222");
+	
 	// Flurry initialization
 	Flurry.secureTransport(true); //use https to send request to make them more safe
 	Flurry.logUncaughtExceptions(true); //logs exception in objective-c code
@@ -49,37 +51,35 @@ if (Ti.version < 2.0 ) {
 	Flurry.setCaptureUncaughtExceptions(true);		
 	Flurry.reportOnClose = true;
 
-	Ti.API.info("Titanium version " + Ti.version);
-	Ti.API.info("App version " + Ti.App.version + "\n");
-	Ti.App.itunesLink = "https://itunes.apple.com/us/app/fashionist/id603194546";
+	//Ti.API.info("Titanium version " + Ti.version);
+	//Ti.API.info("App version " + Ti.App.version + "\n");
+	//Ti.App.itunesLink = "https://itunes.apple.com/us/app/fashionist/id603194546";
 	
 	// test out logging to developer console, formatting and localization
-	Ti.API.info(String.format("%s %s", Ti.Locale.getString("welcome_message","default_not_set"),Titanium.version));
-	Ti.API.debug(String.format("%s %s", Ti.Locale.getString("user_agent_message","default_not_set"),Titanium.userAgent));
+	//Ti.API.info(String.format("%s %s", Ti.Locale.getString("welcome_message","default_not_set"), model));
+	//Ti.API.debug(String.format("%s %s", Ti.Locale.getString("user_agent_message","default_not_set"),Titanium.userAgent));
 	
-	Ti.API.debug(String.format("locale specific date is %s",String.formatDate(new Date()))); // default is short
-	Ti.API.debug(String.format("locale specific date (medium) is %s",String.formatDate(new Date(),"medium")));
-	Ti.API.debug(String.format("locale specific date (long) is %s",String.formatDate(new Date(),"long")));
-	Ti.API.debug(String.format("locale specific time is %s",String.formatTime(new Date())));
-	Ti.API.debug(String.format("locale specific currency is %s",String.formatCurrency(12.99)));
-	Ti.API.debug(String.format("locale specific decimal is %s",String.formatDecimal(12.99)));
+	//Ti.API.debug(String.format("locale specific date is %s",String.formatDate(new Date()))); // default is short
+	//Ti.API.debug(String.format("locale specific date (medium) is %s",String.formatDate(new Date(),"medium")));
+	//Ti.API.debug(String.format("locale specific date (long) is %s",String.formatDate(new Date(),"long")));
+	//Ti.API.debug(String.format("locale specific time is %s",String.formatTime(new Date())));
+	//Ti.API.debug(String.format("locale specific currency is %s",String.formatCurrency(12.99)));
+	//Ti.API.debug(String.format("locale specific decimal is %s",String.formatDecimal(12.99)));
 	
 	
-	Ti.API.info("should be en, was = "+Ti.Locale.currentLanguage);
-	Ti.API.info("welcome_message = "+Ti.Locale.getString("welcome_message"));
-	Ti.API.info("should be def, was = "+Ti.Locale.getString("welcome_message2","def"));
-	Ti.API.info("should be 1, was = "+String.format('%d',1));
-
-	Ti.API.info('Ti.Platform.displayCaps.density: ' + Ti.Platform.displayCaps.density);
-	Ti.API.info('Ti.Platform.displayCaps.dpi: ' + Ti.Platform.displayCaps.dpi);
-	Ti.API.info('Ti.Platform.displayCaps.platformHeight: ' + Ti.Platform.displayCaps.platformHeight);
-	Ti.API.info('Ti.Platform.displayCaps.platformWidth: ' + Ti.Platform.displayCaps.platformWidth);
+	//Ti.API.info("should be en, was = "+Ti.Locale.currentLanguage);
+	//Ti.API.info('Ti.Platform.displayCaps.density: ' + Ti.Platform.displayCaps.density);
+	//Ti.API.info('Ti.Platform.displayCaps.dpi: ' + Ti.Platform.displayCaps.dpi);
+	//Ti.API.info('Ti.Platform.displayCaps.platformHeight: ' + Ti.Platform.displayCaps.platformHeight);
+	//Ti.API.info('Ti.Platform.displayCaps.platformWidth: ' + Ti.Platform.displayCaps.platformWidth);
+	/*
 	if (Ti.Platform.displayCaps.density === 'high') {
 		Ti.App.pixelScaling = 2;
 	}
 	else {
 		Ti.App.pixelScaling = 1;
 	}
+	*/
 	Ti.App.SCREEN_WIDTH = (width > height) ? height : width;
 	Ti.App.SCREEN_HEIGHT = (width > height) ? width : height;
 	
@@ -106,16 +106,26 @@ if (Ti.version < 2.0 ) {
 	
 	Ti.App.addEventListener('close', function(){
 	    Ti.API.info('Fashionist is closing. See you again soon.');
+		if (Ti.App.mainTabGroup) {Ti.App.mainTabGroup.close();} 
+		if (Ti.App.rootWindow) {Ti.App.rootWindow.close();}   
+		Ti.App.mainTabGroup = null;
+		Ti.App.getFeedTab = null;
+		Ti.App.rootWindow = null;	    
 	});
 	
 	// max number of posts in feed
-	Ti.App.maxNumPosts = 75;
+	Ti.App.maxNumPosts = 8;
+	Ti.App.maxPages = 6;
 	Ti.App.maxNumCachedComments = 3;
 	Ti.App.maxCommentsInPostSummary = 3;
+	
+	// default font
+	Ti.App.defaultFontFamily = "HelveticaNeue-Light";
 
 	
 	// initialize main tabgroup
 	Ti.App.mainTabGroup = null;
+	Ti.App.guestTabGroup = null;	
 	Ti.App.getFeedTab = null;
 	Ti.App.rootWindow = null;
 	
@@ -130,14 +140,14 @@ if (Ti.version < 2.0 ) {
 	}
 	// initialize Facebook 
 	Ti.App.facebookInitialized = false;
-	
+	/*
 	if(Ti.Platform.osname === 'android'){
 	  Ti.API.info('Ti.Platform.displayCaps.xdpi: ' + Ti.Platform.displayCaps.xdpi);
 	  Ti.API.info('Ti.Platform.displayCaps.ydpi: ' + Ti.Platform.displayCaps.ydpi);
 	  Ti.API.info('Ti.Platform.displayCaps.logicalDensityFactor: ' + Ti.Platform.displayCaps.logicalDensityFactor);
 	}
-	
-	Ti.API.info("should be hello, was = " + String.format('%s','hello'));
+	*/
+	//Ti.API.info("should be hello, was = " + String.format('%s','hello'));
 	
 	//these acl objects were created using curl on the command line
 	/*
@@ -167,8 +177,7 @@ if (Ti.version < 2.0 ) {
 	}
 	Cloud.debug = true;
 	
-	Ti.App.photoSizes ={"thumbnail": [50,50], "iphone": [640,640], "ipad": [768,768], "android": [478,478]};
-	
+	Ti.App.photoSizes ={"iphone": [640,640], "ipad": [768,768], "android": [478,478]};	
 	Ti.App.rootWindow = AppWindow.createApplicationWindow(Ti.Locale.getString('fashionista'));
 	Ti.App.rootWindow.open();
 	

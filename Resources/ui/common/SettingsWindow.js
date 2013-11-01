@@ -15,10 +15,10 @@
 			
 		Ti.API.info('Congratulations, you successfully logged out');
 		if (Ti.App.mainTabGroup) {
-			Ti.App.mainTabGroup.close();			
+			Ti.App.mainTabGroup.close();
+			Ti.App.mainTabGoup = null;			
 		}
 
-		Ti.App.mainTabGroup = null;
 		GuestWindow.createGuestWindow(Ti.App.rootWindow);
 	}
 

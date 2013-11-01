@@ -48,7 +48,8 @@
 				var mainTabGroup = Ti.App.mainTabGroup,
 					tab = mainTabGroup.getActiveTab() || mainTabGroup.tabs[0], // friendfeed tab
 					currentUser = acs.currentUser(),
-					postId = e.pid, message = e.message, senderId = e.uid,
+					postId = e.pid, message = e.message, senderId = e.uid, 
+					mostRecentFriendPost = null, mostRecentPublicPost = null,
 					appBadge = e.badge,
 					afterAction = function () { 
 						Ti.API.info("display post in details window on top of tab " + tab); 
@@ -70,12 +71,13 @@
 							Ti.API.info("your picture " + message + " has been posted");
 						}
 						else {
-							/* race condition can cause this to display a post twice
-							acs.showPost(postId, function (p) {
-													FeedWindow.displayPostInFeed(p, true); 
-													});
-													*/					
-							FeedWindow.showFriendsFeed(false, postId, afterAction);													
+							mostRecentFriendPost = FeedWindow.getMostRecentFriendPost();
+							if (mostRecentFriendPost && mostRecentFriendPost.id !== postId) {
+								acs.showPost(postId, function (p) {
+														FeedWindow.displayPostInFeed(p, true); 
+														});											
+							}							
+							//FeedWindow.showFriendsFeed(false, postId, afterAction);													
 						}
 					}
 				}		
@@ -103,35 +105,6 @@
 				Ti.API.info("notification handler called when appbadge is not positive " + appBadge);
 			}			
 			FeedWindow.showFriendsFeed(false, null, null);
-	}
-	
-
-	function approveFriendRequest (requesterId, appBadge, message) {
-			Ti.API.info("executing approveFriendRequest handler");
-			var acs = require('/lib/acs'),
-				Flurry = require('sg.flurry'),
-				requesters = [],
-				currentUser = acs.currentUser(),
-				FeedWindow = require('ui/common/FeedWindow'),
-				approveRequestCallback = function(e) {
-					FeedWindow.showFriendsFeed(false, null, null);	
-				};
-			Flurry.logEvent('approveFriendRequestHandler', { 'username': currentUser.username, message: message});				
-				
-			requesters.push(requesterId);
-			// decrement the app badge
-			Ti.API.info("appBadge is " + appBadge);
-			if (appBadge > 0) {
-				Ti.UI.iPhone.setAppBadge(appBadge - 1);			}
-			else {
-				Ti.API.info("notification handler called when appbadge is not positive " + appBadge);
-			}			
-			if (currentUser && acs.currentUserId() !== requesterId) {				
-				acs.approveFriendRequests(requesters, approveRequestCallback);				
-			}
-			else {
-				Ti.API.info("got a request to add self as a friend. do nothing currentUser is " + currentUser);
-			}
 	}
 	
 	
@@ -166,7 +139,7 @@
 				else {
 					// update likes count on friends' devices
 					Ti.API.info("received a like " + message + " from user " + senderId);
-					FeedWindow.showFriendsFeed(false, postId, afterAction);
+					//FeedWindow.showFriendsFeed(false, postId, afterAction);
 					//FIXME instead of doing a roundtrip to the cloud, we should update the local post instance
 				}
 			}
@@ -209,8 +182,7 @@
 					Ti.API.info("your comment " + message + " has been posted");
 				}
 				else {
-					FeedWindow.showFriendsFeed(false, postId, afterAction);
-					FeedWindow.showFindFeed(false, postId, null);						
+					Ti.API.info("received a comment " + message + " from user " + senderId);					
 				}
 			}
 			else {
@@ -278,8 +250,6 @@
 					break;								
 					case 'friend_request':
 						Ti.API.info("Notification Type: FRIEND REQUEST from " + senderId + " to " + currentUser);
-						//Flurry.logEvent('friend_requestNotificationReceived', { 'username': currentUser.username, message: message});										
-						//approveFriendRequest (senderId, badge, message);
 					break;
 					case 'friend_approved':
 						Ti.API.info("Notification Type: FRIEND APPROVED from " + senderId + " to " + currentUser);

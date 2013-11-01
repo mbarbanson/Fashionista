@@ -6,22 +6,31 @@
 	}
 
 	function flagPost(post) {
-		alert("This post has inappropriate content that violates app store policy");
+		alert("This post has inappropriate content that violates Apple's app store policy.");
 	}
 
 	function saveToCameraRoll(photoBlob) {
-		var successCallback = function (e) { alert("Successfully saved to camera roll");},
+		var Flurry = require('sg.flurry'),
+			successCallback = function (e) { alert("Successfully saved to camera roll");},
 			errorCallback = function (e) {alert("Couldn't save photo to camera roll. Please check your connection and try again later.");};
+		Ti.API.info('saveToCameraRoll');
+		Flurry.logEvent('saveToCameraRoll');
 		Ti.Media.saveToPhotoGallery(photoBlob, {success: successCallback, error: errorCallback});
 	}
 
     function deletePost(containingTab, post) {
+		if (!post || !containingTab) {
+			Ti.API.error('delete Post called with null post or containingTab');
+			return;
+		}
 		var acs = require('lib/acs'),
 			FeedWindow = require('ui/common/FeedWindow'),
+			Flurry = require('sg.flurry'),
 			fWin = containingTab.window,
 			postId = post.id,
 			callback = function (e) {
 						//update both feeds
+						Flurry.logEvent('deletePost', {'post': post.content});
 						fWin.fireEvent('deletePost', {postId: postId});
 						if (fWin.type === 'friendFeed') {
 							FeedWindow.currentFindFeedWindow().fireEvent('deletePost', {postId: postId});
@@ -45,7 +54,7 @@
 						}
 					});
 			dialog.show();
-}
+	}
 
 
 	function createMoreDialog(containingTab, post, imgView) {
@@ -109,7 +118,7 @@
 				Flurry.logEvent(optionLabel, {'username': currentUser.username, 'email': currentUser.email});
 				switch (e.index) {
 					case 0:
-						saveToCameraRoll(post);
+						saveToCameraRoll(imgView.toBlob());
 						break;
 					case 1:
 						flagPost(post);

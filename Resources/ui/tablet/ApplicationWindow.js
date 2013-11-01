@@ -7,8 +7,9 @@ exports.createApplicationWindow = function (title) {
 	'use strict';
 	var self = Ti.UI.createWindow({
 		title:title,
-		backgroundImage: '/images/Default.png',		
-//		barColor: '#5D3879',
+		//backgroundImage: '/images/Default.png',		
+		statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+		extendEdges: [Ti.UI.EXTEND_EDGES_ALL],
 		navBarHidden: true,
 		visible: false,
 		exitOnclose: true

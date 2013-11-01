@@ -106,9 +106,10 @@ function createShareWindow(postModel, shareAction) {
 				Ti.API.info("Notifying friends of new post");
 				social.newPostNotification(post, true);
 				//update feed window with local info after caption has been updated in the cloud
-				Ti.API.info("update local feed window with new post");
-				Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
-				Ti.App.fireEvent('newPost', {"uid": senderId, "pid": post.id, "message": message});						
+				FeedWindow.afterSharePost(post);
+				//Ti.API.info("update local feed window with new post");
+				//Ti.API.info("FIRE EVENT: NEW POST from " + senderId);
+				//Ti.App.fireEvent('newPost', {"uid": senderId, "pid": post.id, "message": message});						
 		};
 			
 		doShare = function () {

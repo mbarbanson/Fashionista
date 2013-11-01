@@ -5,44 +5,31 @@
 (function () {
 	"use strict";
 	
-	var curatedPhotosPath = 'photos/',
-		guestThumbnailsWindow = null,
-		privThumbnailsWindow = null,
-		acs = require('lib/acs'),
-		DetailWindow = require('ui/common/DetailWindow');
-	
-	function thumbnailsWindow() {
-		var thumbnailsWin = guestThumbnailsWindow;
-		if (acs.currentUser()) {
-			thumbnailsWin = privThumbnailsWindow;	
-		}
-		return thumbnailsWin;
-	}
+	var curatedPhotosPath = 'photos/';
 	
 	
 	function showPreview (tab, thumbView) {
 		var LoginToolbar = require('ui/common/LoginToolbar'),
 			imgView = null,
-			toolbar = LoginToolbar.createLoginToolbar(tab),
 			detailWindow = Ti.UI.createWindow({
 									title: Ti.Locale.getString('fashionista'),
-							        backgroundColor: 'transparent',
+							        backgroundColor: 'black',
 							        //navTintColor: Ti.Locale.getString('themeColor'),
 							        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
 							        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
-							});
+							}),
+			toolbar = LoginToolbar.createLoginToolbar(tab, detailWindow);
 
 		imgView = Ti.UI.createImageView({
 			backgroundColor: 'black',
 			width: Ti.UI.FILL
 		});
-		detailWindow.imgView = imgView;
 		detailWindow.add(imgView);
 		detailWindow.add(toolbar);
 
 		// use small_240 if present, otherwise use the thumbnail itself or fallback image if neither has a value
 		imgView.image = thumbView.image || '/photos/IMG_0001.JPG';
-		imgView.show();
+		//imgView.show();
 		
 		return detailWindow;
 	}
@@ -51,16 +38,13 @@
 
 	function showDetail (image) {
 		//alert("showing Image detail" + image);
-		var tab = thumbnailsWindow().containingTab,
+		var tab = Ti.App.guestTabGroup.getActiveTab(),
 			detailWindow = showPreview(tab, image);
 		if (tab) {
 			tab.open(detailWindow);
 		}
 	}
 	
-	function showPhotoDetailCallback(e) {
-		showDetail(e.source);	
-	}
 	
 	function displayThumbnails (tableView, photos) {
 		Ti.API.info("displayThumbnailsView");
@@ -72,7 +56,17 @@
 			imgView, row, col, i, 
 			tableData = [],
 			numRows,
-			image, thumb;
+			image, thumb,
+			showPhotoDetailCallback = function (e) {
+											showDetail(e.source);	
+										},
+			clearThumbnails = function (e) {
+				var data = tableView.getData();
+				for (i= 0; i < numRows; i = i + 1) {
+					row = data[i];
+					tableView.remove(row);
+				}
+			};
 	
 		photos = photos.filter(isValidPhoto, photos);	
 		numPhotos = photos !== "" ? photos.length : 0;
@@ -125,64 +119,11 @@
 		}
 	
 		tableView.setData(tableData);
-		tableView.setVisible(true);
+		//tableView.setVisible(true);
 	}
-	
-	
-	function clearThumbnails() {
 		
-		if (!thumbnailsWindow().tableView) {
-			return;
-		}
-		// clear tableView rows to avoid memory leaks
-		// null out imageViews also, just to be safe
-		var tableView = thumbnailsWindow().tableView,
-			rows = tableView.data,
-			numRows = rows.length,
-			i, imgViews, numImg, j;
-		for (i = 0; i < numRows; i = i + 1) {
-			imgViews = rows[i].children;
-			numImg = imgViews.length;
-			for (j = 0;j < numImg; j = j + 1) {
-				imgViews[j] = null;
-			}
-		}
-		tableView.data = null;
-		tableView.setVisible(false);
-		thumbnailsWindow().containingTab = null;
-	}
 	
-	function getThumbnails (callback) {
-		var collectionId,
-			user = acs.currentUser(),
-			photos = "";
-			
-		// debug code to sanity check things
-		if (!user) {
-			alert("user is null and shouldn't be");
-		}
-		
-		if (user) {
-			photos = acs.getUserPhotos(user);
-			if (!photos || photos === []) {
-				Ti.API.info("About to clear user photos " + photos);
-				collectionId = acs.getPhotoCollectionId(user);
-				if (collectionId !== null) {
-				    acs.getUserCollectionIdPhotos(collectionId, callback);
-				}
-				else {
-					Ti.API.info("empty user photo collection for " + user.username);
-					callback("");
-				}
-			}
-		} 
-		else {
-			callback("");
-		}	
-	}
-	
-	function getCuratedThumbnails() {
-		
+	function getCuratedThumbnails() {		
 		var photoDirectory = Ti.Filesystem.getFile(curatedPhotosPath),
 			listing;
 		if (photoDirectory && photoDirectory.exists()) {
@@ -201,101 +142,68 @@
 		displayThumbnails(tableView, curatedPics);
 	}
 	
-	function refreshThumbnails () {
-		// if there is a logged in user, retrieve the photoCollection and display the corresponding thumbnails
-		if (acs.currentUser()) {
-			getThumbnails(function (pics) {
-								displayThumbnails (privThumbnailsWindow.tableView, pics);
-							}
-			);			
-		}
-		else { //if there is no logged in user, display curated thumbnails
-			initializeThumbnails(guestThumbnailsWindow.tableView);
-		}			
-	}
-	
-	
+		
 	function createThumbnailsWindow () {
-		var tableView = null, 
-			refreshBtn = null;
-		
-		if (acs.currentUser()) {
-			// this code is never currently called
-			if (!privThumbnailsWindow) {
-				privThumbnailsWindow = Ti.UI.createWindow({
-										//translucent:false,
-								        backgroundColor: 'black', //'transparent',
-								        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
-								        extendEdges: [Ti.UI.EXTEND_EDGE_LEFT, Ti.UI.EXTEND_EDGE_RIGHT]				
-										});
-			 
-				tableView = Ti.UI.createTableView ({
-					objname: 'ThumbnailView',
-					backgroudColor: 'transparent',
-					visible: false
-				});
-				privThumbnailsWindow.tableView = tableView;
-		
-				privThumbnailsWindow.add(tableView);
-				
-				// add refresh button to nav bar
-				refreshBtn = Titanium.UI.createButton({
-					systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
-					style: Titanium.UI.iPhone.SystemButtonStyle.BAR
-				});
-				privThumbnailsWindow.setRightNavButton(refreshBtn);
-				refreshBtn.addEventListener('click', function(e) {
-					refreshThumbnails(true);
-					});
+		var LoginToolbar = require('ui/common/LoginToolbar'),
+			tableView = null, 
+			refreshBtn = null,
+			guestThumbnailsWindow = null,
+			toolbar = null,
+			cleanupThumbnailsWindow = function (e) {
+				var win = e.source;
+				if (tableView) {
+					tableView.setData(null);
 				}
-			else { //thumbnailsWindow already exists 
-			
-				clearThumbnails();
-			}
-		}
-		else { // no current user 
-			if (!guestThumbnailsWindow) {
-					guestThumbnailsWindow = Ti.UI.createWindow({
-											title: Ti.Locale.getString('fashionista'),
-									        backgroundColor: 'transparent',
-									        //navTintColor: Ti.Locale.getString('themeColor'),
-									        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
-									        extendEdges: [Ti.UI.EXTEND_EDGES_ALL]
-											});
-			 
-					tableView = Ti.UI.createTableView ({
-						objname: 'ThumbnailView',
-						backgroudColor: 'transparent',
-						//separatorStyle: Ti.UI.iPhone.TableViewSeparatorStyle.NONE,
-						visible: false
-					});
-				guestThumbnailsWindow.tableView = tableView;
-			
-				guestThumbnailsWindow.add(tableView);
-				
-				// add refresh button to nav bar
-				refreshBtn = Titanium.UI.createButton({
-					systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
-					style: Titanium.UI.iPhone.SystemButtonStyle.BAR
-				});
-				guestThumbnailsWindow.setRightNavButton(refreshBtn);
-				refreshBtn.addEventListener('click', function(e) {
-					refreshThumbnails(true);
-					});
-			}
-			else { //thumbnailsWindow already exists 
-			
-				clearThumbnails();
-			}
-			
-		}
+				win.remove(tableView);
+				win.remove(toolbar);
+				win.tableView = null;
+				tableView = null;
+				toolbar = null;					
+			};
 		
-		return thumbnailsWindow();  
+		guestThumbnailsWindow = Ti.UI.createWindow({
+								title: Ti.Locale.getString('fashionista'),
+						        backgroundColor: 'transparent',
+								font: {
+									fontFamily: Ti.App.defaultFontFamily,
+									fontWeight: 'normal'
+								},						        
+						        //navTintColor: Ti.Locale.getString('themeColor'),
+						        statusBarStyle: Ti.UI.iPhone.StatusBar.LIGHT_CONTENT,
+						        extendEdges: [Ti.UI.EXTEND_EDGES_LEFT, Ti.UI.EXTEND_EDGES_RIGHT, Ti.UI.EXTEND_EDGES_BOTTOM],
+						        tabBarHidden: true
+								});
+ 
+		tableView = Ti.UI.createTableView ({
+			objname: 'ThumbnailView',
+			backgroudColor: 'transparent'
+		});
+		
+		initializeThumbnails(tableView);	
+		guestThumbnailsWindow.tableView = tableView;			
+		guestThumbnailsWindow.add(tableView);
+		
+		// create fixed toolbar at bottom   
+	    toolbar = LoginToolbar.createLoginToolbar();
+	    guestThumbnailsWindow.add(toolbar);
+					
+		// add refresh button to nav bar
+		refreshBtn = Titanium.UI.createButton({
+			systemButton: Titanium.UI.iPhone.SystemButton.REFRESH,
+			style: Titanium.UI.iPhone.SystemButtonStyle.BAR
+		});
+		guestThumbnailsWindow.setRightNavButton(refreshBtn);
+		refreshBtn.addEventListener('click', function(e) {
+			initializeThumbnails(tableView);
+			});
+			
+		guestThumbnailsWindow.addEventListener('close', cleanupThumbnailsWindow);
+
+		
+		return guestThumbnailsWindow;  
 	}
 	
-	exports.clearThumbnails = clearThumbnails;
 	exports.createThumbnailsWindow = createThumbnailsWindow;
-	exports.refreshThumbnails = refreshThumbnails;
 	exports.showPreview = showPreview;	
 
 } ());

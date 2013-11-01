@@ -6,7 +6,7 @@
 	<string name="signup">Create Account</string>
 	<string name="signupWinTitle">Create Your Account</string>
 	<string name='resetPasswordWinTitle'>Request Password Reset</string>
-	<string name='forgotPassword'>forgot your password?</string>
+	<string name='forgotPassword'>Forgot your password?</string>
 	<string name='resetLinkSent'>Check your email in a few minutes for instructions on how to reset your password</string>
 	<string name='agreeToTerms'>By creating an account, I accept %1$s's Terms of Service and Privacy Policy</string>	
 	<string name="fashionista">Fashionist</string>

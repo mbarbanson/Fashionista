@@ -27,40 +27,45 @@
 			user = acs.currentUser(),
 			curWin = FeedWindow.currentFeedWindow(),
 			postModel;
-		Titanium.API.info('PHOTO SUCCESS cropRect.x ' + cropRect.x + ' cropRect.y ' + cropRect.y  + ' cropRect.height ' + cropRect.height + ' cropRect.width ' + cropRect.width);
-
+		//Titanium.API.info('PHOTO SUCCESS cropRect.x ' + cropRect.x + ' cropRect.y ' + cropRect.y  + ' cropRect.height ' + cropRect.height + ' cropRect.width ' + cropRect.width);
 		Ti.Media.hideCamera();
-		Ti.App.mainTabGroup.setActiveTab(0);	
+		//Ti.App.mainTabGroup.setActiveTab(0);	
 		postModel = PostModel.createPostModel(user, image);
 		goToShareWindow(postModel);
 		postModel.photo = FeedWindow.resizeToPlatform(image);
 	}
 	 
 	function createCameraView (successCallback, cancelCallback, mode) {
+		var Flurry = require('sg.flurry');
 		if (Ti.Media.isCameraSupported && mode === 'camera') {
-			//FIXME should pop up a menu to let user select camera or photo gallery instead of only offering camera
-			Ti.Media.showCamera({
-				animated: false,
-				success: successCallback,
-				cancel:cancelCallback,
-				error:function(error) {
-					cancelCallback();
-					var a = Ti.UI.createAlertDialog({title: Ti.Locale.getString('camera_error')});
-					if (error.code === Ti.Media.NO_CAMERA) {
-						a.setMessage(Ti.Locale.getString('camera_error_details'));
-					}
-					else {
-						a.setMessage('Unexpected error: ' + error.code);
-					}
-					a.show();
-				},
-				saveToPhotoGallery:true,
-				allowEditing:true,
-				autohide: false,
-				showControls: true,				
-				mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
-				//overlay: cameraOverlay
-			});
+			try {
+				Ti.Media.showCamera({
+					animated: false,
+					success: successCallback,
+					cancel:cancelCallback,
+					error:function(error) {
+						cancelCallback();
+						var a = Ti.UI.createAlertDialog({title: Ti.Locale.getString('camera_error')});
+						if (error.code === Ti.Media.NO_CAMERA) {
+							a.setMessage(Ti.Locale.getString('camera_error_details'));
+						}
+						else {
+							a.setMessage('Unexpected error: ' + error.code);
+						}
+						a.show();
+					},
+					saveToPhotoGallery:true,
+					allowEditing:true,
+					autohide: false,
+					showControls: true,				
+					mediaTypes:[Ti.Media.MEDIA_TYPE_PHOTO]
+					//overlay: cameraOverlay
+				});	
+			}
+			catch (e) {
+				Ti.API.info(e.message);
+				Flurry.logEvent('caughtException', {'in': 'createCameraView', 'msg': e.message});
+			}
 		} else {
 			Ti.Media.openPhotoGallery({
 				animated: false,
